@@ -1,5 +1,8 @@
 .PHONY: help setup dev test build clean reset logs backup
 
+# Detect Docker Compose command
+DOCKER_COMPOSE := $(shell command -v docker-compose >/dev/null 2>&1 && echo "docker-compose" || echo "docker compose")
+
 # Default target
 help:
 	@echo "Axon Flow Development Commands"
@@ -21,7 +24,7 @@ setup:
 
 # Start development
 dev:
-	@docker compose -f docker-compose.dev.yml up -d
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
 	@pnpm dev
 
 # Run tests
@@ -52,13 +55,13 @@ backup:
 
 # Quick commands
 up:
-	@docker compose -f docker-compose.dev.yml up -d
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml up -d
 
 down:
-	@docker compose -f docker-compose.dev.yml down
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml down
 
 ps:
-	@docker compose -f docker-compose.dev.yml ps
+	@$(DOCKER_COMPOSE) -f docker-compose.dev.yml ps
 
 # Install dependencies
 install:
