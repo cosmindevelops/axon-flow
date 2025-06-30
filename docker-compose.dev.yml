@@ -1,0 +1,151 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: axon_postgres
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    ports:
+      - '127.0.0.1:${DB_PORT:-5432}:5432'
+    environment:
+      POSTGRES_USER: ${DB_USER:-axon}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-axon_dev_2025}
+      POSTGRES_DB: ${DB_NAME:-axon_flow}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-axon} -d ${DB_NAME:-axon_flow}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - axon_internal
+
+  rabbitmq:
+    image: rabbitmq:4.1.1-management-alpine
+    container_name: axon_rabbitmq
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 768M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    ports:
+      - '127.0.0.1:${RABBITMQ_PORT:-5672}:5672'
+      - '127.0.0.1:${RABBITMQ_MGMT_PORT:-15672}:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-axon}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-axon_dev_2025}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-axon}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - axon_internal
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: axon_redis
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-axon_dev_2025}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - axon_internal
+
+  adminer:
+    image: adminer:4.8.1
+    container_name: axon_adminer
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    ports:
+      - '127.0.0.1:${ADMINER_PORT:-8080}:8080'
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: dracula
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - axon_internal
+      - axon_public
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: axon_redis_commander
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    ports:
+      - '127.0.0.1:${REDIS_COMMANDER_PORT:-8081}:8081'
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD:-axon_dev_2025}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - axon_internal
+      - axon_public
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  redis_data:
+
+networks:
+  axon_internal:
+    driver: bridge
+    internal: true
+  axon_public:
+    driver: bridge
