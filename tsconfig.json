@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo"
+  },
+  "references": [{ "path": "./packages/shared-types" }],
+  "files": [],
+  "include": [],
+  "exclude": ["**/node_modules", "**/dist"]
+}
