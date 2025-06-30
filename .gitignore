@@ -1,0 +1,86 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+.turbo/
+out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.cursor/** 
+CLAUDE.md
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Docker volumes (local only)
+docker/volumes/
+
+# OS files
+Thumbs.db
+Desktop.ini
+
+# Build analysis
+.webpack-bundle-analyzer/
+stats.json
+
+# Misc
+.cache/
+.parcel-cache/
+.vercel/
+.netlify/
+*.pem
+
+# Debug
+.vscode-test/
+*.vsix
+
+# Backup files
+*.backup
+*.bak
+backup/
+
+# Lock files in packages (keep only root)
+packages/*/pnpm-lock.yaml
+apps/*/pnpm-lock.yaml
