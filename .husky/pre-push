@@ -9,7 +9,7 @@ pnpm lint || exit 1
 
 # Run type checking
 echo "🔧 Running TypeScript type checking..."
-pnpm turbo typecheck || exit 1
+pnpm turbo type-check || exit 1
 
 # Run tests on affected packages
 echo "🧪 Running tests on affected changes..."

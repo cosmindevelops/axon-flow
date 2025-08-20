@@ -54,7 +54,7 @@
         "src/**/*.{ts,tsx,js,jsx}",
         "../../eslint.config.js"
       ],
-      "outputs": [".eslintcache"]
+      "outputs": []
     },
     "lint:fix": {
       "dependsOn": [],
