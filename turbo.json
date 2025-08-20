@@ -1,0 +1,76 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "build/**"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "src/**/*.test.*", "tests/**/*"],
+      "outputs": ["coverage/**"]
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "test:ui": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".eslintrc*", "eslint.config.*", "tsconfig.eslint.json", "tsconfig*.json"],
+      "outputs": []
+    },
+    "lint:fix": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".eslintrc*", "eslint.config.*", "tsconfig.eslint.json", "tsconfig*.json"],
+      "outputs": [],
+      "cache": false
+    },
+    "type-check": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json", "**/*.ts", "**/*.tsx"],
+      "outputs": ["dist/**/*.d.ts"]
+    },
+    "format": {
+      "inputs": ["$TURBO_DEFAULT$", ".prettierrc*", "prettier.config.*", ".editorconfig"],
+      "outputs": [],
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
+    "verify": {
+      "dependsOn": ["build", "lint", "type-check", "test"],
+      "inputs": [],
+      "outputs": []
+    },
+    "clean": {
+      "cache": false,
+      "outputs": []
+    }
+  },
+  "globalDependencies": [
+    "package.json",
+    "pnpm-workspace.yaml",
+    "turbo.json",
+    ".env*",
+    "tsconfig*.json",
+    "tsconfig.eslint.json",
+    ".eslintrc*",
+    "eslint.config.*",
+    ".prettierrc*",
+    "prettier.config.*",
+    ".editorconfig"
+  ],
+  "globalEnv": ["NODE_ENV", "CI", "VERCEL", "DATABASE_URL", "REDIS_URL", "RABBITMQ_URL"]
+}

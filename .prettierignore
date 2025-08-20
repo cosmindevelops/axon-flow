@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+.turbo/
+coverage/
+storybook-static/
+
+# Package manager files
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Environment files
+.env*
+
+# Git
+.git/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Generated files
+CHANGELOG.md
+.changeset/
+
+# Configuration files that don't need formatting
+.editorconfig
+*.editorconfig
+.prettierignore
+*.ignore
+
+# Git hooks and shell scripts
+*.sh

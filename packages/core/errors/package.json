@@ -1,0 +1,28 @@
+{
+  "name": "@axon/errors",
+  "version": "0.1.0",
+  "description": "Enhanced error handling utilities with context preservation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write src/",
+    "clean": "rm -rf dist"
+  }
+}
