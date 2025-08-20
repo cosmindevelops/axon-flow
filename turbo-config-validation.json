@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-20T14:58:00.378Z",
+  "errors": ["Pipeline configuration is missing"],
+  "warnings": [
+    "Remote caching enabled but TURBO_TOKEN/TURBO_TEAM not configured",
+    "Potentially sensitive environment variable 'TURBO_TOKEN' in globalEnv"
+  ],
+  "valid": false
+}

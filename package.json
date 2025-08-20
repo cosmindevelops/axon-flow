@@ -79,18 +79,18 @@
     "format:check": "prettier --check '**/*.{js,jsx,ts,tsx,json,md,yaml,yml}'",
     "format:write": "prettier --write '**/*.{js,jsx,ts,tsx,json,md,yaml,yml}'",
     "// Validation & Security": "===== Validation & Security =====",
-    "health": "node tools/scripts/monorepo-health.cjs",
-    "health:serve": "node tools/scripts/monorepo-health.cjs --serve",
+    "health": "node tools/scripts/axon-tools.cjs quality health-check",
+    "health:serve": "node tools/scripts/axon-tools.cjs quality health-check --serve",
     "verify": "turbo verify",
     "verify:full": "pnpm audit && turbo verify && pnpm validate:all && pnpm health",
     "audit": "pnpm audit --audit-level=high",
     "audit:fix": "pnpm audit --fix",
-    "security:check": "pnpm audit --json | node tools/scripts/security-check.cjs",
-    "validate:env": "node tools/scripts/validate-dev-env.cjs",
-    "validate:docs": "node tools/scripts/validate-docs.cjs",
-    "validate:pnpm": "node tools/scripts/validate-pnpm.cjs",
-    "validate:deps": "node tools/scripts/check-phantom-deps.cjs",
-    "validate:structure": "node tools/scripts/validate-structure.cjs",
+    "security:check": "node tools/scripts/axon-tools.cjs security check",
+    "validate:env": "node tools/scripts/axon-tools.cjs env validate",
+    "validate:docs": "node tools/scripts/axon-tools.cjs validate docs",
+    "validate:pnpm": "node tools/scripts/axon-tools.cjs validate pnpm",
+    "validate:deps": "node tools/scripts/axon-tools.cjs quality phantom-deps",
+    "validate:structure": "node tools/scripts/axon-tools.cjs validate structure",
     "validate:all": "pnpm validate:env && pnpm validate:pnpm && pnpm validate:deps && pnpm validate:structure && pnpm validate:docs",
     "// Workspace Management": "===== Workspace Operations =====",
     "clean": "turbo clean && rm -rf node_modules/.cache .turbo",
@@ -114,13 +114,13 @@
     "prerelease": "pnpm verify:full && changeset pre enter rc",
     "prerelease:exit": "changeset pre exit",
     "// Performance & Benchmarks": "===== Performance Monitoring =====",
-    "benchmark:install": "node tools/scripts/benchmark-install.cjs",
+    "benchmark:install": "node tools/scripts/axon-tools.cjs perf benchmark-install",
     "benchmark:build": "hyperfine --warmup 2 'pnpm build' --export-json benchmark-build.json",
-    "benchmark:turbo": "node tools/scripts/turbo-performance-monitor.cjs",
-    "analyze:parallel": "node tools/scripts/turbo-parallel-analyzer.cjs",
-    "optimize:cache": "node tools/scripts/turbo-cache-optimizer.cjs",
-    "validate:turbo-cache": "node tools/scripts/validate-turbo-cache.cjs",
-    "profile:startup": "node --prof tools/scripts/profile-startup.cjs",
+    "benchmark:turbo": "node tools/scripts/axon-tools.cjs turbo monitor",
+    "analyze:parallel": "node tools/scripts/axon-tools.cjs turbo analyze",
+    "optimize:cache": "node tools/scripts/axon-tools.cjs turbo optimize",
+    "validate:turbo-cache": "node tools/scripts/axon-tools.cjs turbo validate-cache",
+    "profile:startup": "node tools/scripts/axon-tools.cjs perf profile-startup",
     "analyze:bundle": "turbo build --profile && open .turbo/turbo-profile.json",
     "// Git Hooks": "===== Git Lifecycle =====",
     "prepare": "husky",
@@ -132,13 +132,13 @@
     "docs:serve": "typedoc --watch",
     "docs:api": "turbo run docs:api",
     "// Utilities": "===== Developer Utilities =====",
-    "create:package": "node tools/scripts/create-package.cjs",
+    "create:package": "node tools/scripts/axon-tools.cjs utils create-package",
     "info": "pnpm list --recursive --depth 0",
     "why": "pnpm why",
     "outdated": "pnpm outdated --recursive",
     "licenses": "pnpm licenses list",
     "debug:turbo": "turbo run build --dry-run=json | jq",
-    "debug:env": "node tools/scripts/debug-env.cjs"
+    "debug:env": "node tools/scripts/axon-tools.cjs utils debug-env"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.6",
@@ -172,20 +172,20 @@
     "*.{js,jsx,ts,tsx}": [
       "prettier --write",
       "eslint --fix",
-      "node scripts/test-staged.cjs"
+      "node tools/scripts/axon-tools.cjs quality test-staged"
     ],
     "*.{json,md,yaml,yml}": [
       "prettier --write"
     ],
     "package.json": [
       "prettier --write",
-      "node scripts/validate-package-changes.cjs"
+      "node tools/scripts/axon-tools.cjs validate package-changes"
     ],
     "*.{ts,tsx}": [
       "bash -c 'tsc --noEmit --skipLibCheck'"
     ],
     "turbo.json": [
-      "node scripts/validate-turbo-config.cjs"
+      "node tools/scripts/axon-tools.cjs turbo validate-config"
     ]
   }
 }
