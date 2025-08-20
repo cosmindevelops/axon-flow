@@ -58,7 +58,8 @@
     // Monorepo Optimization
     "composite": true,
     "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo"
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "assumeChangesOnlyAffectDirectDependencies": true
   },
   "exclude": [
     "**/node_modules",

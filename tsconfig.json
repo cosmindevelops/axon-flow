@@ -2,7 +2,6 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    // Root-specific settings
     "baseUrl": ".",
     "paths": {
       "@axon/config": ["./packages/core/config/src"],
