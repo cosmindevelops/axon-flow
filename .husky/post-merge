@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+
+# Post-merge hook for dependency updates
+echo "🔄 Post-merge maintenance..."
+
+# Check if package.json or pnpm-lock.yaml changed
+changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)"
+
+# Check for dependency changes
+if echo "$changed_files" | grep -q "package\.json\|pnpm-lock\.yaml"; then
+  echo "📦 Dependencies changed, updating installation..."
+  pnpm install
+  
+  # Validate workspace after dependency changes
+  echo "🔍 Validating workspace structure..."
+  pnpm validate:structure || echo "⚠️  Workspace validation warnings detected"
+  
+  # Check for phantom dependencies
+  echo "🔍 Checking for phantom dependencies..."
+  pnpm validate:deps || echo "⚠️  Dependency validation warnings detected"
+fi
+
+# Check for Turborepo config changes
+if echo "$changed_files" | grep -q "turbo\.json"; then
+  echo "⚡ Turborepo config changed, validating configuration..."
+  pnpm benchmark:turbo || echo "⚠️  Turborepo configuration warnings detected"
+fi
+
+echo "✅ Post-merge maintenance completed!"

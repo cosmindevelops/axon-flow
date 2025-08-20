@@ -1,6 +1,6 @@
 import js from "@eslint/js";
-import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
+import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   js.configs.recommended,
@@ -84,6 +84,63 @@ export default tseslint.config(
         },
       ],
 
+      // Axon Flow Architecture Compliance
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@axon/agents/*", "**/agents/**"],
+              message:
+                "Direct agent imports violate Hub-centric architecture. Use message-based communication through RabbitMQ.",
+            },
+            {
+              group: ["aws-sdk", "azure-*", "gcp-*", "@google-cloud/*"],
+              message: "Direct cloud service imports violate Provider Pattern. Use I*Provider interfaces instead.",
+            },
+          ],
+          paths: [
+            {
+              name: "lodash",
+              message:
+                "Use native JavaScript methods instead of lodash for better performance and smaller bundle size.",
+            },
+            {
+              name: "moment",
+              message: "Use native Date API or date-fns for better performance and tree-shaking.",
+            },
+          ],
+        },
+      ],
+
+      // Provider Pattern Enforcement
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "ImportDeclaration[source.value=/^(aws-sdk|@aws-sdk|azure-|@azure|@google-cloud)/] > ImportDefaultSpecifier",
+          message:
+            "Direct cloud service imports should use Provider Pattern. Create I*Provider interface and implementation.",
+        },
+        {
+          selector: "NewExpression[callee.name=/^(S3|DynamoDB|CosmosDB|Firestore)$/]",
+          message:
+            "Direct service instantiation violates Provider Pattern. Use dependency injection with I*Provider interface.",
+        },
+      ],
+
+      // Semantic Preservation Rules
+      "@typescript-eslint/explicit-function-return-type": [
+        "warn",
+        {
+          allowExpressions: true,
+          allowTypedFunctionExpressions: true,
+          allowHigherOrderFunctions: true,
+          allowDirectConstAssertionInArrowFunctions: true,
+        },
+      ],
+      "@typescript-eslint/explicit-module-boundary-types": "warn",
+
       // Security and safety enhancements
       "@typescript-eslint/no-base-to-string": "error",
       "@typescript-eslint/no-confusing-void-expression": "error",
@@ -131,6 +188,53 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-var-requires": "off",
       "no-console": "off",
+    },
+  },
+  {
+    // CommonJS files (.cjs) configuration
+    files: ["**/*.cjs"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "commonjs",
+      globals: {
+        // Node.js globals
+        global: "readonly",
+        process: "readonly",
+        Buffer: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
+        module: "readonly",
+        require: "readonly",
+        exports: "readonly",
+        console: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly",
+        setImmediate: "readonly",
+        clearImmediate: "readonly",
+      },
+    },
+    rules: {
+      // Disable all TypeScript rules for plain JS CommonJS files
+      "@typescript-eslint/no-var-requires": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/restrict-template-expressions": "off",
+      "@typescript-eslint/strict-boolean-expressions": "off",
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/require-await": "off",
+      "@typescript-eslint/prefer-nullish-coalescing": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+
+      // Basic JavaScript rules
+      "no-console": ["warn", { allow: ["warn", "error", "info", "log"] }],
+      "prefer-const": "warn",
+      "no-var": "warn",
     },
   },
   {
