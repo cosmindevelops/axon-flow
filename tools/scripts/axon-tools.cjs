@@ -249,7 +249,13 @@ class AxonTool {
   }
 
   saveResults(filename) {
-    const resultsFile = path.join(this.projectRoot, filename);
+    // Create temp reports directory if it doesn't exist
+    const reportsDir = path.join(this.projectRoot, '.temp', 'reports');
+    if (!fs.existsSync(reportsDir)) {
+      fs.mkdirSync(reportsDir, { recursive: true });
+    }
+    
+    const resultsFile = path.join(reportsDir, filename);
     fs.writeFileSync(resultsFile, JSON.stringify(this.results, null, 2));
     log(`💾 Results saved to: ${resultsFile}`, colors.cyan);
   }
@@ -1923,8 +1929,12 @@ class TurboTool extends AxonTool {
       const recommendations = this.generateCacheRecommendations(results);
       results.recommendations = recommendations;
 
-      // Save results
-      const resultsFile = path.join(this.projectRoot, "turbo-cache-validation.json");
+      // Save results to temp directory
+      const reportsDir = path.join(this.projectRoot, '.temp', 'reports');
+      if (!fs.existsSync(reportsDir)) {
+        fs.mkdirSync(reportsDir, { recursive: true });
+      }
+      const resultsFile = path.join(reportsDir, "turbo-cache-validation.json");
       fs.writeFileSync(resultsFile, JSON.stringify(results, null, 2));
       log(`\n💾 Results saved to: ${resultsFile}`, colors.cyan);
 
@@ -2160,7 +2170,12 @@ class TurboTool extends AxonTool {
         valid: errors.length === 0,
       };
 
-      const resultsFile = path.join(this.projectRoot, "turbo-config-validation.json");
+      // Save results to temp directory
+      const reportsDir = path.join(this.projectRoot, '.temp', 'reports');
+      if (!fs.existsSync(reportsDir)) {
+        fs.mkdirSync(reportsDir, { recursive: true });
+      }
+      const resultsFile = path.join(reportsDir, "turbo-config-validation.json");
       fs.writeFileSync(resultsFile, JSON.stringify(results, null, 2));
       log(`\n💾 Results saved to: ${resultsFile}`, colors.cyan);
 
@@ -4986,8 +5001,12 @@ class QualityTool extends AxonTool {
         log(`   • Ensure all dependencies are installed: pnpm install`);
       }
 
-      // Save report to file
-      const reportPath = path.join(projectRoot, "monorepo-health-report.json");
+      // Save report to temp directory
+      const reportsDir = path.join(projectRoot, '.temp', 'reports');
+      if (!fs.existsSync(reportsDir)) {
+        fs.mkdirSync(reportsDir, { recursive: true });
+      }
+      const reportPath = path.join(reportsDir, "monorepo-health-report.json");
       fs.writeFileSync(reportPath, JSON.stringify(results, null, 2));
       log(`\n📄 Full report saved to: ${reportPath}`, colors.dim);
 

@@ -74,8 +74,16 @@ pnpm-debug.log*
 lerna-debug.log*
 tmp/
 temp/
+.temp/
 *.tmp
 *.temp
+
+# Validation and Report Files
+# ==========================================
+*validation*.json
+*-report.json
+*report*.json
+.reports/
 
 # Testing
 # ==========================================
