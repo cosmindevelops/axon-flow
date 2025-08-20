@@ -2627,7 +2627,7 @@ class ValidationTool extends AxonTool {
 
     try {
       // Run TypeScript type checking across workspaces
-      execSync("pnpm turbo typecheck", {
+      execSync("pnpm turbo type-check", {
         encoding: "utf8",
         timeout: 180000, // 3 minutes timeout
       });
@@ -3429,7 +3429,7 @@ class ValidationTool extends AxonTool {
 
       // Run TypeScript type checking
       log("🔍 Running TypeScript type check...", colors.cyan);
-      const _typeCheckOutput = execSync("pnpm turbo typecheck", {
+      const _typeCheckOutput = execSync("pnpm turbo type-check", {
         encoding: "utf8",
         stdio: "pipe",
         timeout: 180000, // 3 minutes timeout
@@ -4019,9 +4019,7 @@ NODE_OPTIONS="--max-old-space-size=${Math.floor(platform.totalMemory * 512)}"
       }
 
       // Save results
-      const resultsFile = path.join(this.projectRoot, "workspace-deps-sync.json");
-      fs.writeFileSync(resultsFile, JSON.stringify(this.results.workspaceSync, null, 2));
-      log(`💾 Results saved to: ${resultsFile}`, colors.cyan);
+      this.saveResults("workspace-deps-sync.json");
 
       return true;
     } catch (error) {
