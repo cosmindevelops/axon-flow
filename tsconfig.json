@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@axon/config": ["./packages/core/config/src"],
+      "@axon/config/*": ["./packages/core/config/src/*"],
+      "@axon/types": ["./packages/core/types/src"],
+      "@axon/types/*": ["./packages/core/types/src/*"],
+      "@axon/logger": ["./packages/core/logger/src"],
+      "@axon/logger/*": ["./packages/core/logger/src/*"],
+      "@axon/errors": ["./packages/core/errors/src"],
+      "@axon/errors/*": ["./packages/core/errors/src/*"]
+    },
+
+    // Root doesn't emit - it's a solution file
+    "noEmit": true,
+
+    // Next.js specific plugin (if needed)
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+
+    // JSX for potential frontend apps
+    "jsx": "preserve"
+  },
+
+  // Project References for composite builds
+  "references": [
+    // Core packages
+    { "path": "./packages/core/types" },
+    { "path": "./packages/core/errors" },
+    { "path": "./packages/core/config" },
+    { "path": "./packages/core/logger" }
+
+    // Additional references will be added as packages are created
+    // { "path": "./packages/services/*" },
+    // { "path": "./packages/agents/*" },
+    // { "path": "./packages/tooling/*" },
+    // { "path": "./apps/*" }
+  ],
+
+  // Files to include at root level
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+
+  // Exclude patterns (inherits from base, can override if needed)
+  "exclude": ["node_modules", "packages/*/dist", "packages/*/build", "apps/*/dist", "apps/*/build", ".next", "coverage"]
+}

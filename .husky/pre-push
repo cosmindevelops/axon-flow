@@ -1,0 +1,26 @@
+#!/usr/bin/env sh
+
+# Pre-push hook for comprehensive validation
+echo "🚀 Running pre-push validation..."
+
+# Run full lint check across all workspaces
+echo "🔍 Linting all workspaces..."
+pnpm lint || exit 1
+
+# Run type checking
+echo "🔧 Running TypeScript type checking..."
+pnpm turbo type-check || exit 1
+
+# Run tests on affected packages
+echo "🧪 Running tests on affected changes..."
+pnpm turbo test --filter='[origin/main...HEAD]' || exit 1
+
+# Validate dependencies
+echo "📦 Validating dependencies..."
+pnpm validate:deps || exit 1
+
+# Security check
+echo "🔒 Running security audit..."
+pnpm audit --audit-level=high || exit 1
+
+echo "✅ Pre-push validation completed successfully!"

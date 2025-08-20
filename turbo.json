@@ -1,0 +1,184 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "daemon": true,
+  "remoteCache": {
+    "signature": true,
+    "enabled": true,
+    "timeout": 30
+  },
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*",
+        "src/**/*.{ts,tsx,js,jsx}",
+        "tsconfig*.json",
+        "tsup.config.*",
+        "package.json",
+        "../../tsconfig.base.json"
+      ],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "build/**", "*.tsbuildinfo"],
+      "env": ["NODE_ENV"],
+      "persistent": false
+    },
+    "test": {
+      "dependsOn": [],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "src/**/*.{test,spec}.{ts,tsx,js,jsx}",
+        "tests/**/*",
+        "vitest.config.*",
+        "jest.config.*"
+      ],
+      "outputs": ["coverage/**", "test-results/**"],
+      "env": ["NODE_ENV", "CI"]
+    },
+    "test:watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "test:ui": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": [],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".eslintrc*",
+        "eslint.config.*",
+        "tsconfig.eslint.json",
+        "tsconfig*.json",
+        "src/**/*.{ts,tsx,js,jsx}",
+        "../../eslint.config.js"
+      ],
+      "outputs": []
+    },
+    "lint:fix": {
+      "dependsOn": [],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".eslintrc*",
+        "eslint.config.*",
+        "tsconfig.eslint.json",
+        "tsconfig*.json",
+        "src/**/*.{ts,tsx,js,jsx}",
+        "../../eslint.config.js"
+      ],
+      "outputs": [],
+      "cache": false
+    },
+    "type-check": {
+      "dependsOn": [],
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json", "src/**/*.{ts,tsx}", "package.json", "../../tsconfig.base.json"],
+      "outputs": ["dist/**/*.d.ts", "*.tsbuildinfo"]
+    },
+    "format": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".prettierrc*",
+        "prettier.config.*",
+        ".editorconfig",
+        "src/**/*.{ts,tsx,js,jsx,json,md}",
+        "../../.prettierrc*"
+      ],
+      "outputs": [],
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": [],
+      "inputs": ["$TURBO_DEFAULT$", "src/**/*.{ts,tsx,js,jsx}", "tsconfig*.json", "package.json"]
+    },
+    "dev:fast": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": [],
+      "inputs": ["$TURBO_DEFAULT$", "src/**/*.{ts,tsx,js,jsx}"],
+      "env": ["NODE_ENV"]
+    },
+    "start": {
+      "cache": false,
+      "persistent": true
+    },
+    "verify": {
+      "dependsOn": ["build", "lint", "type-check", "test"],
+      "inputs": [],
+      "outputs": []
+    },
+    "clean": {
+      "cache": false,
+      "outputs": []
+    },
+    "benchmark": {
+      "dependsOn": ["build"],
+      "inputs": ["$TURBO_DEFAULT$", "scripts/benchmark*", "tools/scripts/benchmark*"],
+      "outputs": ["benchmark-*.json", "performance-*.json"],
+      "cache": false
+    },
+    "validate": {
+      "dependsOn": ["build", "lint", "type-check", "test"],
+      "inputs": [],
+      "outputs": [],
+      "cache": false
+    },
+    "validate:deps": {
+      "inputs": ["package.json", "pnpm-lock.yaml", "tools/scripts/check-phantom-deps.cjs"],
+      "outputs": [],
+      "cache": false
+    },
+    "validate:structure": {
+      "inputs": ["$TURBO_DEFAULT$", "tools/scripts/validate-structure.cjs"],
+      "outputs": [],
+      "cache": false
+    },
+    "health": {
+      "dependsOn": [],
+      "inputs": [
+        "package.json",
+        "pnpm-workspace.yaml",
+        "turbo.json",
+        "tsconfig*.json",
+        "tools/scripts/monorepo-health.cjs",
+        "tools/scripts/validate-*.cjs",
+        "tools/scripts/check-phantom-deps.cjs",
+        "tools/scripts/verify-builds.cjs"
+      ],
+      "outputs": ["monorepo-health-report.json"],
+      "cache": false
+    },
+    "validate:env": {
+      "inputs": ["package.json", ".env*", "tools/scripts/validate-dev-env.cjs"],
+      "outputs": ["dev-env-validation-report.json"],
+      "cache": false
+    },
+    "validate:docs": {
+      "inputs": ["README.md", "docs/**/*.md", "packages/**/README.md", "tools/scripts/validate-docs.cjs"],
+      "outputs": ["docs-validation-report.json"],
+      "cache": false
+    }
+  },
+  "globalDependencies": [
+    "package.json",
+    "pnpm-workspace.yaml",
+    "pnpm-lock.yaml",
+    "turbo.json",
+    ".env*",
+    "tsconfig*.json",
+    "tsconfig.base.json",
+    "tsconfig.eslint.json",
+    ".eslintrc*",
+    "eslint.config.*",
+    ".prettierrc*",
+    "prettier.config.*",
+    ".editorconfig",
+    "vitest.config.*",
+    "jest.config.*"
+  ],
+  "globalEnv": ["NODE_ENV", "CI", "VERCEL", "DATABASE_URL", "REDIS_URL", "RABBITMQ_URL", "TURBO_TOKEN", "TURBO_TEAM"],
+  "globalPassThroughEnv": ["NODE_OPTIONS", "FORCE_COLOR", "NO_COLOR"],
+  "concurrency": "100%"
+}

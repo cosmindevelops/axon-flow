@@ -1,0 +1,191 @@
+{
+  "name": "axon-flow",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "General-purpose multi-agent automation platform with Hub-centric orchestration for intelligent workflow automation",
+  "keywords": [
+    "multi-agent",
+    "orchestration",
+    "automation",
+    "workflow",
+    "rabbitmq",
+    "microservices",
+    "turborepo",
+    "monorepo",
+    "typescript",
+    "nestjs",
+    "saga-pattern",
+    "event-driven"
+  ],
+  "author": {
+    "name": "Axon Flow Team",
+    "email": "team@axonflow.dev",
+    "url": "https://axonflow.dev"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cosmin/axon-flow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cosmin/axon-flow/issues"
+  },
+  "homepage": "https://github.com/cosmin/axon-flow#readme",
+  "engines": {
+    "node": ">=24.6.0",
+    "pnpm": ">=10.15.0"
+  },
+  "engineStrict": true,
+  "packageManager": "pnpm@10.15.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "packages/core/*",
+    "packages/services/*",
+    "packages/agents/*",
+    "packages/tooling/*"
+  ],
+  "scripts": {
+    "// Development": "===== Development Scripts =====",
+    "dev": "turbo dev",
+    "dev:hub": "turbo dev --filter=@axon/hub",
+    "dev:agents": "turbo dev --filter='./packages/agents/*'",
+    "dev:services": "turbo dev --filter='./packages/services/*'",
+    "dev:apps": "turbo dev --filter='./apps/*'",
+    "start": "turbo start",
+    "start:hub": "turbo start --filter=@axon/hub",
+    "// Building": "===== Build & Compilation =====",
+    "build": "turbo build",
+    "build:packages": "turbo build --filter='./packages/**'",
+    "build:apps": "turbo build --filter='./apps/**'",
+    "build:affected": "turbo build --filter='[HEAD^1]'",
+    "type-check": "turbo type-check",
+    "compile": "turbo build type-check",
+    "// Testing": "===== Testing & Quality =====",
+    "test": "turbo test",
+    "test:watch": "turbo test:watch",
+    "test:ui": "turbo test:ui",
+    "test:coverage": "turbo test -- --coverage",
+    "test:affected": "turbo test --filter='[HEAD^1]'",
+    "test:e2e": "turbo test:e2e",
+    "test:integration": "turbo test:integration",
+    "test:file": "vitest run --reporter=verbose",
+    "// Linting & Formatting": "===== Code Quality =====",
+    "lint": "turbo lint",
+    "lint:fix": "turbo lint:fix",
+    "lint:affected": "turbo lint --filter='[HEAD^1]'",
+    "format": "turbo format",
+    "format:check": "prettier --check '**/*.{js,jsx,ts,tsx,json,md,yaml,yml}'",
+    "format:write": "prettier --write '**/*.{js,jsx,ts,tsx,json,md,yaml,yml}'",
+    "// Validation & Security": "===== Validation & Security =====",
+    "health": "node tools/scripts/axon-tools.cjs quality health-check",
+    "health:serve": "node tools/scripts/axon-tools.cjs quality health-check --serve",
+    "verify": "turbo verify",
+    "verify:full": "pnpm audit && turbo verify && pnpm validate:all && pnpm health",
+    "audit": "pnpm audit --audit-level=high",
+    "audit:fix": "pnpm audit --fix",
+    "security:check": "node tools/scripts/axon-tools.cjs security check",
+    "validate:env": "node tools/scripts/axon-tools.cjs env validate",
+    "validate:docs": "node tools/scripts/axon-tools.cjs validate docs",
+    "validate:pnpm": "node tools/scripts/axon-tools.cjs validate pnpm",
+    "validate:deps": "node tools/scripts/axon-tools.cjs quality phantom-deps",
+    "validate:structure": "node tools/scripts/axon-tools.cjs validate structure",
+    "validate:all": "pnpm validate:env && pnpm validate:pnpm && pnpm validate:deps && pnpm validate:structure && pnpm validate:docs",
+    "// Workspace Management": "===== Workspace Operations =====",
+    "clean": "turbo clean && rm -rf node_modules/.cache .turbo",
+    "clean:deep": "turbo clean && find . -type d -name 'node_modules' -o -name 'dist' -o -name '.turbo' -o -name '.next' -o -name 'coverage' | xargs rm -rf",
+    "reset": "pnpm clean:deep && pnpm install",
+    "reset:hard": "pnpm clean:deep && rm -rf pnpm-lock.yaml && pnpm install",
+    "install:all": "pnpm install",
+    "update:deps": "pnpm update --interactive --latest",
+    "dedupe": "pnpm dedupe",
+    "// Workspace Targeting": "===== Selective Operations =====",
+    "workspace": "pnpm --filter",
+    "core": "pnpm --filter='./packages/core/*'",
+    "services": "pnpm --filter='./packages/services/*'",
+    "agents": "pnpm --filter='./packages/agents/*'",
+    "apps": "pnpm --filter='./apps/*'",
+    "// Release Management": "===== Versioning & Publishing =====",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish",
+    "release": "pnpm verify:full && pnpm changeset:version && pnpm changeset:publish",
+    "prerelease": "pnpm verify:full && changeset pre enter rc",
+    "prerelease:exit": "changeset pre exit",
+    "// Performance & Benchmarks": "===== Performance Monitoring =====",
+    "benchmark:install": "node tools/scripts/axon-tools.cjs perf benchmark-install",
+    "benchmark:build": "hyperfine --warmup 2 'pnpm build' --export-json benchmark-build.json",
+    "benchmark:turbo": "node tools/scripts/axon-tools.cjs turbo monitor",
+    "analyze:parallel": "node tools/scripts/axon-tools.cjs turbo analyze",
+    "optimize:cache": "node tools/scripts/axon-tools.cjs turbo optimize",
+    "validate:turbo-cache": "node tools/scripts/axon-tools.cjs turbo validate-cache",
+    "profile:startup": "node tools/scripts/axon-tools.cjs perf profile-startup",
+    "analyze:bundle": "turbo build --profile && open .turbo/turbo-profile.json",
+    "// Git Hooks": "===== Git Lifecycle =====",
+    "prepare": "husky",
+    "pre-commit": "lint-staged",
+    "pre-push": "pnpm verify",
+    "commit-msg": "commitlint --edit",
+    "// Documentation": "===== Documentation Generation =====",
+    "docs:generate": "typedoc",
+    "docs:serve": "typedoc --watch",
+    "docs:api": "turbo run docs:api",
+    "// Utilities": "===== Developer Utilities =====",
+    "create:package": "node tools/scripts/axon-tools.cjs utils create-package",
+    "info": "pnpm list --recursive --depth 0",
+    "why": "pnpm why",
+    "outdated": "pnpm outdated --recursive",
+    "licenses": "pnpm licenses list",
+    "debug:turbo": "turbo run build --dry-run=json | jq",
+    "debug:env": "node tools/scripts/axon-tools.cjs utils debug-env"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.6",
+    "@commitlint/cli": "19.8.1",
+    "@commitlint/config-conventional": "19.8.1",
+    "@eslint/js": "^9.33.0",
+    "@types/node": "^24.3.0",
+    "@vitest/ui": "^3.2.4",
+    "eslint": "^9.33.0",
+    "eslint-config-prettier": "^10.1.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
+    "prettier": "^3.6.2",
+    "tsup": "8.5.0",
+    "turbo": "^2.5.6",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.40.0",
+    "vitest": "^3.2.4",
+    "zod": "4.0.17"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "@babel/core",
+        "@babel/preset-env",
+        "webpack"
+      ]
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix",
+      "node tools/scripts/axon-tools.cjs quality test-staged"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ],
+    "package.json": [
+      "prettier --write",
+      "node tools/scripts/axon-tools.cjs validate package-changes"
+    ],
+    "*.{ts,tsx}": [
+      "bash -c 'tsc --noEmit --skipLibCheck'"
+    ],
+    "turbo.json": [
+      "node tools/scripts/axon-tools.cjs turbo validate-config"
+    ]
+  }
+}
