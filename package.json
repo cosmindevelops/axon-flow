@@ -111,6 +111,8 @@
     "// Performance & Benchmarks": "===== Performance Monitoring =====",
     "benchmark:install": "node tools/scripts/benchmark-install.cjs",
     "benchmark:build": "hyperfine --warmup 2 'pnpm build' --export-json benchmark-build.json",
+    "benchmark:turbo": "node tools/scripts/turbo-performance-monitor.cjs",
+    "validate:turbo-cache": "node tools/scripts/validate-turbo-cache.cjs",
     "profile:startup": "node --prof tools/scripts/profile-startup.cjs",
     "analyze:bundle": "turbo build --profile && open .turbo/turbo-profile.json",
     "// Git Hooks": "===== Git Lifecycle =====",
