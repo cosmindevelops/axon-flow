@@ -18,20 +18,11 @@
     "saga-pattern",
     "event-driven"
   ],
-  "author": {
-    "name": "Axon Flow Team",
-    "email": "team@axonflow.dev",
-    "url": "https://axonflow.dev"
-  },
-  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cosmin/axon-flow.git"
+    "url": "git+https://github.com/cosmindevelops/axon-flow"
   },
-  "bugs": {
-    "url": "https://github.com/cosmin/axon-flow/issues"
-  },
-  "homepage": "https://github.com/cosmin/axon-flow#readme",
+  "homepage": "https://github.com/cosmindevelops/axon-flow#readme",
   "engines": {
     "node": ">=24.6.0",
     "pnpm": ">=10.15.0"
@@ -99,6 +90,7 @@
     "reset:hard": "pnpm clean:deep && rm -rf pnpm-lock.yaml && pnpm install",
     "install:all": "pnpm install",
     "update:deps": "pnpm update --interactive --latest",
+    "update:all": "pnpm update --recursive --latest",
     "dedupe": "pnpm dedupe",
     "// Workspace Targeting": "===== Selective Operations =====",
     "workspace": "pnpm --filter",
@@ -149,6 +141,7 @@
     "@vitest/ui": "^3.2.4",
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-formatter-compact": "8.40.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.5",
     "prettier": "^3.6.2",
@@ -157,7 +150,8 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.40.0",
     "vitest": "^3.2.4",
-    "zod": "4.0.17"
+    "zod": "4.0.17",
+    "pino": "^9.9.0"
   },
   "pnpm": {
     "peerDependencyRules": {
@@ -187,5 +181,8 @@
     "turbo.json": [
       "node tools/scripts/axon-tools.cjs turbo validate-config"
     ]
+  },
+  "dependencies": {
+    "pino": "^9.9.0"
   }
 }

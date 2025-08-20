@@ -2,12 +2,12 @@
 
 /**
  * ┌──────────────────────────────────────────────────────────────────────────────────────────┐
- * │                        🚀 AXON FLOW UNIFIED DEVELOPMENT TOOLS 🚀                         │
- * ├──────────────────────────────────────────────────────────────────────────────────────────┤
- * │                   🎯 ONE SCRIPT TO RULE THEM ALL 🎯                                      │
- * │  Consolidated all 23 individual scripts into a single powerful CLI interface             │
- * │  Modular architecture with 6 specialized tool categories for development tasks           │
- * └──────────────────────────────────────────────────────────────────────────────────────────┘
+ * │                        🚀 AXON FLOW UNIFIED DEVELOPMENT TOOLS 🚀                        │
+ * ├─────────────────────────────────────────────────────────────────────────────────────────┤
+ * │                   🎯 ONE SCRIPT TO RULE THEM ALL 🎯                                    │
+ * │  Consolidated all 23 individual scripts into a single powerful CLI interface           │
+ * │  Modular architecture with 6 specialized tool categories for development tasks        │
+ * └──────────────────────────────────────────────────────────────────────────────────────┘
  *
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  * 📂 ARCHITECTURE OVERVIEW
@@ -250,11 +250,11 @@ class AxonTool {
 
   saveResults(filename) {
     // Create temp reports directory if it doesn't exist
-    const reportsDir = path.join(this.projectRoot, '.temp', 'reports');
+    const reportsDir = path.join(this.projectRoot, ".temp", "reports");
     if (!fs.existsSync(reportsDir)) {
       fs.mkdirSync(reportsDir, { recursive: true });
     }
-    
+
     const resultsFile = path.join(reportsDir, filename);
     fs.writeFileSync(resultsFile, JSON.stringify(this.results, null, 2));
     log(`💾 Results saved to: ${resultsFile}`, colors.cyan);
@@ -893,11 +893,6 @@ TURBO_TEAM=
 // ============================================================================
 
 class TurboTool extends AxonTool {
-  constructor() {
-    super();
-    this.outputFile = path.join(this.projectRoot, "turbo-cache-analysis.json");
-  }
-
   /**
    * Get turbo cache statistics
    */
@@ -1182,7 +1177,7 @@ class TurboTool extends AxonTool {
     };
 
     // Save results
-    fs.writeFileSync(this.outputFile, JSON.stringify(this.results, null, 2));
+    this.saveResults("turbo-cache-analysis.json");
 
     // Display results
     this.displayCacheResults();
@@ -1234,7 +1229,9 @@ class TurboTool extends AxonTool {
       });
     }
 
-    log(`\n📄 Detailed results saved to: ${this.outputFile}`, colors.dim);
+    const reportsDir = path.join(this.projectRoot, ".temp", "reports");
+    const outputFile = path.join(reportsDir, "turbo-cache-analysis.json");
+    log(`\n📄 Detailed results saved to: ${outputFile}`, colors.dim);
   }
 
   /**
@@ -1293,7 +1290,11 @@ class TurboTool extends AxonTool {
       };
 
       // Save results
-      const outputFile = path.join(this.projectRoot, "turbo-parallel-analysis.json");
+      const reportsDir = path.join(this.projectRoot, ".temp", "reports");
+      if (!fs.existsSync(reportsDir)) {
+        fs.mkdirSync(reportsDir, { recursive: true });
+      }
+      const outputFile = path.join(reportsDir, "turbo-parallel-analysis.json");
       fs.writeFileSync(outputFile, JSON.stringify(results, null, 2));
 
       // Display results
@@ -1569,7 +1570,8 @@ class TurboTool extends AxonTool {
         stdio: "pipe",
       });
 
-      const _dryRunData = JSON.parse(turboOutput);
+      // Parse dry run data for potential future use
+      JSON.parse(turboOutput);
 
       // Run actual build and capture output
       const buildOutput = execSync("pnpm turbo build --output-logs=hash-only", {
@@ -1633,7 +1635,11 @@ class TurboTool extends AxonTool {
       results.validationResults = validationResults;
 
       // Save results
-      const resultsFile = path.join(this.projectRoot, "performance-metrics.json");
+      const reportsDir = path.join(this.projectRoot, ".temp", "reports");
+      if (!fs.existsSync(reportsDir)) {
+        fs.mkdirSync(reportsDir, { recursive: true });
+      }
+      const resultsFile = path.join(reportsDir, "performance-metrics.json");
       fs.writeFileSync(resultsFile, JSON.stringify(results, null, 2));
       log(`\n💾 Results saved to: ${resultsFile}`, colors.cyan);
 
@@ -1930,7 +1936,7 @@ class TurboTool extends AxonTool {
       results.recommendations = recommendations;
 
       // Save results to temp directory
-      const reportsDir = path.join(this.projectRoot, '.temp', 'reports');
+      const reportsDir = path.join(this.projectRoot, ".temp", "reports");
       if (!fs.existsSync(reportsDir)) {
         fs.mkdirSync(reportsDir, { recursive: true });
       }
@@ -2171,7 +2177,7 @@ class TurboTool extends AxonTool {
       };
 
       // Save results to temp directory
-      const reportsDir = path.join(this.projectRoot, '.temp', 'reports');
+      const reportsDir = path.join(this.projectRoot, ".temp", "reports");
       if (!fs.existsSync(reportsDir)) {
         fs.mkdirSync(reportsDir, { recursive: true });
       }
@@ -3419,7 +3425,7 @@ class ValidationTool extends AxonTool {
 
       // Run Turbo build
       log("📦 Building all packages...", colors.cyan);
-      const _buildOutput = execSync("pnpm build", {
+      execSync("pnpm build", {
         encoding: "utf8",
         stdio: "pipe",
         timeout: 300000, // 5 minutes timeout
@@ -3429,7 +3435,7 @@ class ValidationTool extends AxonTool {
 
       // Run TypeScript type checking
       log("🔍 Running TypeScript type check...", colors.cyan);
-      const _typeCheckOutput = execSync("pnpm turbo type-check", {
+      execSync("pnpm turbo type-check", {
         encoding: "utf8",
         stdio: "pipe",
         timeout: 180000, // 3 minutes timeout
@@ -5000,7 +5006,7 @@ class QualityTool extends AxonTool {
       }
 
       // Save report to temp directory
-      const reportsDir = path.join(projectRoot, '.temp', 'reports');
+      const reportsDir = path.join(projectRoot, ".temp", "reports");
       if (!fs.existsSync(reportsDir)) {
         fs.mkdirSync(reportsDir, { recursive: true });
       }

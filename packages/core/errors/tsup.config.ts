@@ -2,22 +2,22 @@ import { defineConfig } from "tsup";
 
 export default defineConfig({
   entry: ["src/index.ts"],
-  format: ["esm"],
-  dts: true,
+  format: ["esm", "cjs"],
+  dts: false,
   sourcemap: true,
-  clean: true,
+  clean: false,
   splitting: true,
   treeshake: true,
   minify: process.env["NODE_ENV"] === "production",
   metafile: true,
-  target: "node24",
-  platform: "node",
+  target: ["node24", "es2024"],
+  platform: "neutral",
   bundle: true,
   skipNodeModulesBundle: true,
   keepNames: true,
   outExtension({ format }) {
     return {
-      js: `.${format}.js`,
+      js: format === "cjs" ? ".cjs" : ".js",
     };
   },
 });

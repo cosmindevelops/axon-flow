@@ -3,19 +3,31 @@
   "version": "0.1.0",
   "description": "High-performance structured logging with Pino",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
+  },
+  "browser": {
+    "./dist/index.cjs": "./dist/index.js"
+  },
+  "dependencies": {
+    "@axon/config": "workspace:*",
+    "@axon/errors": "workspace:*",
+    "@axon/types": "workspace:*",
+    "pino": "^9.9.0",
+    "pino-pretty": "^13.1.1"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "rm -rf dist && tsc && tsup",
     "dev": "tsup --watch",
     "test": "vitest",
     "test:watch": "vitest --watch",
