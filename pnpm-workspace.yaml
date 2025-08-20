@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "packages/core/*"
+  - "packages/services/*"
+  - "packages/agents/*"
+  - "packages/tooling/*"
