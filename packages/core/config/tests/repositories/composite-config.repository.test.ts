@@ -54,9 +54,9 @@ describe("CompositeConfigRepository", () => {
   });
 
   beforeEach(() => {
-    source1 = new MemoryConfigRepository({ config: baseConfig });
-    source2 = new MemoryConfigRepository({ config: overrideConfig });
-    source3 = new MemoryConfigRepository({ config: highPriorityConfig });
+    source1 = new MemoryConfigRepository(baseConfig);
+    source2 = new MemoryConfigRepository(overrideConfig);
+    source3 = new MemoryConfigRepository(highPriorityConfig);
   });
 
   afterEach(async () => {
@@ -269,6 +269,11 @@ describe("CompositeConfigRepository", () => {
 
       expect(changeEvents.length).toBeGreaterThan(0);
       expect(changeEvents[0]!.changeType).toBe("update");
+
+      // Reset source1 to original state to avoid affecting other tests
+      if (source1 instanceof MemoryConfigRepository) {
+        await source1.set("app.name", "base-app");
+      }
     });
 
     it("should reload all sources", async () => {
@@ -315,6 +320,7 @@ describe("CompositeConfigRepository", () => {
           });
         }),
         get: vi.fn().mockReturnValue(undefined),
+        getAllConfig: vi.fn().mockReturnValue({}),
         validate: vi.fn(),
         watch: vi.fn().mockReturnValue(() => {}),
         reload: vi.fn().mockResolvedValue(undefined),
@@ -407,9 +413,7 @@ describe("CompositeConfigRepository", () => {
 
       // Create 50 sources with different priorities
       for (let i = 0; i < 50; i++) {
-        const repo = new MemoryConfigRepository({
-          config: { [`source${i}`]: { value: i } },
-        });
+        const repo = new MemoryConfigRepository({ [`source${i}`]: { value: i } });
         repositories.push(repo);
         manySources.push({
           repository: repo,

@@ -30,6 +30,7 @@
         "src/**/*.{test,spec}.{ts,tsx,js,jsx}",
         "tests/**/*",
         "vitest.config.*",
+        "packages/tooling/vitest-config/src/**/*",
         "jest.config.*"
       ],
       "outputs": ["coverage/**", "test-results/**"],
@@ -173,6 +174,7 @@
     "prettier.config.*",
     ".editorconfig",
     "vitest.config.*",
+    "packages/tooling/vitest-config/src/**/*",
     "jest.config.*"
   ],
   "globalEnv": ["NODE_ENV", "CI", "VERCEL", "DATABASE_URL", "REDIS_URL", "RABBITMQ_URL", "TURBO_TOKEN", "TURBO_TEAM"],

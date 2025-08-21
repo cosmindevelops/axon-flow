@@ -209,11 +209,12 @@ describe("FileConfigRepository", () => {
       await unlink(testFilePath);
       await repository.reload();
 
-      // Wait for error event
+      // Wait for error events (both file deletion and reload can trigger errors)
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      expect(errorEvents).toHaveLength(1);
+      expect(errorEvents).toHaveLength(2);
       expect(errorEvents[0]!.changeType).toBe("error");
+      expect(errorEvents[1]!.changeType).toBe("error");
     });
 
     it("should unsubscribe change listeners", () => {

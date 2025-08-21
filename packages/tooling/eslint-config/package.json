@@ -5,5 +5,10 @@
   "type": "module",
   "description": "Centralized ESLint configurations for Axon Flow monorepo",
   "main": "src/index.js",
-  "files": ["src/base.js", "src/index.js", "src/node.js", "src/react.js"]
+  "files": [
+    "src/base.js",
+    "src/index.js",
+    "src/node.js",
+    "src/react.js"
+  ]
 }

@@ -17,6 +17,9 @@ class MockVersionedConfigRepository extends MemoryConfigRepository implements IV
 
   constructor(config: Record<string, unknown> = {}) {
     super(config);
+    // Initialize version history with the initial configuration
+    this.configHistory.push({ ...config });
+    this.currentVersion = 0;
     this.saveVersion(config);
   }
 
@@ -43,12 +46,15 @@ class MockVersionedConfigRepository extends MemoryConfigRepository implements IV
       throw new ConfigurationError("Invalid version for rollback", {
         component: "MockVersionedConfigRepository",
         operation: "rollback",
-        metadata: { targetVersion, availableVersions: this.versions.length },
+        metadata: { targetVersion, availableVersions: this.configHistory.length },
       });
     }
 
     const targetConfig = this.configHistory[targetVersion] ?? {};
-    await this.updateConfig(targetConfig);
+
+    // Directly restore configuration without triggering version updates
+    // Access the private config property to avoid set() method version increments
+    (this as any).config = { ...targetConfig };
     this.currentVersion = targetVersion;
   }
 
@@ -72,11 +78,15 @@ class MockVersionedConfigRepository extends MemoryConfigRepository implements IV
   }
 
   async updateConfig(newConfig: Record<string, unknown>): Promise<void> {
-    // Use the clear method and then set values individually
+    // Update the repository state first
     await this.clear();
     for (const [key, value] of Object.entries(newConfig)) {
       await this.set(key, value);
     }
+
+    // Save to history FIRST, then increment version
+    this.configHistory.push({ ...newConfig });
+    this.currentVersion = this.configHistory.length - 1;
     this.saveVersion(newConfig);
   }
 
@@ -122,21 +132,6 @@ class MockVersionedConfigRepository extends MemoryConfigRepository implements IV
     }
 
     return differences;
-  }
-
-  private getAllConfig(): Record<string, unknown> {
-    // Build config from current state by accessing all known keys
-    const config: Record<string, unknown> = {};
-
-    // Get all keys from current version in history
-    if (this.configHistory.length > 0) {
-      const currentConfig = this.configHistory[this.currentVersion] ?? {};
-      for (const key of Object.keys(currentConfig)) {
-        config[key] = this.get(key);
-      }
-    }
-
-    return config;
   }
 }
 

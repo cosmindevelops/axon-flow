@@ -20,19 +20,18 @@
     "build": "tsup",
     "clean": "rm -rf dist .turbo",
     "dev": "tsup --watch",
-    "format": "prettier --write \"src/**/*.ts\" || true",
-    "format:check": "prettier --check \"src/**/*.ts\" || true",
-    "lint": "eslint src --config ../../../eslint.config.js",
-    "lint:fix": "eslint src --fix --config ../../../eslint.config.js",
+    "lint": "eslint src",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@axon/config": "workspace:*"
+    "@axon/errors": "workspace:*",
+    "@axon/types": "workspace:*"
   },
   "devDependencies": {
-    "@axon/typescript-config": "workspace:*"
+    "@axon/typescript-config": "workspace:*",
+    "@axon/vitest-config": "workspace:*"
   }
 }

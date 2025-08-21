@@ -1,6 +1,6 @@
 /**
  * @axon/eslint-config
- * 
+ *
  * Centralized ESLint configurations for Axon Flow monorepo.
  * Provides optimized configurations for different environments.
  */

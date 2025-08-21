@@ -1,6 +1,6 @@
 /**
  * @axon/eslint-config/node
- * 
+ *
  * Node.js specific ESLint configuration for Axon Flow.
  * Extends base configuration with Node.js patterns and rules.
  */
@@ -10,7 +10,7 @@ import baseConfig from "./base.js";
 export default [
   // Include base configuration
   ...baseConfig,
-  
+
   // Node.js specific configuration
   {
     files: ["**/*.{js,mjs,cjs,ts}"],

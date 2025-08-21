@@ -3,14 +3,14 @@
  * @module @axon/config/repositories/memory-config
  */
 
+import { ConfigurationError } from "@axon/errors";
 import type { z } from "zod";
 import { ZodError } from "zod";
-import { ConfigurationError } from "@axon/errors";
 import type {
-  IWritableConfigRepository,
-  IConfigChangeListener,
   IConfigChangeEvent,
+  IConfigChangeListener,
   IRepositoryMetadata,
+  IWritableConfigRepository,
 } from "../types/index.js";
 import { detectPlatform } from "../utils/platform-detector.js";
 
@@ -157,9 +157,9 @@ export class MemoryConfigRepository implements IWritableConfigRepository {
   }
 
   /**
-   * Get all configuration as a plain object (for testing/debugging)
+   * Get all configuration as a plain object (for interface compliance and testing/debugging)
    */
-  getAll(): Record<string, unknown> {
+  getAllConfig(): Record<string, unknown> {
     return { ...this.config };
   }
 

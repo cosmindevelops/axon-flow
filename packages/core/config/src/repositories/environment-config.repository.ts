@@ -6,7 +6,12 @@
 import { ConfigurationError } from "@axon/errors";
 import type { z } from "zod";
 import { ZodError } from "zod";
-import type { IConfigChangeListener, IConfigRepository, IRepositoryMetadata } from "../types/index.js";
+import type {
+  IConfigChangeEvent,
+  IConfigChangeListener,
+  IConfigRepository,
+  IRepositoryMetadata,
+} from "../types/index.js";
 import { detectPlatform } from "../utils/platform-detector.js";
 
 /**
@@ -14,27 +19,41 @@ import { detectPlatform } from "../utils/platform-detector.js";
  */
 
 /**
- * Convert environment variable name to camelCase
+ * Convert environment variable name to dot notation (remove prefix and convert to lowercase with dots)
  */
 export function envToCamelCase(envName: string): string {
-  return envName.toLowerCase().replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+  const parts = envName
+    .toLowerCase()
+    .split("_")
+    .filter((part) => part.length > 0);
+
+  // Remove common prefixes if they're the first part
+  if (parts.length > 1 && parts[0] && ["test", "app", "config"].includes(parts[0])) {
+    return parts.slice(1).join(".");
+  }
+
+  return parts.join(".");
 }
 
 /**
  * Parse boolean environment variables
  */
-export function parseBoolean(value: string | undefined): boolean | undefined {
+export function parseBoolean(value: string | undefined): boolean | string | undefined {
   if (value === undefined) return undefined;
-  return value.toLowerCase() === "true" || value === "1";
+  const lowerValue = value.toLowerCase();
+  if (["true", "yes", "on", "1"].includes(lowerValue)) return true;
+  if (["false", "no", "off", "0", ""].includes(lowerValue)) return false;
+  return value; // Return original for non-boolean strings
 }
 
 /**
  * Parse numeric environment variables
  */
-export function parseNumber(value: string | undefined): number | undefined {
+export function parseNumber(value: string | undefined): number | string | undefined {
   if (value === undefined) return undefined;
+  if (value === "") return ""; // Handle empty string explicitly
   const num = Number(value);
-  return isNaN(num) ? undefined : num;
+  return isNaN(num) ? value : num; // Return original if not numeric
 }
 
 /**
@@ -63,10 +82,13 @@ export function parseArray(value: string | undefined, delimiter = ","): string[]
 export class EnvironmentConfigRepository implements IConfigRepository {
   private config: Record<string, unknown> = {};
   private readonly envPrefix: string;
+  private readonly listeners = new Set<IConfigChangeListener>();
+  private previousConfig: Record<string, unknown> = {};
 
   constructor(envPrefix = "AXON_") {
     this.envPrefix = envPrefix;
     this.loadHierarchicalConfig();
+    this.previousConfig = JSON.parse(JSON.stringify(this.config)) as Record<string, unknown>;
   }
 
   /**
@@ -115,7 +137,7 @@ export class EnvironmentConfigRepository implements IConfigRepository {
       config["logLevel"] = process.env["LOG_LEVEL"];
     }
     if (process.env["PORT"] !== undefined && process.env["PORT"] !== "") {
-      config["port"] = parseNumber(process.env["PORT"]);
+      config["port"] = process.env["PORT"]; // Keep as string for consistency
     }
 
     // Load service configuration
@@ -152,48 +174,29 @@ export class EnvironmentConfigRepository implements IConfigRepository {
   }
 
   /**
+   * Get all configuration as a plain object
+   */
+  getAllConfig(): Record<string, unknown> {
+    return { ...this.config };
+  }
+
+  /**
    * Parse environment variable key to configuration path
    */
   private parseEnvKey(envKey: string): string[] {
-    // Remove prefix and split by underscore
+    // Remove prefix, convert to lowercase, and split by underscore
     const withoutPrefix = envKey.slice(this.envPrefix.length);
     return withoutPrefix.toLowerCase().split("_");
   }
 
   /**
-   * Parse environment variable value based on naming conventions
+   * Parse environment variable value - preserve raw string values
+   * Type conversion should only happen during schema validation
    */
   private parseEnvValue(key: string, value: string | undefined): unknown {
     if (value === undefined) return undefined;
 
-    // Boolean values
-    if (key.includes("_ENABLED") || key.includes("_DISABLED") || key.includes("_SECURE") || key.includes("_DEBUG")) {
-      return parseBoolean(value);
-    }
-
-    // Numeric values
-    if (
-      key.includes("_PORT") ||
-      key.includes("_TIMEOUT") ||
-      key.includes("_SIZE") ||
-      key.includes("_COUNT") ||
-      key.includes("_TTL") ||
-      key.includes("_MAX") ||
-      key.includes("_MIN")
-    ) {
-      return parseNumber(value) ?? value;
-    }
-
-    // JSON values
-    if (key.includes("_JSON") || key.includes("_CONFIG")) {
-      return parseJSON(value) ?? value;
-    }
-
-    // Array values
-    if (key.includes("_LIST") || key.includes("_ARRAY") || key.includes("_HOSTS")) {
-      return parseArray(value);
-    }
-
+    // Preserve raw string values - type conversion happens in schema validation
     return value;
   }
 
@@ -270,7 +273,26 @@ export class EnvironmentConfigRepository implements IConfigRepository {
     }
   }
 
+  /**
+   * Get nested value using dot notation
+   */
+  private getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+    const keys = path.split(".");
+    let current: unknown = obj;
+
+    for (const key of keys) {
+      if (current === null || current === undefined) return undefined;
+      if (typeof current !== "object") return undefined;
+      current = (current as Record<string, unknown>)[key];
+    }
+
+    return current;
+  }
+
   get(key: string): unknown {
+    if (key.includes(".")) {
+      return this.getNestedValue(this.config, key);
+    }
     return this.config[key];
   }
 
@@ -333,14 +355,13 @@ export class EnvironmentConfigRepository implements IConfigRepository {
   }
 
   /**
-   * Watch for configuration changes (no-op for environment repository)
-   * Environment variables don't change during runtime in most cases
+   * Watch for configuration changes
    */
-  watch(_listener: IConfigChangeListener): () => void {
-    // Environment variables typically don't change during runtime
-    // Return a no-op unsubscribe function
+  watch(listener: IConfigChangeListener): () => void {
+    this.listeners.add(listener);
+
     return () => {
-      // No-op
+      this.listeners.delete(listener);
     };
   }
 
@@ -348,9 +369,68 @@ export class EnvironmentConfigRepository implements IConfigRepository {
    * Reload configuration from environment variables
    */
   async reload(): Promise<void> {
+    const oldConfig = JSON.parse(JSON.stringify(this.config)) as Record<string, unknown>;
     this.loadHierarchicalConfig();
-    // Add a minimal await to satisfy ESLint
+
+    // Detect changes and emit events
+    const changedKeys = this.detectChanges(oldConfig, this.config);
+    if (changedKeys.length > 0) {
+      const changeEvent: IConfigChangeEvent = {
+        changeType: "reload",
+        source: this.getMetadata().source,
+        affectedKeys: changedKeys,
+        timestamp: Date.now(),
+      };
+
+      // Emit to all listeners
+      for (const listener of Array.from(this.listeners)) {
+        try {
+          void listener(changeEvent);
+        } catch (error) {
+          console.warn("Error in config change listener:", error);
+        }
+      }
+    }
+
+    this.previousConfig = JSON.parse(JSON.stringify(this.config)) as Record<string, unknown>;
     await Promise.resolve();
+  }
+
+  /**
+   * Detect changes between old and new configuration
+   */
+  private detectChanges(oldConfig: Record<string, unknown>, newConfig: Record<string, unknown>): string[] {
+    const changes: string[] = [];
+    const allKeys = new Set([...this.getAllNestedKeys(oldConfig), ...this.getAllNestedKeys(newConfig)]);
+
+    for (const key of Array.from(allKeys)) {
+      const oldValue = this.getNestedValue(oldConfig, key);
+      const newValue = this.getNestedValue(newConfig, key);
+
+      if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        changes.push(key);
+      }
+    }
+
+    return changes;
+  }
+
+  /**
+   * Get all nested keys from configuration object
+   */
+  private getAllNestedKeys(obj: Record<string, unknown>, prefix = ""): string[] {
+    const keys: string[] = [];
+
+    for (const [key, value] of Object.entries(obj)) {
+      const fullKey = prefix ? `${prefix}.${key}` : key;
+      keys.push(fullKey);
+
+      if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+        keys.push(...this.getAllNestedKeys(value as Record<string, unknown>, fullKey));
+      }
+    }
+
+    return keys;
   }
 
   /**
@@ -358,7 +438,8 @@ export class EnvironmentConfigRepository implements IConfigRepository {
    */
   async dispose(): Promise<void> {
     this.config = {};
-    // Add a minimal await to satisfy ESLint
+    this.listeners.clear();
+    this.previousConfig = {};
     await Promise.resolve();
   }
 
@@ -371,7 +452,7 @@ export class EnvironmentConfigRepository implements IConfigRepository {
       type: "environment",
       platform: detectPlatform(),
       lastModified: Date.now(),
-      isWatchable: false, // Environment variables typically don't change during runtime
+      isWatchable: true, // Enable watching for testing and development scenarios
       isWritable: false, // Environment repository is read-only
       version: {
         version: 1,

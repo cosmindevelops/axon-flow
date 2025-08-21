@@ -10,12 +10,7 @@
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": [
-    "**/*.ts",
-    "**/*.js",
-    "**/*.mjs",
-    "**/*.cjs"
-  ],
+  "include": ["**/*.ts", "**/*.js", "**/*.mjs", "**/*.cjs"],
   "exclude": [
     "**/node_modules",
     "**/dist",

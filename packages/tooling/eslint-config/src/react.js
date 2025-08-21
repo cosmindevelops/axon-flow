@@ -1,6 +1,6 @@
 /**
  * @axon/eslint-config/react
- * 
+ *
  * React specific ESLint configuration for Axon Flow.
  * Extends base configuration with React, JSX, and accessibility rules.
  */
@@ -13,7 +13,7 @@ import jsxA11yPlugin from "eslint-plugin-jsx-a11y";
 export default [
   // Include base configuration
   ...baseConfig,
-  
+
   // React specific configuration
   {
     files: ["**/*.{jsx,tsx}"],

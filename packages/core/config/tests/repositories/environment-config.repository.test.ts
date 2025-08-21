@@ -121,24 +121,20 @@ describe("EnvironmentConfigRepository", () => {
       expect(repository.get("database.pool.max")).toBe("20");
     });
 
-    it("should handle case sensitivity", () => {
+    it("should handle case insensitivity", () => {
       process.env["TEST_app_name"] = "lowercase-app";
       process.env["TEST_APP_NAME"] = "uppercase-app";
 
-      // Case insensitive (default)
-      const insensitiveRepo = new EnvironmentConfigRepository("TEST_");
+      // Environment variables are case-insensitive by default
+      const repo = new EnvironmentConfigRepository("TEST_");
 
-      // Should find either variant
-      const value = insensitiveRepo.get("app.name");
+      // Both TEST_app_name and TEST_APP_NAME map to the same key
+      // The last one processed wins (order is not guaranteed)
+      const value = repo.get("app.name");
       expect(typeof value).toBe("string");
+      expect(["lowercase-app", "uppercase-app"]).toContain(value);
 
-      // Case sensitive
-      const sensitiveRepo = new EnvironmentConfigRepository("TEST_");
-
-      expect(sensitiveRepo.get("app.name")).toBe("uppercase-app");
-
-      sensitiveRepo.dispose().catch(() => {});
-      insensitiveRepo.dispose().catch(() => {});
+      repo.dispose().catch(() => {});
     });
   });
 

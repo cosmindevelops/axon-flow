@@ -3,18 +3,18 @@
  * @module @axon/config/repositories/file-config
  */
 
-import { readFile } from "node:fs/promises";
-import { existsSync, statSync } from "node:fs";
+import { ConfigurationError } from "@axon/errors";
 import type { FSWatcher } from "node:fs";
+import { existsSync, statSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import type { z } from "zod";
 import { ZodError } from "zod";
-import { ConfigurationError } from "@axon/errors";
 import type {
-  IConfigRepository,
-  IConfigChangeListener,
-  IConfigChangeEvent,
-  IRepositoryMetadata,
   FileFormat,
+  IConfigChangeEvent,
+  IConfigChangeListener,
+  IConfigRepository,
+  IRepositoryMetadata,
 } from "../types/index.js";
 import { performanceNow } from "../utils/platform-detector.js";
 
@@ -89,6 +89,10 @@ export class FileConfigRepository implements IConfigRepository {
     return this.getNestedValue(this.config, key);
   }
 
+  getAllConfig(): Record<string, unknown> {
+    return { ...this.config };
+  }
+
   validate<T extends z.ZodType>(data: unknown, schema: T): z.infer<T> {
     try {
       return schema.parse(data);
@@ -118,7 +122,44 @@ export class FileConfigRepository implements IConfigRepository {
   }
 
   async reload(): Promise<void> {
-    await this.loadConfigAsync();
+    const startTime = performanceNow();
+
+    try {
+      if (!existsSync(this.filePath)) {
+        await this.emitChangeEvent("error", [], {
+          error: `Configuration file not found: ${this.filePath}`,
+        });
+        return;
+      }
+
+      const stats = statSync(this.filePath);
+      const fileModified = stats.mtime.getTime();
+
+      // Always reload when explicitly requested, regardless of modification time
+      const content = await readFile(this.filePath, this.encoding);
+      const newConfig = JSON.parse(content) as Record<string, unknown>;
+
+      // Compare configurations to determine affected keys
+      const affectedKeys = this.getChangedKeys(this.config, newConfig);
+
+      // Update config before emitting event
+      this.config = newConfig;
+      this.lastModified = fileModified;
+
+      // Emit change event for successful reload
+      await this.emitChangeEvent("reload", affectedKeys, {
+        loadTime: performanceNow() - startTime,
+        fileSize: stats.size,
+        hasChanges: affectedKeys.length > 0,
+      });
+    } catch (error) {
+      // Emit single error event and re-throw
+      await this.emitChangeEvent("error", [], {
+        error: error instanceof Error ? error.message : String(error),
+        loadTime: performanceNow() - startTime,
+      });
+      throw error; // Re-throw to maintain error handling behavior
+    }
   }
 
   async dispose(): Promise<void> {

@@ -17,9 +17,11 @@ export default tseslint.config(
     files: [
       "**/tsup.config.ts",
       "**/vite.config.ts",
+      "**/vitest.config.ts",
       "**/webpack.config.ts",
       "**/rollup.config.ts",
       "packages/tooling/**/*",
+      "tools/scripts/*",
       "**/tooling/**/*",
     ],
     languageOptions: {

@@ -2,11 +2,11 @@
  * Cached configuration repository with performance optimizations
  */
 
-import type { z } from "zod";
 import { ConfigurationError } from "@axon/errors";
-import type { IConfigRepository, IConfigChangeListener, IRepositoryMetadata } from "../types/index.js";
-import { EnvironmentConfigRepository } from "./index.js";
+import type { z } from "zod";
+import type { IConfigChangeListener, IConfigRepository, IRepositoryMetadata } from "../types/index.js";
 import { detectPlatform } from "../utils/platform-detector.js";
+import { EnvironmentConfigRepository } from "./index.js";
 
 /**
  * Performance metrics for configuration loading
@@ -90,7 +90,6 @@ export class CachedConfigRepository implements IConfigRepository {
       this.setCacheEntry(schemaKey, value, schema);
       this.updatePerformanceMetrics(performance.now() - startTime);
 
-
       return value;
     } catch (error) {
       this.updatePerformanceMetrics(performance.now() - startTime);
@@ -122,6 +121,10 @@ export class CachedConfigRepository implements IConfigRepository {
     return value;
   }
 
+  getAllConfig(): Record<string, unknown> {
+    return this.baseRepository.getAllConfig();
+  }
+
   /**
    * Validate data against schema with caching
    */
@@ -144,7 +147,6 @@ export class CachedConfigRepository implements IConfigRepository {
       const validated = this.baseRepository.validate(data, schema);
       this.setCacheEntry(cacheKey, validated, schema);
       this.updatePerformanceMetrics(performance.now() - startTime);
-
 
       return validated;
     } catch (error) {

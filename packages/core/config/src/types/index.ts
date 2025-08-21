@@ -69,6 +69,7 @@ export interface IConfigRepository {
   // Core configuration methods
   load<T extends z.ZodType>(schema: T): z.infer<T>;
   get(key: string): unknown;
+  getAllConfig(): Record<string, unknown>;
   validate<T extends z.ZodType>(data: unknown, schema: T): z.infer<T>;
 
   // Hot-reloading and change management

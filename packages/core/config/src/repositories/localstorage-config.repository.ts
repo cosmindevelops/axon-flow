@@ -115,6 +115,11 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
     return this.getNestedValue(config, key);
   }
 
+  getAllConfig(): Record<string, unknown> {
+    if (!this.isSupported) return {};
+    return this.getStoredConfig();
+  }
+
   validate<T extends z.ZodType>(data: unknown, schema: T): z.infer<T> {
     try {
       return schema.parse(data);
