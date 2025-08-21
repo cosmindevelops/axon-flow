@@ -5,10 +5,10 @@
  * Provides a minimalistic, performance-focused base configuration.
  */
 
-import baseConfig from "./base.js";
+import baseConfig from "./base";
 
 // Re-export the base configuration
-export { default as base } from "./base.js";
+export { default as base } from "./base";
 
 // Default export provides the base configuration
 export default baseConfig;

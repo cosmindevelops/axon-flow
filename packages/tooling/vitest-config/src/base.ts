@@ -105,11 +105,6 @@ export default defineConfig({
     // Setup files (to be overridden by specific configs)
     setupFiles: [],
 
-    // Cache configuration using Vite's cacheDir
-    cache: {
-      dir: "node_modules/.vitest",
-    },
-
     // Modern snapshot configuration with better path handling
     resolveSnapshotPath: (testPath, snapExtension) => testPath.replace(/\.test\.([jt]sx?)$/, `.test${snapExtension}`),
 
