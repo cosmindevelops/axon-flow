@@ -18,16 +18,14 @@ const HEALTH_CHECK_SCHEMA = z.object({
   startPeriod: z.coerce.number().min(0).default(60000).describe("Start period in milliseconds"),
   shutdownTimeout: z.coerce.number().min(0).default(10000).describe("Graceful shutdown timeout in milliseconds"),
   includeDetails: z.boolean().default(false).describe("Include detailed health info"),
-  checks: z
-    .object({
-      database: z.boolean().default(true).describe("Check database connectivity"),
-      redis: z.boolean().default(true).describe("Check Redis connectivity"),
-      rabbitmq: z.boolean().default(true).describe("Check RabbitMQ connectivity"),
-      disk: z.boolean().default(false).describe("Check disk space"),
-      memory: z.boolean().default(false).describe("Check memory usage"),
-      custom: z.array(z.string()).default([]).describe("Custom health checks"),
-    })
-    .default({}),
+  checks: z.object({
+    database: z.boolean().default(true).describe("Check database connectivity"),
+    redis: z.boolean().default(true).describe("Check Redis connectivity"),
+    rabbitmq: z.boolean().default(true).describe("Check RabbitMQ connectivity"),
+    disk: z.boolean().default(false).describe("Check disk space"),
+    memory: z.boolean().default(false).describe("Check memory usage"),
+    custom: z.array(z.string()).default([]).describe("Custom health checks"),
+  }),
 });
 
 /**
@@ -44,13 +42,13 @@ const SERVICE_RATE_LIMIT_SCHEMA = z.object({
         method: z.enum(["GET", "POST", "PUT", "DELETE", "PATCH", "ALL"]).default("ALL"),
         limit: z.coerce.number().int().min(1).describe("Requests per window"),
         window: z.coerce.number().min(1000).describe("Window in milliseconds"),
-        skipIf: z.function().args(z.unknown()).returns(z.boolean()).optional(),
+        skipIf: z.any().optional(),
       }),
     )
     .default([])
     .describe("Endpoint-specific rate limits"),
-  keyGenerator: z.function().args(z.unknown()).returns(z.string()).optional().describe("Custom key generator"),
-  skip: z.function().args(z.unknown()).returns(z.boolean()).optional().describe("Skip function"),
+  keyGenerator: z.any().optional(),
+  skip: z.any().optional(),
 });
 
 /**
@@ -81,7 +79,7 @@ const CIRCUIT_BREAKER_SCHEMA = z.object({
   sleepWindow: z.coerce.number().min(0).default(5000).describe("Sleep window in milliseconds"),
   errorThresholdPercentage: z.coerce.number().min(0).max(100).default(50).describe("Error threshold percentage"),
   requestVolumeThreshold: z.coerce.number().int().min(1).default(20).describe("Request volume threshold"),
-  fallbackFunction: z.function().args(z.unknown()).returns(z.unknown()).optional().describe("Fallback function"),
+  fallbackFunction: z.any().optional(),
 });
 
 /**
@@ -105,7 +103,7 @@ const METRICS_CONFIG_SCHEMA = z.object({
   enabled: z.boolean().default(true).describe("Enable metrics collection"),
   endpoint: z.string().default("/metrics").describe("Metrics endpoint"),
   interval: z.coerce.number().min(1000).default(10000).describe("Collection interval in milliseconds"),
-  defaultLabels: z.record(z.string()).default({}).describe("Default metric labels"),
+  defaultLabels: z.record(z.string(), z.string()).default({}).describe("Default metric labels"),
   includeSystemMetrics: z.boolean().default(true).describe("Include system metrics"),
   includeHttpMetrics: z.boolean().default(true).describe("Include HTTP metrics"),
   includeDatabaseMetrics: z.boolean().default(true).describe("Include database metrics"),
@@ -137,13 +135,13 @@ export const SERVICE_CONFIG_SCHEMA = z.object({
   port: z.coerce.number().int().min(1).max(65535).default(3000).describe("Service port"),
   host: z.string().default("0.0.0.0").describe("Service host"),
   basePath: z.string().default("/").describe("API base path"),
-  healthCheck: HEALTH_CHECK_SCHEMA.default({}),
-  rateLimit: SERVICE_RATE_LIMIT_SCHEMA.default({}),
-  timeouts: TIMEOUT_CONFIG_SCHEMA.default({}),
-  circuitBreaker: CIRCUIT_BREAKER_SCHEMA.default({}),
-  retry: RETRY_CONFIG_SCHEMA.default({}),
-  metrics: METRICS_CONFIG_SCHEMA.default({}),
-  logging: SERVICE_LOG_CONFIG_SCHEMA.default({}),
+  healthCheck: HEALTH_CHECK_SCHEMA,
+  rateLimit: SERVICE_RATE_LIMIT_SCHEMA,
+  timeouts: TIMEOUT_CONFIG_SCHEMA,
+  circuitBreaker: CIRCUIT_BREAKER_SCHEMA,
+  retry: RETRY_CONFIG_SCHEMA,
+  metrics: METRICS_CONFIG_SCHEMA,
+  logging: SERVICE_LOG_CONFIG_SCHEMA,
   cors: z.boolean().default(true).describe("Enable CORS (uses auth CORS config)"),
   compression: z.boolean().default(true).describe("Enable response compression"),
   trustProxy: z.boolean().or(z.string()).or(z.number()).default(false).describe("Trust proxy settings"),
@@ -163,16 +161,16 @@ export const ENVIRONMENT_SERVICE_SCHEMA = z.discriminatedUnion("environment", [
       logging: SERVICE_LOG_CONFIG_SCHEMA.extend({
         level: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("debug"),
         pretty: z.boolean().default(true),
-      }).default({}),
+      }),
       healthCheck: HEALTH_CHECK_SCHEMA.extend({
         includeDetails: z.boolean().default(true),
-      }).default({}),
+      }),
       metrics: METRICS_CONFIG_SCHEMA.extend({
         enabled: z.boolean().default(false),
-      }).default({}),
+      }),
       circuitBreaker: CIRCUIT_BREAKER_SCHEMA.extend({
         enabled: z.boolean().default(false),
-      }).default({}),
+      }),
     }),
   }),
   z.object({
@@ -180,13 +178,13 @@ export const ENVIRONMENT_SERVICE_SCHEMA = z.discriminatedUnion("environment", [
     service: SERVICE_CONFIG_SCHEMA.extend({
       logging: SERVICE_LOG_CONFIG_SCHEMA.extend({
         level: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
-      }).default({}),
+      }),
       healthCheck: HEALTH_CHECK_SCHEMA.extend({
         interval: z.coerce.number().default(20000),
-      }).default({}),
+      }),
       rateLimit: SERVICE_RATE_LIMIT_SCHEMA.extend({
         defaultLimit: z.coerce.number().default(50),
-      }).default({}),
+      }),
     }),
   }),
   z.object({
@@ -195,18 +193,18 @@ export const ENVIRONMENT_SERVICE_SCHEMA = z.discriminatedUnion("environment", [
       logging: SERVICE_LOG_CONFIG_SCHEMA.extend({
         level: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("warn"),
         pretty: z.boolean().default(false),
-      }).default({}),
+      }),
       healthCheck: HEALTH_CHECK_SCHEMA.extend({
         interval: z.coerce.number().default(10000),
         includeDetails: z.boolean().default(false),
-      }).default({}),
+      }),
       rateLimit: SERVICE_RATE_LIMIT_SCHEMA.extend({
         defaultLimit: z.coerce.number().default(30),
-      }).default({}),
+      }),
       circuitBreaker: CIRCUIT_BREAKER_SCHEMA.extend({
         threshold: z.coerce.number().default(0.3),
         errorThresholdPercentage: z.coerce.number().default(30),
-      }).default({}),
+      }),
       clusterMode: z.boolean().default(true),
       workers: z.coerce.number().default(0), // 0 = CPU count
     }),

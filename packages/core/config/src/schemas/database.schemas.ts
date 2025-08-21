@@ -52,8 +52,22 @@ export const DATABASE_CONFIG_SCHEMA = z.object({
   password: z.string().min(1).describe("Database password"),
   schema: z.string().default("public").describe("Database schema"),
   ssl: SSL_CONFIG_SCHEMA,
-  pool: CONNECTION_POOL_SCHEMA.default({}),
-  pgvector: PGVECTOR_SCHEMA.default({}),
+  pool: CONNECTION_POOL_SCHEMA.default(() => ({
+    min: 2,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+    acquireTimeoutMillis: 30000,
+  })),
+  pgvector: PGVECTOR_SCHEMA.default(() => ({
+    enabled: false,
+    dimensions: 1536,
+    indexMethod: "hnsw" as const,
+    lists: 100,
+    probes: 1,
+    efConstruction: 200,
+    m: 16,
+  })),
   statementTimeout: z.coerce.number().min(0).default(30000).describe("Statement timeout in milliseconds"),
   queryTimeout: z.coerce.number().min(0).default(30000).describe("Query timeout in milliseconds"),
   applicationName: z.string().default("axon-flow").describe("Application name for pg_stat_activity"),
@@ -72,7 +86,7 @@ export const ENVIRONMENT_DATABASE_SCHEMA = z.discriminatedUnion("environment", [
       pool: CONNECTION_POOL_SCHEMA.extend({
         min: z.coerce.number().default(1),
         max: z.coerce.number().default(5),
-      }).default({}),
+      }),
       ssl: z.object({ enabled: z.boolean().default(false) }).optional(),
     }),
   }),
@@ -82,7 +96,7 @@ export const ENVIRONMENT_DATABASE_SCHEMA = z.discriminatedUnion("environment", [
       pool: CONNECTION_POOL_SCHEMA.extend({
         min: z.coerce.number().default(2),
         max: z.coerce.number().default(10),
-      }).default({}),
+      }),
       ssl: z.object({ enabled: z.boolean().default(true) }).optional(),
     }),
   }),
@@ -92,7 +106,7 @@ export const ENVIRONMENT_DATABASE_SCHEMA = z.discriminatedUnion("environment", [
       pool: CONNECTION_POOL_SCHEMA.extend({
         min: z.coerce.number().default(5),
         max: z.coerce.number().default(20),
-      }).default({}),
+      }),
       ssl: z
         .object({
           enabled: z.boolean().default(true),

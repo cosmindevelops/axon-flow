@@ -1,0 +1,14 @@
+{
+  "name": "@axon/typescript-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Centralized TypeScript configurations for Axon Flow monorepo",
+  "main": "src/index.js",
+  "files": [
+    "src/base.json",
+    "src/index.js",
+    "src/node.json",
+    "src/react.json"
+  ]
+}

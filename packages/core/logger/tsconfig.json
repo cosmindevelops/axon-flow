@@ -1,26 +1,10 @@
 {
-  "extends": "../../../tsconfig.base.json",
+  "extends": "../../tooling/typescript-config/src/node.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "noEmit": false
+    "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
-  "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules", "**/*.test.*", "**/*.spec.*"],
-  "references": [
-    {
-      "path": "../types"
-    },
-    {
-      "path": "../errors"
-    },
-    {
-      "path": "../config"
-    }
-  ]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }

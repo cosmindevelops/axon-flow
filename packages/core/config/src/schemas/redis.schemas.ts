@@ -49,12 +49,7 @@ const REDIS_CLUSTER_SCHEMA = z.object({
     .default(300)
     .describe("Retry delay on cluster down in milliseconds"),
   slotsRefreshTimeout: z.coerce.number().min(0).default(1000).describe("Slots refresh timeout in milliseconds"),
-  clusterRetryStrategy: z
-    .function()
-    .args(z.number())
-    .returns(z.union([z.number(), z.null()]))
-    .optional()
-    .describe("Custom cluster retry strategy"),
+  clusterRetryStrategy: z.any().optional(),
 });
 
 /**
@@ -63,12 +58,7 @@ const REDIS_CLUSTER_SCHEMA = z.object({
 const REDIS_PUBSUB_SCHEMA = z.object({
   enabled: z.boolean().default(true),
   subscriber: z.object({
-    retryStrategy: z
-      .function()
-      .args(z.number())
-      .returns(z.union([z.number(), z.null()]))
-      .optional()
-      .describe("Subscriber retry strategy"),
+    retryStrategy: z.any().optional(),
     enableOfflineQueue: z.boolean().default(true).describe("Enable offline queue"),
     maxRetriesPerRequest: z.coerce.number().int().min(0).default(3).describe("Max retries per request"),
   }),
@@ -99,8 +89,8 @@ export const REDIS_CONFIG_SCHEMA = z.object({
     .optional()
     .describe("Redis Sentinel nodes"),
   name: z.string().optional().describe("Sentinel master name"),
-  pool: REDIS_POOL_SCHEMA.default({}),
-  cacheTTL: CACHE_TTL_SCHEMA.default({}),
+  pool: REDIS_POOL_SCHEMA,
+  cacheTTL: CACHE_TTL_SCHEMA,
   cluster: REDIS_CLUSTER_SCHEMA.optional(),
   pubsub: REDIS_PUBSUB_SCHEMA.default({
     enabled: true,
@@ -119,18 +109,8 @@ export const REDIS_CONFIG_SCHEMA = z.object({
   enableOfflineQueue: z.boolean().default(true).describe("Enable offline queue"),
   lazyConnect: z.boolean().default(false).describe("Lazy connect on first command"),
   maxRetriesPerRequest: z.coerce.number().int().min(0).default(3).describe("Max retries per request"),
-  retryStrategy: z
-    .function()
-    .args(z.number())
-    .returns(z.union([z.number(), z.null()]))
-    .optional()
-    .describe("Custom retry strategy"),
-  reconnectOnError: z
-    .function()
-    .args(z.unknown())
-    .returns(z.boolean())
-    .optional()
-    .describe("Reconnect on error function"),
+  retryStrategy: z.any().optional(),
+  reconnectOnError: z.any().optional().describe("Reconnect on error function"),
 });
 
 /**
@@ -144,7 +124,7 @@ export const ENVIRONMENT_REDIS_SCHEMA = z.discriminatedUnion("environment", [
       pool: REDIS_POOL_SCHEMA.extend({
         min: z.coerce.number().default(1),
         max: z.coerce.number().default(5),
-      }).default({}),
+      }),
       cluster: z.object({ enabled: z.boolean().default(false) }).optional(),
     }),
   }),
@@ -154,7 +134,7 @@ export const ENVIRONMENT_REDIS_SCHEMA = z.discriminatedUnion("environment", [
       pool: REDIS_POOL_SCHEMA.extend({
         min: z.coerce.number().default(2),
         max: z.coerce.number().default(10),
-      }).default({}),
+      }),
     }),
   }),
   z.object({
@@ -163,7 +143,7 @@ export const ENVIRONMENT_REDIS_SCHEMA = z.discriminatedUnion("environment", [
       pool: REDIS_POOL_SCHEMA.extend({
         min: z.coerce.number().default(5),
         max: z.coerce.number().default(20),
-      }).default({}),
+      }),
       cluster: REDIS_CLUSTER_SCHEMA.optional(),
       maxRetriesPerRequest: z.coerce.number().default(5),
     }),

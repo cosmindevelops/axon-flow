@@ -14,7 +14,7 @@ const EXCHANGE_CONFIG_SCHEMA = z.object({
   autoDelete: z.boolean().default(false).describe("Delete when no queues bound"),
   internal: z.boolean().default(false).describe("Internal exchange"),
   alternateExchange: z.string().optional().describe("Alternate exchange for unroutable messages"),
-  arguments: z.record(z.unknown()).optional().describe("Additional exchange arguments"),
+  arguments: z.record(z.string(), z.unknown()).optional().describe("Additional exchange arguments"),
 });
 
 /**
@@ -30,7 +30,7 @@ const QUEUE_CONFIG_SCHEMA = z.object({
   maxLength: z.coerce.number().int().min(0).optional().describe("Maximum queue length"),
   maxLengthBytes: z.coerce.number().int().min(0).optional().describe("Maximum queue size in bytes"),
   maxPriority: z.coerce.number().int().min(1).max(255).optional().describe("Maximum priority level"),
-  arguments: z.record(z.unknown()).optional().describe("Additional queue arguments"),
+  arguments: z.record(z.string(), z.unknown()).optional().describe("Additional queue arguments"),
 });
 
 /**
@@ -89,7 +89,7 @@ const CONSUMER_CONFIG_SCHEMA = z.object({
   exclusive: z.boolean().default(false).describe("Exclusive consumer"),
   priority: z.coerce.number().int().min(0).optional().describe("Consumer priority"),
   consumerTag: z.string().optional().describe("Consumer tag"),
-  arguments: z.record(z.unknown()).optional().describe("Additional consumer arguments"),
+  arguments: z.record(z.string(), z.unknown()).optional().describe("Additional consumer arguments"),
 });
 
 /**
@@ -103,13 +103,13 @@ export const RABBITMQ_CONFIG_SCHEMA = z.object({
   password: z.string().min(1).default("guest").describe("RabbitMQ password"),
   vhost: z.string().default("/").describe("Virtual host"),
   connectionName: z.string().default("axon-flow").describe("Connection name for management UI"),
-  connection: CONNECTION_CONFIG_SCHEMA.default({}),
+  connection: CONNECTION_CONFIG_SCHEMA,
   exchanges: z.array(EXCHANGE_CONFIG_SCHEMA).default([]).describe("Exchange configurations"),
   queues: z.array(QUEUE_CONFIG_SCHEMA).default([]).describe("Queue configurations"),
-  deadLetter: DEAD_LETTER_CONFIG_SCHEMA.default({}),
-  retryPolicy: RETRY_POLICY_SCHEMA.default({}),
-  publisher: PUBLISHER_CONFIG_SCHEMA.default({}),
-  consumer: CONSUMER_CONFIG_SCHEMA.default({}),
+  deadLetter: DEAD_LETTER_CONFIG_SCHEMA,
+  retryPolicy: RETRY_POLICY_SCHEMA,
+  publisher: PUBLISHER_CONFIG_SCHEMA,
+  consumer: CONSUMER_CONFIG_SCHEMA,
   socketOptions: z
     .object({
       noDelay: z.boolean().default(true).describe("Disable Nagle's algorithm"),
@@ -118,13 +118,11 @@ export const RABBITMQ_CONFIG_SCHEMA = z.object({
       timeout: z.coerce.number().min(0).default(0).describe("Socket timeout (0 = no timeout)"),
     })
     .optional(),
-  reconnect: z
-    .object({
-      enabled: z.boolean().default(true).describe("Enable automatic reconnection"),
-      maxAttempts: z.coerce.number().int().min(0).default(0).describe("Max reconnection attempts (0 = unlimited)"),
-      interval: z.coerce.number().min(0).default(5000).describe("Reconnection interval in milliseconds"),
-    })
-    .default({}),
+  reconnect: z.object({
+    enabled: z.boolean().default(true).describe("Enable automatic reconnection"),
+    maxAttempts: z.coerce.number().int().min(0).default(0).describe("Max reconnection attempts (0 = unlimited)"),
+    interval: z.coerce.number().min(0).default(5000).describe("Reconnection interval in milliseconds"),
+  }),
 });
 
 /**
@@ -137,10 +135,10 @@ export const ENVIRONMENT_RABBITMQ_SCHEMA = z.discriminatedUnion("environment", [
       hostname: z.string().default("localhost"),
       connection: CONNECTION_CONFIG_SCHEMA.extend({
         heartbeat: z.coerce.number().default(30),
-      }).default({}),
+      }),
       consumer: CONSUMER_CONFIG_SCHEMA.extend({
         prefetch: z.coerce.number().default(5),
-      }).default({}),
+      }),
     }),
   }),
   z.object({
@@ -148,13 +146,13 @@ export const ENVIRONMENT_RABBITMQ_SCHEMA = z.discriminatedUnion("environment", [
     rabbitmq: RABBITMQ_CONFIG_SCHEMA.extend({
       connection: CONNECTION_CONFIG_SCHEMA.extend({
         heartbeat: z.coerce.number().default(60),
-      }).default({}),
+      }),
       consumer: CONSUMER_CONFIG_SCHEMA.extend({
         prefetch: z.coerce.number().default(10),
-      }).default({}),
+      }),
       retryPolicy: RETRY_POLICY_SCHEMA.extend({
         maxRetries: z.coerce.number().default(5),
-      }).default({}),
+      }),
     }),
   }),
   z.object({
@@ -164,21 +162,19 @@ export const ENVIRONMENT_RABBITMQ_SCHEMA = z.discriminatedUnion("environment", [
       connection: CONNECTION_CONFIG_SCHEMA.extend({
         heartbeat: z.coerce.number().default(120),
         channelMax: z.coerce.number().default(100),
-      }).default({}),
+      }),
       consumer: CONSUMER_CONFIG_SCHEMA.extend({
         prefetch: z.coerce.number().default(20),
-      }).default({}),
+      }),
       retryPolicy: RETRY_POLICY_SCHEMA.extend({
         maxRetries: z.coerce.number().default(10),
         maxDelay: z.coerce.number().default(60000),
-      }).default({}),
-      reconnect: z
-        .object({
-          enabled: z.boolean().default(true),
-          maxAttempts: z.coerce.number().default(10),
-          interval: z.coerce.number().default(10000),
-        })
-        .default({}),
+      }),
+      reconnect: z.object({
+        enabled: z.boolean().default(true),
+        maxAttempts: z.coerce.number().default(10),
+        interval: z.coerce.number().default(10000),
+      }),
     }),
   }),
 ]);

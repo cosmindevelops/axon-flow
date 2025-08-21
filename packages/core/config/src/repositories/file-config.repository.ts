@@ -73,9 +73,7 @@ export class FileConfigRepository implements IConfigRepository {
           metadata: {
             filePath: this.filePath,
             format: this.format,
-            errors: error.issues.map(
-              (err: { path: (string | number)[]; message: string }) => `${err.path.join(".")}: ${err.message}`,
-            ),
+            errors: error.issues.map((err) => `${err.path.join(".")}: ${err.message}`),
           },
         });
       }
@@ -100,9 +98,7 @@ export class FileConfigRepository implements IConfigRepository {
           component: "FileConfigRepository",
           operation: "validate",
           metadata: {
-            errors: error.issues.map(
-              (err: { path: (string | number)[]; message: string }) => `${err.path.join(".")}: ${err.message}`,
-            ),
+            errors: error.issues.map((err) => `${err.path.join(".")}: ${err.message}`),
           },
         });
       }

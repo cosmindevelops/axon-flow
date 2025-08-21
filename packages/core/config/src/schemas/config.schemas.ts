@@ -86,44 +86,28 @@ export const AGENT_SERVICE_CONFIG_SCHEMA = z.object({
 /**
  * Environment-aware configuration schema
  */
-export const ENVIRONMENT_AWARE_CONFIG_SCHEMA = z
-  .object({
-    environment: z.enum(["development", "staging", "production"]),
-  })
-  .passthrough()
-  .transform((data) => {
-    const env = data.environment;
+export const ENVIRONMENT_AWARE_CONFIG_SCHEMA = APP_CONFIG_SCHEMA.transform((data) => {
+  const env = data.service.environment;
 
-    // Apply environment-specific defaults
-    const config = { ...data };
+  // Apply environment-specific defaults
+  const config = { ...data };
 
-    // Environment-specific transformations can be added here
-    if (env === "production") {
-      // Ensure security settings in production
-      if (config["auth"] !== undefined && config["auth"] !== null && typeof config["auth"] === "object") {
-        (config["auth"] as Record<string, unknown>)["secure"] = true;
-      }
-      if (config["service"] !== undefined && config["service"] !== null && typeof config["service"] === "object") {
-        const service = config["service"] as Record<string, unknown>;
-        if (service["logging"] !== undefined && service["logging"] !== null && typeof service["logging"] === "object") {
-          (service["logging"] as Record<string, unknown>)["level"] = "warn";
-        }
-      }
+  // Environment-specific transformations can be added here
+  if (env === "production") {
+    // Ensure security settings in production
+    if (config.auth) {
+      (config.auth as Record<string, unknown>)["secure"] = true;
     }
+    (config.service.logging as Record<string, unknown>)["level"] = "warn";
+  }
 
-    if (env === "development") {
-      // Development-friendly settings
-      if (config["service"] !== undefined && config["service"] !== null && typeof config["service"] === "object") {
-        const service = config["service"] as Record<string, unknown>;
-        if (service["logging"] !== undefined && service["logging"] !== null && typeof service["logging"] === "object") {
-          (service["logging"] as Record<string, unknown>)["pretty"] = true;
-        }
-      }
-    }
+  if (env === "development") {
+    // Development-friendly settings
+    (config.service.logging as Record<string, unknown>)["pretty"] = true;
+  }
 
-    return config;
-  })
-  .pipe(APP_CONFIG_SCHEMA);
+  return config;
+});
 
 /**
  * Configuration schema factory for creating custom configurations
@@ -144,14 +128,14 @@ export function createConfigSchema<T extends z.ZodRawShape>(
 /**
  * Utility function to merge configurations with environment overrides
  */
-export function mergeWithEnvironment<T extends z.ZodTypeAny>(
+export function mergeWithEnvironment<T extends z.ZodType>(
   schema: T,
   baseConfig: z.infer<T>,
   envConfig: Partial<z.infer<T>>,
 ): z.infer<T> {
   // Deep merge base config with environment overrides
   const merged = deepMerge(baseConfig as Record<string, unknown>, envConfig as Record<string, unknown>);
-   
+
   return schema.parse(merged);
 }
 

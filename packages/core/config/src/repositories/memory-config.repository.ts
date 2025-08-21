@@ -30,15 +30,14 @@ export class MemoryConfigRepository implements IWritableConfigRepository {
 
   load<T extends z.ZodType>(schema: T): z.infer<T> {
     try {
-       
       return schema.parse(this.config);
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof ZodError) {
         throw new ConfigurationError("Configuration validation failed", {
           component: "MemoryConfigRepository",
           operation: "load",
           metadata: {
-            errors: error.errors.map((err) => `${err.path.join(".")}: ${err.message}`),
+            errors: error.issues.map((err) => `${err.path.join(".")}: ${err.message}`),
           },
         });
       }
@@ -56,15 +55,14 @@ export class MemoryConfigRepository implements IWritableConfigRepository {
 
   validate<T extends z.ZodType>(data: unknown, schema: T): z.infer<T> {
     try {
-       
       return schema.parse(data);
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof ZodError) {
         throw new ConfigurationError("Schema validation failed", {
           component: "MemoryConfigRepository",
           operation: "validate",
           metadata: {
-            errors: error.errors.map((err) => `${err.path.join(".")}: ${err.message}`),
+            errors: error.issues.map((err) => `${err.path.join(".")}: ${err.message}`),
           },
         });
       }

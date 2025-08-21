@@ -87,7 +87,7 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
 
     try {
       const config = this.getStoredConfig();
-       
+
       return schema.parse(config);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -96,7 +96,7 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
           operation: "load",
           metadata: {
             storageKey: this.storageKey,
-            errors: error.errors.map((err) => `${err.path.join(".")}: ${err.message}`),
+            errors: error.issues.map((err) => `${err.path.join(".")}: ${err.message}`),
           },
         });
       }
@@ -117,7 +117,6 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
 
   validate<T extends z.ZodType>(data: unknown, schema: T): z.infer<T> {
     try {
-       
       return schema.parse(data);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -125,7 +124,7 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
           component: "LocalStorageConfigRepository",
           operation: "validate",
           metadata: {
-            errors: error.errors.map((err) => `${err.path.join(".")}: ${err.message}`),
+            errors: error.issues.map((err) => `${err.path.join(".")}: ${err.message}`),
           },
         });
       }

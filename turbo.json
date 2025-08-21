@@ -49,7 +49,6 @@
         "$TURBO_DEFAULT$",
         ".eslintrc*",
         "eslint.config.*",
-        "tsconfig.eslint.json",
         "tsconfig*.json",
         "src/**/*.{ts,tsx,js,jsx}",
         "../../eslint.config.js"
@@ -62,7 +61,6 @@
         "$TURBO_DEFAULT$",
         ".eslintrc*",
         "eslint.config.*",
-        "tsconfig.eslint.json",
         "tsconfig*.json",
         "src/**/*.{ts,tsx,js,jsx}",
         "../../eslint.config.js"
@@ -169,7 +167,6 @@
     ".env*",
     "tsconfig*.json",
     "tsconfig.base.json",
-    "tsconfig.eslint.json",
     ".eslintrc*",
     "eslint.config.*",
     ".prettierrc*",

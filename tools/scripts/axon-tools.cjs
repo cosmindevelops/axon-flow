@@ -3596,7 +3596,7 @@ class UtilityTool extends AxonTool {
 
 export default defineConfig({
   entry: ["src/index.ts"],
-  format: ["esm"],
+  format: ['cjs', 'esm'],
   dts: true,
   sourcemap: true,
   clean: true,

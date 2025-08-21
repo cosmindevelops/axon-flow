@@ -1,40 +1,38 @@
 {
   "name": "@axon/logger",
-  "version": "0.1.0",
-  "description": "High-performance structured logging with Pino",
+  "version": "0.0.0",
+  "description": "Logging utilities for Axon Flow",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     }
-  },
-  "browser": {
-    "./dist/index.cjs": "./dist/index.js"
-  },
-  "dependencies": {
-    "@axon/config": "workspace:*",
-    "@axon/errors": "workspace:*",
-    "@axon/types": "workspace:*",
-    "pino": "^9.9.0",
-    "pino-pretty": "^13.1.1"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc && tsup",
+    "build": "tsup",
+    "clean": "rm -rf dist .turbo",
     "dev": "tsup --watch",
-    "test": "vitest",
-    "test:watch": "vitest --watch",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write \"src/**/*.ts\" || true",
+    "format:check": "prettier --check \"src/**/*.ts\" || true",
+    "lint": "eslint src --config ../../../eslint.config.js",
+    "lint:fix": "eslint src --fix --config ../../../eslint.config.js",
     "type-check": "tsc --noEmit",
-    "format": "prettier --write src/",
-    "clean": "rm -rf dist"
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@axon/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@axon/typescript-config": "workspace:*"
   }
 }

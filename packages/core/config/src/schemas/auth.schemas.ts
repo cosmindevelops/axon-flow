@@ -96,11 +96,8 @@ const RATE_LIMIT_SCHEMA = z.object({
   headers: z.boolean().default(true).describe("Include rate limit headers"),
   skipSuccessfulRequests: z.boolean().default(false).describe("Skip successful requests"),
   skipFailedRequests: z.boolean().default(false).describe("Skip failed requests"),
-  keyGenerator: z
-    .function(z.tuple([z.unknown()]), z.string())
-    .optional()
-    .describe("Custom key generator"),
-  skip: z.function().args(z.unknown()).returns(z.boolean()).optional().describe("Skip function"),
+  keyGenerator: z.any().optional(),
+  skip: z.any().optional(),
 });
 
 /**
@@ -124,12 +121,12 @@ const PASSWORD_POLICY_SCHEMA = z.object({
  */
 export const AUTH_CONFIG_SCHEMA = z.object({
   jwt: JWT_CONFIG_SCHEMA,
-  accessToken: ACCESS_TOKEN_SCHEMA.default({}),
-  refreshToken: REFRESH_TOKEN_SCHEMA.default({}),
-  cors: CORS_CONFIG_SCHEMA.default({}),
+  accessToken: ACCESS_TOKEN_SCHEMA,
+  refreshToken: REFRESH_TOKEN_SCHEMA,
+  cors: CORS_CONFIG_SCHEMA,
   session: SESSION_CONFIG_SCHEMA.optional(),
-  rateLimit: RATE_LIMIT_SCHEMA.default({}),
-  passwordPolicy: PASSWORD_POLICY_SCHEMA.default({}),
+  rateLimit: RATE_LIMIT_SCHEMA,
+  passwordPolicy: PASSWORD_POLICY_SCHEMA,
   bcryptRounds: z.coerce.number().int().min(4).max(31).default(10).describe("Bcrypt hashing rounds"),
   maxLoginAttempts: z.coerce.number().int().min(1).default(5).describe("Max login attempts before lockout"),
   lockoutDuration: z.coerce.number().min(0).default(900000).describe("Lockout duration in milliseconds (15 min)"),
@@ -146,11 +143,11 @@ export const ENVIRONMENT_AUTH_SCHEMA = z.discriminatedUnion("environment", [
     auth: AUTH_CONFIG_SCHEMA.extend({
       cors: CORS_CONFIG_SCHEMA.extend({
         origins: z.array(z.string()).or(z.literal("*")).default(["*"]),
-      }).default({}),
+      }),
       secure: z.boolean().default(false),
       rateLimit: RATE_LIMIT_SCHEMA.extend({
         enabled: z.boolean().default(false),
-      }).default({}),
+      }),
     }),
   }),
   z.object({
@@ -158,11 +155,11 @@ export const ENVIRONMENT_AUTH_SCHEMA = z.discriminatedUnion("environment", [
     auth: AUTH_CONFIG_SCHEMA.extend({
       cors: CORS_CONFIG_SCHEMA.extend({
         origins: z.array(z.string()).default(["https://staging.axon-flow.com"]),
-      }).default({}),
+      }),
       secure: z.boolean().default(true),
       rateLimit: RATE_LIMIT_SCHEMA.extend({
         max: z.coerce.number().default(50),
-      }).default({}),
+      }),
     }),
   }),
   z.object({
@@ -171,7 +168,7 @@ export const ENVIRONMENT_AUTH_SCHEMA = z.discriminatedUnion("environment", [
       cors: CORS_CONFIG_SCHEMA.extend({
         origins: z.array(z.string()).default(["https://axon-flow.com", "https://www.axon-flow.com"]),
         credentials: z.boolean().default(true),
-      }).default({}),
+      }),
       secure: z.boolean().default(true),
       session: SESSION_CONFIG_SCHEMA.extend({
         cookie: z.object({
@@ -186,7 +183,7 @@ export const ENVIRONMENT_AUTH_SCHEMA = z.discriminatedUnion("environment", [
       rateLimit: RATE_LIMIT_SCHEMA.extend({
         max: z.coerce.number().default(30),
         windowMs: z.coerce.number().default(600000), // 10 minutes
-      }).default({}),
+      }),
       bcryptRounds: z.coerce.number().default(12),
       maxLoginAttempts: z.coerce.number().default(3),
       lockoutDuration: z.coerce.number().default(1800000), // 30 minutes

@@ -137,23 +137,28 @@
     "@commitlint/cli": "19.8.1",
     "@commitlint/config-conventional": "19.8.1",
     "@eslint/js": "^9.33.0",
+    "@microsoft/api-extractor": "^7.52.0",
     "@types/node": "^24.3.0",
     "@vitest/ui": "^3.2.4",
     "eslint": "^9.33.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-formatter-compact": "8.40.0",
+    "eslint-scope": "8.4.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.5",
+    "pino": "^9.9.0",
     "prettier": "^3.6.2",
-    "tsup": "8.5.0",
+    "tsup": "^8.5.0",
     "turbo": "^2.5.6",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.40.0",
     "vitest": "^3.2.4",
-    "zod": "4.0.17",
-    "pino": "^9.9.0"
+    "zod": "4.0.17"
   },
   "pnpm": {
+    "overrides": {
+      "@microsoft/api-extractor": "^7.52.0"
+    },
     "peerDependencyRules": {
       "ignoreMissing": [
         "@babel/core",
