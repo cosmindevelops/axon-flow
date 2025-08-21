@@ -3,17 +3,17 @@
  * @module @axon/config/tests/performance-benchmark
  */
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { writeFile, unlink, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
+import { CachedConfigRepository } from "../src/repositories/cached-config.repository.js";
+import { CompositeConfigRepository } from "../src/repositories/composite-config.repository.js";
 import { FileConfigRepository } from "../src/repositories/file-config.repository.js";
 import { MemoryConfigRepository } from "../src/repositories/memory-config.repository.js";
-import { CompositeConfigRepository } from "../src/repositories/composite-config.repository.js";
-import { CachedConfigRepository } from "../src/repositories/cached-config.repository.js";
-import type { IConfigRepository, ICompositeSource } from "../src/types/index.js";
+import type { ICompositeSource, IConfigRepository } from "../src/types/index.js";
 
 describe("Configuration Repository Performance Benchmarks", () => {
   let testDir: string;
@@ -29,7 +29,7 @@ describe("Configuration Repository Performance Benchmarks", () => {
     // Cleanup test directory
     try {
       if (existsSync(testDir)) {
-        const files = await import("node:fs/promises").then(fs => fs.readdir(testDir));
+        const files = await import("node:fs/promises").then((fs) => fs.readdir(testDir));
         for (const file of files) {
           await unlink(join(testDir, file));
         }
@@ -56,7 +56,7 @@ describe("Configuration Repository Performance Benchmarks", () => {
       await writeFile(configPath, JSON.stringify(smallConfig, null, 2));
 
       const startTime = performance.now();
-      
+
       const repository = new FileConfigRepository({
         filePath: configPath,
         watchForChanges: false,
@@ -95,7 +95,7 @@ describe("Configuration Repository Performance Benchmarks", () => {
       await writeFile(configPath, JSON.stringify(mediumConfig, null, 2));
 
       const startTime = performance.now();
-      
+
       const repository = new FileConfigRepository({
         filePath: configPath,
         watchForChanges: false,
@@ -132,7 +132,7 @@ describe("Configuration Repository Performance Benchmarks", () => {
       await writeFile(configPath, JSON.stringify(largeConfig, null, 2));
 
       const startTime = performance.now();
-      
+
       const repository = new FileConfigRepository({
         filePath: configPath,
         watchForChanges: false,
@@ -149,7 +149,7 @@ describe("Configuration Repository Performance Benchmarks", () => {
 
   describe("Access Performance", () => {
     let repository: IConfigRepository;
-    
+
     const testConfig = {
       app: { name: "test", version: "1.0.0" },
       database: { host: "localhost", port: 5432 },
@@ -189,17 +189,13 @@ describe("Configuration Repository Performance Benchmarks", () => {
     });
 
     it("should efficiently access nested configuration values", () => {
-      const deepKeys = [
-        "nested.deep.level.value",
-        "nested.deep.level.array.0",
-        "nested.deep.level.array.999",
-      ];
+      const deepKeys = ["nested.deep.level.value", "nested.deep.level.array.0", "nested.deep.level.array.999"];
 
       const iterations = 1000;
       const startTime = performance.now();
 
       for (let i = 0; i < iterations; i++) {
-        deepKeys.forEach(key => repository.get(key));
+        deepKeys.forEach((key) => repository.get(key));
       }
 
       const nestedAccessTime = performance.now() - startTime;
@@ -209,17 +205,13 @@ describe("Configuration Repository Performance Benchmarks", () => {
     });
 
     it("should handle non-existent key access efficiently", () => {
-      const nonExistentKeys = [
-        "non.existent.key",
-        "another.missing.value",
-        "deeply.nested.missing.configuration",
-      ];
+      const nonExistentKeys = ["non.existent.key", "another.missing.value", "deeply.nested.missing.configuration"];
 
       const iterations = 1000;
       const startTime = performance.now();
 
       for (let i = 0; i < iterations; i++) {
-        nonExistentKeys.forEach(key => repository.get(key));
+        nonExistentKeys.forEach((key) => repository.get(key));
       }
 
       const missingKeyTime = performance.now() - startTime;
@@ -241,12 +233,16 @@ describe("Configuration Repository Performance Benchmarks", () => {
         port: z.number().int().min(1).max(65535),
         ssl: z.boolean().optional(),
       }),
-      features: z.array(z.object({
-        id: z.number().int(),
-        name: z.string(),
-        enabled: z.boolean(),
-        config: z.record(z.unknown()).optional(),
-      })).max(1000),
+      features: z
+        .array(
+          z.object({
+            id: z.number().int(),
+            name: z.string(),
+            enabled: z.boolean(),
+            config: z.record(z.string(), z.unknown()).optional(),
+          }),
+        )
+        .max(1000),
     });
 
     beforeEach(() => {
@@ -382,7 +378,7 @@ describe("Configuration Repository Performance Benchmarks", () => {
       expect(compositeRepo.get("source49.value")).toBe(49);
 
       // Cleanup
-      manySources.forEach(repo => repo.dispose().catch(() => {}));
+      manySources.forEach((repo) => repo.dispose().catch(() => {}));
     });
   });
 
@@ -402,10 +398,7 @@ describe("Configuration Repository Performance Benchmarks", () => {
         },
       });
 
-      cachedRepository = new CachedConfigRepository(baseRepository, {
-        defaultTtl: 60000, // 60 seconds
-        maxSize: 1000,
-      });
+      cachedRepository = new CachedConfigRepository(baseRepository, 1000, 60000);
     });
 
     afterEach(async () => {
@@ -440,7 +433,7 @@ describe("Configuration Repository Performance Benchmarks", () => {
 
       const startTime = performance.now();
 
-      uniqueKeys.forEach(key => {
+      uniqueKeys.forEach((key) => {
         cachedRepository.get(key); // All cache misses
       });
 
@@ -476,7 +469,7 @@ describe("Configuration Repository Performance Benchmarks", () => {
 
       // Cleanup should complete quickly
       const cleanupStart = performance.now();
-      Promise.all(repositories.map(repo => repo.dispose()));
+      void Promise.all(repositories.map((repo) => repo.dispose()));
       const cleanupTime = performance.now() - cleanupStart;
 
       expect(cleanupTime).toBeLessThan(1000); // < 1 second cleanup
@@ -560,7 +553,8 @@ describe("Configuration Repository Performance Benchmarks", () => {
 
         for (let j = 0; j < 10; j++) {
           const op = operations[j % operations.length];
-          op();
+          // Guard in case operation is undefined
+          op?.();
         }
       });
 

@@ -61,7 +61,7 @@ export class CompositeConfigRepository implements IConfigRepository {
 
     try {
       const config = this.getEffectiveConfig();
-       
+
       return schema.parse(config);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -91,7 +91,7 @@ export class CompositeConfigRepository implements IConfigRepository {
 
   validate<T extends z.ZodType>(data: unknown, schema: T): z.infer<T> {
     try {
-       
+
       return schema.parse(data);
     } catch (error) {
       if (error instanceof ZodError) {

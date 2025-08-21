@@ -29,6 +29,16 @@ export default tseslint.config(
     },
   },
 
+  // Disable type-aware linting for test files to avoid TSConfig scope issues
+  {
+    files: ["packages/core/**/tests/**/*.test.ts", "packages/core/**/tests/**/*.test.tsx"],
+    languageOptions: {
+      parserOptions: {
+        project: null,
+      },
+    },
+  },
+
   {
     ignores: ["eslint.config.js", "packages/core/types/tests/**/*"],
   },

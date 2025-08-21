@@ -77,7 +77,7 @@ export class CachedConfigRepository implements IConfigRepository {
         this.performanceMetrics.cacheHits++;
         cachedEntry.accessCount++;
         this.updatePerformanceMetrics(performance.now() - startTime);
-         
+
         return cachedEntry.value;
       }
 
@@ -90,7 +90,7 @@ export class CachedConfigRepository implements IConfigRepository {
       this.setCacheEntry(schemaKey, value, schema);
       this.updatePerformanceMetrics(performance.now() - startTime);
 
-       
+
       return value;
     } catch (error) {
       this.updatePerformanceMetrics(performance.now() - startTime);
@@ -137,7 +137,7 @@ export class CachedConfigRepository implements IConfigRepository {
         this.performanceMetrics.cacheHits++;
         cachedEntry.accessCount++;
         this.updatePerformanceMetrics(performance.now() - startTime);
-         
+
         return cachedEntry.value;
       }
 
@@ -145,7 +145,7 @@ export class CachedConfigRepository implements IConfigRepository {
       this.setCacheEntry(cacheKey, validated, schema);
       this.updatePerformanceMetrics(performance.now() - startTime);
 
-       
+
       return validated;
     } catch (error) {
       this.updatePerformanceMetrics(performance.now() - startTime);

@@ -45,19 +45,16 @@ export function parseJSON(value: string | undefined): unknown {
   try {
     return JSON.parse(value) as unknown;
   } catch {
-    return undefined;
+    return value;
   }
 }
 
 /**
  * Parse array environment variables (comma-separated)
  */
-export function parseArray(value: string | undefined): string[] | undefined {
+export function parseArray(value: string | undefined, delimiter = ","): string[] | undefined {
   if (value === undefined) return undefined;
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  return value.split(delimiter).map((item) => item.trim());
 }
 
 /**

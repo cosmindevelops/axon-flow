@@ -3,12 +3,12 @@
  * @module @axon/config/tests/repositories/composite-config
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { z } from "zod";
 import { ConfigurationError } from "@axon/errors";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 import { CompositeConfigRepository } from "../../src/repositories/composite-config.repository.js";
 import { MemoryConfigRepository } from "../../src/repositories/memory-config.repository.js";
-import type { IConfigRepository, ICompositeSource, IConfigChangeEvent } from "../../src/types/index.js";
+import type { ICompositeSource, IConfigChangeEvent, IConfigRepository } from "../../src/types/index.js";
 
 describe("CompositeConfigRepository", () => {
   let repository: CompositeConfigRepository;
@@ -40,13 +40,17 @@ describe("CompositeConfigRepository", () => {
       host: z.string(),
       port: z.number(),
     }),
-    api: z.object({
-      port: z.number(),
-      timeout: z.number(),
-    }).optional(),
-    cache: z.object({
-      ttl: z.number(),
-    }).optional(),
+    api: z
+      .object({
+        port: z.number(),
+        timeout: z.number(),
+      })
+      .optional(),
+    cache: z
+      .object({
+        ttl: z.number(),
+      })
+      .optional(),
   });
 
   beforeEach(() => {
@@ -133,13 +137,17 @@ describe("CompositeConfigRepository", () => {
           host: z.string(),
           port: z.number(),
         }),
-        api: z.object({
-          port: z.number(),
-          timeout: z.number(),
-        }).optional(),
-        cache: z.object({
-          ttl: z.number(),
-        }).optional(),
+        api: z
+          .object({
+            port: z.number(),
+            timeout: z.number(),
+          })
+          .optional(),
+        cache: z
+          .object({
+            ttl: z.number(),
+          })
+          .optional(),
       });
 
       const config = repository.load(mergedSchema);
@@ -257,10 +265,10 @@ describe("CompositeConfigRepository", () => {
       }
 
       // Wait for change propagation
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       expect(changeEvents.length).toBeGreaterThan(0);
-      expect(changeEvents[0].changeType).toBe("update");
+      expect(changeEvents[0]!.changeType).toBe("update");
     });
 
     it("should reload all sources", async () => {
@@ -336,9 +344,7 @@ describe("CompositeConfigRepository", () => {
     });
 
     it("should throw ConfigurationError for schema validation failures", () => {
-      const sources: ICompositeSource[] = [
-        { repository: source1, priority: 1, enabled: true },
-      ];
+      const sources: ICompositeSource[] = [{ repository: source1, priority: 1, enabled: true }];
 
       repository = new CompositeConfigRepository({
         sources,
@@ -380,9 +386,7 @@ describe("CompositeConfigRepository", () => {
     });
 
     it("should handle multiple dispose calls gracefully", async () => {
-      const sources: ICompositeSource[] = [
-        { repository: source1, priority: 1, enabled: true },
-      ];
+      const sources: ICompositeSource[] = [{ repository: source1, priority: 1, enabled: true }];
 
       repository = new CompositeConfigRepository({
         sources,
@@ -427,7 +431,7 @@ describe("CompositeConfigRepository", () => {
       expect(repository.get("source49.value")).toBe(49);
 
       // Cleanup
-      repositories.forEach(repo => repo.dispose().catch(() => {}));
+      repositories.forEach((repo) => repo.dispose().catch(() => {}));
     });
 
     it("should cache merged configuration for repeated access", () => {
@@ -442,7 +446,7 @@ describe("CompositeConfigRepository", () => {
       });
 
       const startTime = performance.now();
-      
+
       // Access same key multiple times
       for (let i = 0; i < 1000; i++) {
         repository.get("app.name");

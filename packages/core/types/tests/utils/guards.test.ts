@@ -132,13 +132,14 @@ describe("Type Guards", () => {
   describe("Agent type guards", () => {
     it("should correctly identify IAgentMetadata", () => {
       const validAgent: IAgentMetadata = {
-        id: "agent-1",
+        id: "agent-1" as any,
         name: "TestAgent",
         version: "1.0.0",
         capabilities: [],
         status: "active",
         registeredAt: new Date().toISOString(),
         lastHeartbeat: new Date().toISOString(),
+        metadata: {},
       };
 
       expect(isAgentMetadata(validAgent)).toBe(true);
@@ -152,7 +153,7 @@ describe("Type Guards", () => {
         version: "1.0.0",
         description: "Processes data",
         parameters: [],
-        returns: { type: "string" },
+        returns: { type: "string", description: "" },
       };
 
       expect(isAgentCapability(validCapability)).toBe(true);
@@ -164,7 +165,7 @@ describe("Type Guards", () => {
         name: "TestAgent",
         version: "1.0.0",
         capabilities: [],
-        endpoint: "http://localhost:3000",
+        // no endpoint field in type
       };
 
       expect(isAgentRegistration(validRegistration)).toBe(true);
@@ -173,8 +174,8 @@ describe("Type Guards", () => {
 
     it("should correctly identify IAgentHealth", () => {
       const validHealth: IAgentHealth = {
-        agentId: "agent-1",
-        status: "healthy",
+        agentId: "agent-1" as any,
+        status: "active" as any,
         lastHeartbeat: new Date().toISOString(),
       };
 
@@ -195,7 +196,7 @@ describe("Type Guards", () => {
         dependencies: [],
         timeout: 30000,
         priority: "normal",
-        retryPolicy: { maxRetries: 3, backoffMultiplier: 2 },
+        retryPolicy: { retries: 3, backoffMultiplier: 2 } as any,
       };
 
       expect(isTaskDefinition(validTask)).toBe(true);
@@ -243,7 +244,7 @@ describe("Type Guards", () => {
       correlationId: "corr-1" as any,
       type: "command",
       payload: {},
-      metadata: {},
+      metadata: { source: "test", version: "1" } as any,
       timestamp: new Date().toISOString() as any,
     };
 
@@ -303,7 +304,8 @@ describe("Type Guards", () => {
       const errorMsg: IErrorMessage = {
         ...baseMessage,
         type: "error",
-        severity: "high",
+        severity: "error",
+        payload: { code: "E_TEST", message: "Test error" },
       };
 
       expect(isErrorMessage(errorMsg)).toBe(true);
@@ -350,7 +352,7 @@ describe("Type Guards", () => {
         name: "TestError",
         message: "Test error message",
         code: "TEST_ERROR",
-        context: { timestamp: new Date(), component: "test" },
+        context: { timestamp: new Date().toISOString() as any, component: "test" },
         severity: "medium",
         category: "system",
         recoverable: true,
@@ -363,7 +365,7 @@ describe("Type Guards", () => {
 
     it("should correctly identify IErrorContext", () => {
       const validContext: IErrorContext = {
-        timestamp: new Date(),
+        timestamp: new Date().toISOString() as any,
         component: "test-component",
       };
 

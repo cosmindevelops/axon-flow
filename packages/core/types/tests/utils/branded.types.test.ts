@@ -165,12 +165,13 @@ describe("Branded Types", () => {
   describe("Type assertion utilities", () => {
     it("should assert brand type", () => {
       const value = "test";
+      const assertValue: string = value;
 
       // assertBrand doesn't throw in our implementation
       // It's primarily for type narrowing
-      expect((): void => {
-        assertBrand<string, "TestBrand">(value);
-      }).not.toThrow();
+      // Call assertion for type-narrowing only; no runtime throw expected
+      assertBrand<string, "TestBrand">(assertValue);
+      expect(value).toBe("test");
     });
 
     it("should check if value is branded", () => {

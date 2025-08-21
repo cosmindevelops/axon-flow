@@ -3,13 +3,13 @@
  * @module @axon/config/tests/repositories/file-config
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { writeFile, unlink, mkdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { z } from "zod";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 import { ConfigurationError } from "@axon/errors";
+import { existsSync } from "node:fs";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 import { FileConfigRepository } from "../../src/repositories/file-config.repository.js";
 import type { IConfigChangeEvent } from "../../src/types/index.js";
 
@@ -43,11 +43,11 @@ describe("FileConfigRepository", () => {
   beforeEach(async () => {
     testDir = join(tmpdir(), `axon-config-test-${Date.now()}`);
     testFilePath = join(testDir, "test-config.json");
-    
+
     if (!existsSync(testDir)) {
       await mkdir(testDir, { recursive: true });
     }
-    
+
     await writeFile(testFilePath, JSON.stringify(testConfig, null, 2));
   });
 
@@ -55,7 +55,7 @@ describe("FileConfigRepository", () => {
     if (repository) {
       await repository.dispose();
     }
-    
+
     try {
       if (existsSync(testFilePath)) {
         await unlink(testFilePath);
@@ -78,7 +78,7 @@ describe("FileConfigRepository", () => {
 
     it("should throw ConfigurationError for non-existent file", () => {
       const nonExistentPath = join(testDir, "non-existent.json");
-      
+
       expect(() => {
         new FileConfigRepository({
           filePath: nonExistentPath,
@@ -109,7 +109,7 @@ describe("FileConfigRepository", () => {
 
     it("should load and validate configuration with schema", () => {
       const config = repository.load(testSchema);
-      
+
       expect(config).toEqual(testConfig);
       expect(config.app.name).toBe("test-app");
       expect(config.database.port).toBe(5432);
@@ -136,13 +136,13 @@ describe("FileConfigRepository", () => {
     it("should validate data against schema", () => {
       const validData = { app: { name: "test", version: "1.0" }, database: { host: "localhost", port: 3000 } };
       const result = repository.validate(validData, testSchema);
-      
+
       expect(result).toEqual(validData);
     });
 
     it("should throw ConfigurationError for invalid data validation", () => {
       const invalidData = { app: { name: 123 } }; // name should be string
-      
+
       expect(() => {
         repository.validate(invalidData, testSchema);
       }).toThrow(ConfigurationError);
@@ -172,7 +172,7 @@ describe("FileConfigRepository", () => {
 
     it("should emit change events on configuration reload", async () => {
       const changeEvents: IConfigChangeEvent[] = [];
-      
+
       const unsubscribe = repository.watch((event) => {
         changeEvents.push(event);
       });
@@ -186,19 +186,19 @@ describe("FileConfigRepository", () => {
       await repository.reload();
 
       // Wait for event emission
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       expect(changeEvents).toHaveLength(1);
-      expect(changeEvents[0].changeType).toBe("reload");
-      expect(changeEvents[0].affectedKeys).toContain("app.version");
-      expect(changeEvents[0].source).toBe(testFilePath);
+      expect(changeEvents[0]!.changeType).toBe("reload");
+      expect(changeEvents[0]!.affectedKeys).toContain("app.version");
+      expect(changeEvents[0]!.source).toBe(testFilePath);
 
       unsubscribe();
     });
 
     it("should handle file watch errors gracefully", async () => {
       const errorEvents: IConfigChangeEvent[] = [];
-      
+
       repository.watch((event) => {
         if (event.changeType === "error") {
           errorEvents.push(event);
@@ -210,18 +210,18 @@ describe("FileConfigRepository", () => {
       await repository.reload();
 
       // Wait for error event
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       expect(errorEvents).toHaveLength(1);
-      expect(errorEvents[0].changeType).toBe("error");
+      expect(errorEvents[0]!.changeType).toBe("error");
     });
 
     it("should unsubscribe change listeners", () => {
       const listener = vi.fn();
       const unsubscribe = repository.watch(listener);
-      
+
       unsubscribe();
-      
+
       // Verify listener is removed (internal state check would be needed)
       expect(typeof unsubscribe).toBe("function");
     });
@@ -237,7 +237,7 @@ describe("FileConfigRepository", () => {
 
     it("should provide repository metadata", () => {
       const metadata = repository.getMetadata();
-      
+
       expect(metadata.source).toBe(testFilePath);
       expect(metadata.type).toBe("file");
       expect(metadata.platform).toBe("node");
@@ -251,14 +251,14 @@ describe("FileConfigRepository", () => {
 
     it("should update lastModified on file changes", async () => {
       const initialMetadata = repository.getMetadata();
-      
+
       // Wait a bit to ensure timestamp difference
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       const updatedConfig = { ...testConfig, newField: "value" };
       await writeFile(testFilePath, JSON.stringify(updatedConfig, null, 2));
       await repository.reload();
-      
+
       const updatedMetadata = repository.getMetadata();
       expect(updatedMetadata.lastModified).toBeGreaterThanOrEqual(initialMetadata.lastModified);
     });
@@ -347,19 +347,19 @@ describe("FileConfigRepository", () => {
       await writeFile(largePath, JSON.stringify(largeConfig, null, 2));
 
       const startTime = performance.now();
-      
+
       const largeRepository = new FileConfigRepository({
         filePath: largePath,
         watchForChanges: false,
       });
 
       const loadTime = performance.now() - startTime;
-      
+
       expect(loadTime).toBeLessThan(1000); // Should load within 1 second
       expect(largeRepository.get("data")).toHaveLength(1000);
 
       await largeRepository.dispose();
-      
+
       try {
         await unlink(largePath);
       } catch {
@@ -387,7 +387,7 @@ describe("FileConfigRepository", () => {
       }
 
       // Wait for debounce
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       // Should have fewer events than changes due to debouncing
       expect(changeEvents.length).toBeLessThanOrEqual(5);

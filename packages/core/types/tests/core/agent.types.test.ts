@@ -9,7 +9,7 @@ import type {
   IAgentCapability,
   IAgentHealth,
   IAgentMetadata,
-  IAgentRegistration
+  IAgentRegistration,
 } from "../../src/core/agent.types.js";
 
 describe("Agent Types", () => {
@@ -27,7 +27,7 @@ describe("Agent Types", () => {
             parameters: [],
             returns: {
               type: "string",
-              description: ""
+              description: "",
             },
           },
         ],
@@ -53,7 +53,7 @@ describe("Agent Types", () => {
         status: "inactive",
         registeredAt: "2024-01-01T00:00:00Z",
         lastHeartbeat: "2024-01-01T00:00:00Z",
-        metadata: {}
+        metadata: {},
       };
 
       expect(minimal.name).toBe("MinimalAgent");
@@ -92,8 +92,8 @@ describe("Agent Types", () => {
       };
 
       expect(capability.parameters).toHaveLength(2);
-      expect(capability.parameters[0].required).toBe(true);
-      expect(capability.parameters[1].required).toBe(false);
+      expect(capability.parameters[0]!.required).toBe(true);
+      expect(capability.parameters[1]!.required).toBe(false);
       expect(capability.timeout).toBe(30000);
     });
   });
@@ -111,7 +111,7 @@ describe("Agent Types", () => {
             parameters: [],
             returns: {
               type: "boolean",
-              description: ""
+              description: "",
             },
           },
         ],
@@ -123,7 +123,7 @@ describe("Agent Types", () => {
 
       expect(registration.name).toBe("RegistrationAgent");
       expect(registration.version).toBe("1.0.0");
-      expect(registration.metadata?.region).toBe("us-east-1");
+      expect(registration.metadata?.["region"]).toBe("us-east-1");
     });
   });
 
@@ -157,7 +157,7 @@ describe("Agent Types", () => {
     it("should use agent status values", () => {
       const statuses: AgentStatus[] = ["active", "inactive", "registering", "error", "disconnected"];
 
-      statuses.forEach(status => {
+      statuses.forEach((status) => {
         expect(["active", "inactive", "registering", "error", "disconnected"]).toContain(status);
       });
     });

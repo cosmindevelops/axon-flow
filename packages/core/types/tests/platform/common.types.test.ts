@@ -44,7 +44,7 @@ describe("Platform Common Types", () => {
       expect(typeof isBrowser).toBe("boolean");
 
       // In node test environment, this should be false
-      if (typeof window === "undefined") {
+      if (typeof (globalThis as any).window === "undefined") {
         expect(isBrowser).toBe(false);
       }
     });

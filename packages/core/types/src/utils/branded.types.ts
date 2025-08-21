@@ -209,7 +209,7 @@ export const createSemVer = (value: string): SemVer => brand<string, "SemVer">(v
 /**
  * Assert that a value is of a branded type
  */
-export const assertBrand = <T, B extends string>(value: T): asserts value is Brand<T, B> => {
+export const assertBrand: <T, B extends string>(value: T) => asserts value is Brand<T, B> = (_value) => {
   // Runtime assertion would go here if needed
   // This is primarily for compile-time type narrowing
 };
