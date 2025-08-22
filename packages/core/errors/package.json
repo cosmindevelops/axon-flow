@@ -29,8 +29,5 @@
   "dependencies": {
     "@axon/types": "workspace:*"
   },
-  "devDependencies": {
-    "@axon/typescript-config": "workspace:*",
-    "@axon/vitest-config": "workspace:*"
-  }
+  "devDependencies": {}
 }

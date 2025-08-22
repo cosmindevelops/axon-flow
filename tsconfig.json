@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "./packages/tooling/typescript-config/src/base.json",
+  "extends": "./tools/config/typescript/base.json",
   "compilerOptions": {
     "noEmit": true,
     "allowJs": true,
@@ -21,7 +21,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "eslint.config.js",
-    "packages/tooling/eslint-config/src/**/*"
+    "tools/config/**/*"
   ],
   "exclude": ["node_modules", "packages/*/dist", "packages/*/build", "apps/*/dist", "apps/*/build", ".next", "coverage"]
 }

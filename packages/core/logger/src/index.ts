@@ -1,15 +1,33 @@
 /**
  * @axon/logger - High-performance structured logging with Pino
  *
- * Structured JSON logging with correlation ID support, multiple sink configuration,
- * and circuit breaker patterns for resilient logging infrastructure.
+ * High-performance structured JSON logging with:
+ * - Object pooling for reduced GC pressure
+ * - Circuit breaker pattern for resilient logging
+ * - Multiple transport support (console, file, remote)
+ * - Performance monitoring and metrics
+ * - Environment-specific optimizations
+ * - Correlation ID support
+ * - 10,000+ logs/second throughput
  */
 
 // Logger types and interfaces
 export type * from "./types/index.js";
 
 // Logger implementation classes
-export * from "./implementations/index.js";
+export * from "./logger/logger.classes.js";
 
-// Default logger instances
+// Transport providers
+export * from "./transport/transport.classes.js";
+
+// Object pooling utilities
+export * from "./pool/pool.classes.js";
+
+// Circuit breaker implementation
+export * from "./circuit-breaker/circuit-breaker.classes.js";
+
+// Utilities
+export * from "./utils/index.js";
+
+// Optimized logger instances
 export * from "./instances/index.js";

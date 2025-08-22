@@ -72,7 +72,7 @@
     "type-check": {
       "dependsOn": [],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig*.json", "src/**/*.{ts,tsx}", "package.json", "../../tsconfig.base.json"],
-      "outputs": ["dist/**/*.d.ts", "*.tsbuildinfo"]
+      "outputs": []
     },
     "format": {
       "inputs": [

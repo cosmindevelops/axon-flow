@@ -14,5 +14,11 @@ export type { IConfigRepository, BaseConfig } from "./types/index.js";
 // Repository implementations
 export * from "./repositories/index.js";
 
+// Builder implementations
+export * from "./builders/index.js";
+
+// Utilities
+export * from "./utils/index.js";
+
 // Singleton instances
 export * from "./instances/index.js";

@@ -10,17 +10,9 @@ export type CorrelationId = string;
 export type Timestamp = string; // ISO 8601 timestamp
 export type Version = string; // Semantic version string
 
-// Export all agent types
-export type * from "./agent.types.js";
-
-// Export all registry types
-export type * from "./registry.types.js";
-
-// Export all task types
-export type * from "./task.types.js";
-
-// Export all message types
-export type * from "./message.types.js";
-
-// Export all workflow and saga types
-export type * from "./workflow.types.js";
+// Export all subdomain types and schemas
+export * from "./agent/index.js";
+export * from "./message/index.js";
+export * from "./registry/index.js";
+export * from "./task/index.js";
+export * from "./workflow/index.js";

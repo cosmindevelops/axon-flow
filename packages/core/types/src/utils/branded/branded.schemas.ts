@@ -1,0 +1,5 @@
+/**
+ * Validation schemas placeholder
+ */
+
+export {};

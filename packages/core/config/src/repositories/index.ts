@@ -1,26 +1,24 @@
 /**
- * Configuration repository implementations
- * @module @axon/config/repositories
+ * Configuration Repository Domain
+ *
+ * Comprehensive repository implementations for configuration data management
+ * organized into specialized subdomains for different storage mechanisms
+ * and architectural patterns.
  */
 
-export { CachedConfigRepository } from "./cached-config.repository.js";
-export {
-  EnvironmentConfigRepository,
-  envToCamelCase,
-  parseBoolean,
-  parseNumber,
-  parseJSON,
-  parseArray,
-} from "./environment-config.repository.js";
+// Export base repository patterns and utilities (excluding CachedConfigRepository to avoid collision)
+export type * from "./base/base.types.js";
+export * from "./base/base.schemas.js";
+export { BaseConfigRepository, CachedConfigRepository as AbstractCachedConfigRepository } from "./base/base.classes.js";
 
-// New repository implementations
-export { FileConfigRepository } from "./file-config.repository.js";
-export type { IFileConfigOptions } from "./file-config.repository.js";
+// Export memory-based repositories (caching and volatile storage)
+export * from "./memory/index.js";
 
-export { MemoryConfigRepository } from "./memory-config.repository.js";
+// Export storage-based repositories (persistent storage)
+export * from "./storage/index.js";
 
-export { LocalStorageConfigRepository } from "./localstorage-config.repository.js";
-export type { ILocalStorageConfigOptions } from "./localstorage-config.repository.js";
+// Export environment-based repositories (system configuration)
+export * from "./environment/index.js";
 
-export { CompositeConfigRepository } from "./composite-config.repository.js";
-export type { ICompositeConfigOptions } from "./composite-config.repository.js";
+// Export composite repositories (multi-source orchestration)
+export * from "./composite/index.js";

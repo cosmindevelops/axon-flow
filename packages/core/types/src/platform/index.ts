@@ -5,11 +5,7 @@
  * including Node.js, browser, and common abstractions.
  */
 
-// Export all Node.js types
-export type * from "./node.types.js";
-
-// Export all browser types
-export type * from "./browser.types.js";
-
-// Export all common cross-platform types
-export * from "./common.types.js";
+// Export all subdomain types and schemas
+export * from "./browser/index.js";
+export * from "./node/index.js";
+export * from "./common/index.js";

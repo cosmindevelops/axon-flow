@@ -1,8 +1,23 @@
 /**
- * Configuration instances - Singleton instances for configuration repositories
+ * Configuration Instances Domain
+ *
+ * ⚠️ SPECIAL PURPOSE FOLDER ⚠️
+ * This domain provides pre-configured, ready-to-use configuration instances
+ * for common scenarios and environments. These are singleton instances that
+ * can be imported directly without manual setup.
+ *
+ * Purpose:
+ * - Pre-configured repository instances for immediate use
+ * - Environment-specific configuration setups
+ * - Common configuration patterns as reusable instances
+ * - Default configurations for quick prototyping
+ *
+ * Usage: Import instances when you need immediate configuration access
+ * without manual repository setup and configuration.
  */
 
-import { EnvironmentConfigRepository, CachedConfigRepository } from "../repositories/index.js";
+import { EnvironmentConfigRepository } from "../repositories/environment/index.js";
+import { CachedConfigRepository } from "../repositories/memory/index.js";
 
 /**
  * Default environment configuration repository instance

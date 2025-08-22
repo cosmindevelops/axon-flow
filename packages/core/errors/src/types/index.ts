@@ -2,7 +2,9 @@
  * Error type definitions and interfaces
  */
 
-import type { CorrelationId, Timestamp } from "@axon/types";
+// Local type definitions to avoid dependency issues
+type CorrelationId = string;
+type Timestamp = string;
 
 /**
  * Enhanced error context for debugging and tracing

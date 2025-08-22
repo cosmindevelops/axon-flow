@@ -1,5 +1,19 @@
 /**
- * Configuration types and interfaces
+ * Configuration Types Domain
+ *
+ * ⚠️ SPECIAL PURPOSE FOLDER ⚠️
+ * This is a centralized type definition domain that provides core TypeScript
+ * interfaces and type definitions used across the entire configuration package.
+ * Unlike other domains, this folder contains ONLY types and interfaces - no
+ * implementations or runtime code.
+ *
+ * Purpose:
+ * - Centralized type definitions for cross-domain consistency
+ * - Interface contracts for repository implementations
+ * - Platform and environment type definitions
+ * - Configuration schema type derivations
+ *
+ * Usage: Import types from this domain when implementing classes in other domains.
  */
 
 import type { z } from "zod";

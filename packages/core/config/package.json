@@ -28,10 +28,8 @@
   },
   "dependencies": {
     "@axon/errors": "workspace:*",
-    "@axon/types": "workspace:*"
+    "@axon/types": "workspace:*",
+    "zod": "^3.23.8"
   },
-  "devDependencies": {
-    "@axon/typescript-config": "workspace:*",
-    "@axon/vitest-config": "workspace:*"
-  }
+  "devDependencies": {}
 }

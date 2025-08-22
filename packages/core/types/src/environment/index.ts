@@ -2,5 +2,11 @@
  * Environment and configuration types
  */
 
-// Environment configuration types
-export type Environment = "development" | "staging" | "production";
+// Export all environment types
+export type * from "./environment.types.js";
+
+// Export all schemas
+export * from "./environment.schemas.js";
+
+// Export all classes (placeholder)
+export * from "./environment.classes.js";

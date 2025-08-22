@@ -5,11 +5,7 @@
  * schemas, providers, and hierarchy management.
  */
 
-// Export all schema types
-export type * from "./schema.types.js";
-
-// Export all provider types
-export type * from "./provider.types.js";
-
-// Export all hierarchy types
-export type * from "./hierarchy.types.js";
+// Export all subdomain types and schemas
+export * from "./hierarchy/index.js";
+export * from "./provider/index.js";
+export * from "./schema/index.js";

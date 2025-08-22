@@ -152,3 +152,4 @@ docs/personal/
 .eslintcache
 .stylelintcache
 .prettiercache
+/.claude/.claude-project-tree.md

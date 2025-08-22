@@ -1,12 +1,13 @@
 /**
- * Configuration validation schemas
- * @module @axon/config/schemas
+ * Configuration Schema Domain
+ *
+ * Comprehensive configuration validation schemas organized into
+ * infrastructure and application domains for better separation
+ * of concerns and maintainability.
  */
 
-export * from "./base.schemas.js";
-export * from "./database.schemas.js";
-export * from "./redis.schemas.js";
-export * from "./rabbitmq.schemas.js";
-export * from "./auth.schemas.js";
-export * from "./service.schemas.js";
-export * from "./config.schemas.js";
+// Export infrastructure-level schemas (system/platform)
+export * from "./infrastructure/index.js";
+
+// Export application-level schemas (business logic)
+export * from "./application/index.js";
