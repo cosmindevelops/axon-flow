@@ -9,4 +9,4 @@ export type * from "./schema.types.js";
 export * from "./schema.schemas.js";
 
 // Export all schema classes (placeholder)
-export * from "./schema.classes.js";
+export type * from "./schema.classes.js";

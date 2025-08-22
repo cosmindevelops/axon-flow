@@ -37,7 +37,6 @@ export interface IPlatformFeatures {
 export function detectPlatform(): ConfigPlatform {
   // Check for Node.js environment
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (typeof process === "object" && process !== null && "versions" in process) {
       return "node";
     }
@@ -47,7 +46,6 @@ export function detectPlatform(): ConfigPlatform {
 
   // Check for React Native
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (typeof navigator === "object" && navigator !== null && "product" in navigator) {
       const nav = navigator as { product: unknown };
       if (nav.product === "ReactNative") {
@@ -159,12 +157,10 @@ export function getRecommendedRepositories(platform?: ConfigPlatform): string[] 
  * Polyfill for performance.now() across environments
  */
 export function performanceNow(): number {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-boolean-expressions
   if (typeof performance !== "undefined" && performance?.now) {
     return performance.now();
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-boolean-expressions
   if (typeof process !== "undefined" && process?.hrtime) {
     const [seconds, nanoseconds] = process.hrtime();
     return seconds * 1000 + nanoseconds / 1000000;

@@ -5,7 +5,7 @@
 
 import { ConfigurationError } from "@axon/errors";
 import type { FSWatcher } from "node:fs";
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import type { z } from "zod";
 import { ZodError } from "zod";
@@ -284,8 +284,7 @@ export class FileConfigRepository implements IConfigRepository {
         });
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      const content = require("node:fs").readFileSync(this.filePath, this.encoding);
+      const content = readFileSync(this.filePath, this.encoding);
       this.config = JSON.parse(content as string) as Record<string, unknown>;
     } catch (error) {
       if (error instanceof ConfigurationError) {
@@ -350,10 +349,9 @@ export class FileConfigRepository implements IConfigRepository {
    */
   private setupFileWatcher(): void {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const fs = require("node:fs");
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
       this.fileWatcher = fs.watch(this.filePath, (eventType: string) => {
         if (eventType === "change" && !this.disposed) {
           this.debouncedReload();
@@ -865,7 +863,6 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
 
     const lastKey = keys[keys.length - 1];
     if (lastKey !== undefined && lastKey in current) {
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete current[lastKey];
     }
   }

@@ -4,7 +4,7 @@
  * @module @axon/config/builders/utils/performance-utils
  */
 
-import { ConfigurationError } from "@axon/errors";
+// ConfigurationError import removed as it's not used in this file
 import type { z } from "zod";
 import type {
   IObjectPool,
@@ -127,7 +127,7 @@ const repositoryPools = new Map<string, ObjectPool<unknown>>();
 /**
  * Test environment flag for unique pool keys
  */
-let isTestEnvironment = false;
+let _isTestEnvironment = false;
 
 /**
  * Get or create a repository pool
@@ -328,7 +328,7 @@ function generateHash(str: string): string {
  * Set test environment mode for unique pool keys
  */
 export function setTestEnvironment(testMode: boolean): void {
-  isTestEnvironment = testMode;
+  _isTestEnvironment = testMode;
 }
 
 /**

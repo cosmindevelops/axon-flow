@@ -29,7 +29,6 @@
   "dependencies": {
     "@axon/errors": "workspace:*",
     "@axon/types": "workspace:*",
-    "zod": "^3.23.8"
-  },
-  "devDependencies": {}
+    "zod": "^4.0.17"
+  }
 }

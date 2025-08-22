@@ -26,6 +26,9 @@ export * from "./pool/pool.classes.js";
 // Circuit breaker implementation
 export * from "./circuit-breaker/circuit-breaker.classes.js";
 
+// Correlation ID management
+export * from "./correlation/index.js";
+
 // Utilities
 export * from "./utils/index.js";
 

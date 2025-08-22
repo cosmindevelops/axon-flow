@@ -10,7 +10,7 @@
 export * from "./application.schemas.js";
 
 // Export application schema types
-export * from "./application.types.js";
+export type * from "./application.types.js";
 
 // Export application schema classes
 export * from "./application.classes.js";

@@ -6,7 +6,7 @@
 export type * from "./hierarchy.types.js";
 
 // Export all hierarchy schemas
-export * from "./hierarchy.schemas.js";
+export type * from "./hierarchy.schemas.js";
 
 // Export all hierarchy classes (placeholder)
-export * from "./hierarchy.classes.js";
+export type * from "./hierarchy.classes.js";

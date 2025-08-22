@@ -9,4 +9,4 @@ export type * from "./agent.types.js";
 export * from "./agent.schemas.js";
 
 // Export all agent classes (placeholder)
-export * from "./agent.classes.js";
+export type * from "./agent.classes.js";

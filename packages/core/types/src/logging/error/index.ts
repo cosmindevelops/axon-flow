@@ -9,4 +9,4 @@ export type * from "./error.types.js";
 export * from "./error.schemas.js";
 
 // Export all error classes (placeholder)
-export * from "./error.classes.js";
+export type * from "./error.classes.js";

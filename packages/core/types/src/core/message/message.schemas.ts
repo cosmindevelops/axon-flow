@@ -76,7 +76,7 @@ export const replySchema = messageSchema.extend({
   success: z.boolean(),
   error: z.string().optional(),
   errorCode: z.string().optional(),
-  errorDetails: z.record(z.unknown()).optional(),
+  errorDetails: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Error message schema
@@ -86,7 +86,7 @@ export const errorMessageSchema = messageSchema.extend({
   errorCode: z.string(),
   severity: z.enum(["low", "medium", "high", "critical"]),
   stack: z.string().optional(),
-  context: z.record(z.unknown()).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
   recoverable: z.boolean().optional(),
   retryable: z.boolean().optional(),
 });

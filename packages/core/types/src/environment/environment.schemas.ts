@@ -19,10 +19,10 @@ export const environmentConfigSchema = z.object({
   debug: z.boolean().optional(),
   verbose: z.boolean().optional(),
   logLevel: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).optional(),
-  features: z.record(z.boolean()).optional(),
+  features: z.record(z.string(), z.boolean()).optional(),
   apiUrl: z.string().url().optional(),
   cdnUrl: z.string().url().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Environment variables schema

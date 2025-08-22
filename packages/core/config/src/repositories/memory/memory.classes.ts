@@ -263,7 +263,6 @@ export class MemoryConfigRepository implements IWritableConfigRepository {
 
     const lastKey = keys[keys.length - 1];
     if (lastKey !== undefined && lastKey in current) {
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete current[lastKey];
     }
   }

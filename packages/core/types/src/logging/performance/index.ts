@@ -9,4 +9,4 @@ export type * from "./performance.types.js";
 export * from "./performance.schemas.js";
 
 // Export all performance classes (placeholder)
-export * from "./performance.classes.js";
+export type * from "./performance.classes.js";

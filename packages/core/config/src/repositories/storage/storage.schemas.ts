@@ -22,9 +22,9 @@ export const FILE_OPTIONS_SCHEMA = z.object({
 export const STORAGE_OPTIONS_SCHEMA = z.object({
   storageKey: z.string().min(1),
   namespace: z.string().optional(),
-  serializeFunction: z.function().optional(),
-  deserializeFunction: z.function().optional(),
-  fallbackData: z.record(z.unknown()).optional().default({}),
+  serializeFunction: z.any().optional(), // Function - can't validate further with Zod
+  deserializeFunction: z.any().optional(), // Function - can't validate further with Zod
+  fallbackData: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 /**

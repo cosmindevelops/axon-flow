@@ -9,7 +9,7 @@ import { z } from "zod";
  * Memory options schema
  */
 export const MEMORY_OPTIONS_SCHEMA = z.object({
-  data: z.record(z.unknown()).optional().default({}),
+  data: z.record(z.string(), z.unknown()).optional().default({}),
   readOnly: z.boolean().optional().default(false),
   deepClone: z.boolean().optional().default(true),
   validateData: z.boolean().optional().default(true),
@@ -29,7 +29,7 @@ export const CACHE_OPTIONS_SCHEMA = z.object({
  * Memory repository schema
  */
 export const MEMORY_REPOSITORY_SCHEMA = z.object({
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
   readOnly: z.boolean().optional(),
   deepClone: z.boolean().optional(),
 });

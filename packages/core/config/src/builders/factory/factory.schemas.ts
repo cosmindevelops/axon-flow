@@ -17,7 +17,7 @@ export const FACTORY_OPTIONS_SCHEMA = z.object({
   environment: ENVIRONMENT_SCHEMA.optional(),
   platform: z.enum(["node", "browser", "react-native"]).optional(),
   strictMode: z.boolean().optional().default(false),
-  customDetection: z.function().optional(),
+  customDetection: z.any().optional(), // Function - can't validate further with Zod
   validation: z
     .object({
       warnOnUnknownEnvironment: z.boolean().optional().default(true),
@@ -31,7 +31,7 @@ export const FACTORY_OPTIONS_SCHEMA = z.object({
  */
 export const TEST_FIXTURE_SCHEMA = z.object({
   name: z.string().min(1),
-  config: z.record(z.unknown()),
+  config: z.record(z.string(), z.unknown()),
   description: z.string().optional(),
 });
 

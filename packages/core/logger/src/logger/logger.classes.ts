@@ -4,9 +4,10 @@
 
 // Removed problematic config import to fix lint errors
 // import { config } from "@axon/config";
-// Temporary workaround for types package issues
-type CorrelationId = string;
-import pino, { type Logger } from "pino";
+import type { CorrelationId } from "../correlation/correlation.types.js";
+import { CorrelationManagerFactory } from "../correlation/correlation.classes.js";
+import type { IEnhancedCorrelationManager } from "../correlation/correlation.types.js";
+import type { Logger } from "pino";
 import {
   executeWithCircuitBreaker,
   getCircuitBreaker,
@@ -17,29 +18,46 @@ import { MultiTransportManager } from "../transport/transport.classes.js";
 import type { ILogger, ILoggerConfig, IPerformanceMetrics } from "../types/index.js";
 import { PerformanceTracker } from "../utils/utils.classes.js";
 
+// Dynamic pino import to handle CommonJS compatibility
+let pinoModule: any = null;
+
+const getPino = async () => {
+  if (!pinoModule) {
+    pinoModule = await import("pino");
+    return pinoModule.default || pinoModule;
+  }
+  return pinoModule.default || pinoModule;
+};
+
 // Type-safe pino factory function
-const createPinoLogger = (config: Record<string, unknown>): Logger => {
+const createPinoLogger = async (config: Record<string, unknown>): Promise<Logger> => {
+  const pino = await getPino();
   return pino(config);
 };
 
 // Type-safe access to pino static properties
-const pinoStatics = {
-  stdSerializers: pino.stdSerializers,
-  stdTimeFunctions: {
-    isoTime: pino.stdTimeFunctions.isoTime,
-    unixTime: pino.stdTimeFunctions.unixTime,
-  },
+const getPinoStatics = async () => {
+  const pino = await getPino();
+  return {
+    stdSerializers: pino.stdSerializers,
+    stdTimeFunctions: {
+      isoTime: pino.stdTimeFunctions.isoTime,
+      unixTime: pino.stdTimeFunctions.unixTime,
+    },
+  };
 };
 
 /**
  * High-performance Pino-based logger implementation
  */
 export class HighPerformancePinoLogger implements ILogger {
-  private readonly logger: Logger;
+  private logger: Logger | null = null;
   private correlationId?: CorrelationId;
   private readonly config: ILoggerConfig;
   private readonly transportManager?: MultiTransportManager;
   private readonly performanceTracker: PerformanceTracker;
+  private readonly correlationManager: IEnhancedCorrelationManager;
+  private readonly loggerInitPromise: Promise<void>;
 
   constructor(configOptions: Partial<ILoggerConfig> = {}) {
     // Use default config as base (removed problematic config.get() call)
@@ -59,13 +77,29 @@ export class HighPerformancePinoLogger implements ILogger {
     // Initialize performance tracker
     this.performanceTracker = new PerformanceTracker(this.config.performance);
 
+    // Initialize correlation manager
+    const factory = new CorrelationManagerFactory();
+    this.correlationManager = factory.create();
+
     // Create transport manager if transports are configured
     if (this.config.transports.length > 0) {
       this.transportManager = new MultiTransportManager(this.config.transports);
     }
 
-    // Configure Pino logger
-    this.logger = this.createPinoLogger();
+    // Configure Pino logger asynchronously
+    this.loggerInitPromise = this.initializePinoLogger();
+  }
+
+  private async initializePinoLogger(): Promise<void> {
+    this.logger = await this.createPinoLogger();
+  }
+
+  private async ensureLoggerInitialized(): Promise<Logger> {
+    await this.loggerInitPromise;
+    if (!this.logger) {
+      throw new Error("Logger failed to initialize");
+    }
+    return this.logger;
   }
 
   debug(message: string, meta: Record<string, unknown> = {}): void {
@@ -86,8 +120,44 @@ export class HighPerformancePinoLogger implements ILogger {
 
   withCorrelation(correlationId: CorrelationId): ILogger {
     const newLogger = new HighPerformancePinoLogger(this.config);
-    newLogger.correlationId = correlationId;
+    (newLogger as any).correlationId = correlationId;
+
+    // Share the correlation manager to ensure consistent context
+    (newLogger as any).correlationManager = this.correlationManager;
+
+    // Share the logger initialization promise to use the same Pino instance
+    (newLogger as any).loggerInitPromise = this.loggerInitPromise;
+    (newLogger as any).logger = this.logger;
+
     return newLogger;
+  }
+
+  /**
+   * Execute function with correlation context
+   */
+  withContext<T>(correlationId: CorrelationId, fn: () => T): T {
+    return this.correlationManager.with(correlationId, fn);
+  }
+
+  /**
+   * Execute async function with correlation context
+   */
+  async withContextAsync<T>(correlationId: CorrelationId, fn: () => Promise<T>): Promise<T> {
+    return this.correlationManager.withAsync(correlationId, fn);
+  }
+
+  /**
+   * Get current correlation ID from context
+   */
+  getCurrentCorrelationId(): CorrelationId | undefined {
+    return this.correlationManager.current();
+  }
+
+  /**
+   * Create new correlation ID
+   */
+  createCorrelationId(prefix?: string): CorrelationId {
+    return this.correlationManager.create(prefix);
   }
 
   async flush(): Promise<void> {
@@ -118,24 +188,29 @@ export class HighPerformancePinoLogger implements ILogger {
   private logWithPerformanceTracking(level: string, message: string, meta: Record<string, unknown>): void {
     const finishTiming = this.performanceTracker.startOperation();
 
-    try {
-      if (this.transportManager) {
-        // Use custom transports with object pooling
-        void this.logToTransports(level, message, meta);
-      } else {
-        // Use standard Pino logging
-        this.logToPino(level, message, meta);
-      }
+    const logOperation = async (): Promise<void> => {
+      try {
+        if (this.transportManager) {
+          // Use custom transports with object pooling
+          await this.logToTransports(level, message, meta);
+        } else {
+          // Use standard Pino logging
+          await this.logToPino(level, message, meta);
+        }
 
-      this.performanceTracker.recordSuccess();
-    } catch (error) {
-      this.performanceTracker.recordFailure();
-      // Fall back to console.error to ensure critical errors aren't lost
-      console.error("Logger failed:", error);
-      console.error("Original message:", { level, message, meta });
-    } finally {
-      finishTiming();
-    }
+        this.performanceTracker.recordSuccess();
+      } catch (error) {
+        this.performanceTracker.recordFailure();
+        // Fall back to console.error to ensure critical errors aren't lost
+        console.error("Logger failed:", error);
+        console.error("Original message:", { level, message, meta });
+      } finally {
+        finishTiming();
+      }
+    };
+
+    // Execute async operation without blocking
+    void logOperation();
   }
 
   private async logToTransports(level: string, message: string, meta: Record<string, unknown>): Promise<void> {
@@ -164,28 +239,30 @@ export class HighPerformancePinoLogger implements ILogger {
     }
   }
 
-  private logToPino(level: string, message: string, meta: Record<string, unknown>): void {
+  private async logToPino(level: string, message: string, meta: Record<string, unknown>): Promise<void> {
+    const logger = await this.ensureLoggerInitialized();
     const enrichedMeta = this.addCorrelation(meta);
 
     switch (level) {
       case "debug":
-        this.logger.debug(enrichedMeta, message);
+        logger.debug(enrichedMeta, message);
         break;
       case "info":
-        this.logger.info(enrichedMeta, message);
+        logger.info(enrichedMeta, message);
         break;
       case "warn":
-        this.logger.warn(enrichedMeta, message);
+        logger.warn(enrichedMeta, message);
         break;
       case "error":
-        this.logger.error(enrichedMeta, message);
+        logger.error(enrichedMeta, message);
         break;
       default:
-        this.logger.info(enrichedMeta, message);
+        logger.info(enrichedMeta, message);
     }
   }
 
-  private createPinoLogger(): Logger {
+  private async createPinoLogger(): Promise<Logger> {
+    const pinoStatics = await getPinoStatics();
     const pinoConfig: Record<string, unknown> = {
       level: this.config.logLevel,
       formatters: {
@@ -224,16 +301,47 @@ export class HighPerformancePinoLogger implements ILogger {
           ignore: "pid,hostname",
         },
       };
+    } else if (this.config.environment === "test") {
+      // Test environment: Use custom stream if provided for output capture
+      pinoConfig["level"] = this.config.logLevel;
+
+      if (this.config.testStream) {
+        // CRITICAL FIX: Pass stream as second argument to Pino, not as config
+        const pino = await getPino();
+        return pino(pinoConfig, this.config.testStream);
+      } else {
+        // Default test stream to process.stdout if no custom stream provided
+        const pino = await getPino();
+        return pino(pinoConfig, process.stdout);
+      }
     }
 
     return createPinoLogger(pinoConfig);
   }
 
   private addCorrelation(meta: Record<string, unknown>): Record<string, unknown> {
-    if (!this.config.enableCorrelationIds || this.correlationId === undefined) {
+    if (!this.config.enableCorrelationIds) {
       return meta;
     }
-    return { ...meta, correlationId: this.correlationId };
+
+    // Priority: manual correlation ID > automatic context detection
+    let correlationId = this.correlationId;
+
+    // If no manual correlation ID, try to get from correlation manager context
+    if (!correlationId) {
+      try {
+        correlationId = this.correlationManager.current();
+      } catch (error) {
+        // Silently handle correlation manager errors to prevent logging failures
+        console.warn("Failed to get correlation context:", error);
+      }
+    }
+
+    if (!correlationId) {
+      return meta;
+    }
+
+    return { ...meta, correlationId };
   }
 
   private getDefaultConfig(): ILoggerConfig {

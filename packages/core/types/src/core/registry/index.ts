@@ -9,4 +9,4 @@ export type * from "./registry.types.js";
 export * from "./registry.schemas.js";
 
 // Export all registry classes (placeholder)
-export * from "./registry.classes.js";
+export type * from "./registry.classes.js";

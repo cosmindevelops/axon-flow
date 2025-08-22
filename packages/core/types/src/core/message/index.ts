@@ -9,4 +9,4 @@ export type * from "./message.types.js";
 export * from "./message.schemas.js";
 
 // Export all message classes (placeholder)
-export * from "./message.classes.js";
+export type * from "./message.classes.js";

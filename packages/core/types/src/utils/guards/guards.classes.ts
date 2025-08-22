@@ -5,7 +5,12 @@
  * All guards follow the pattern: is[Type](value): value is [Type]
  */
 
-import type { IAgentCapability, IAgentHealth, IAgentMetadata, IAgentRegistration } from "../../core/agent/agent.types.js";
+import type {
+  IAgentCapability,
+  IAgentHealth,
+  IAgentMetadata,
+  IAgentRegistration,
+} from "../../core/agent/agent.types.js";
 
 import type { ITaskDefinition, ITaskExecution, IWorkflowDefinition, TaskStatus } from "../../core/task/task.types.js";
 

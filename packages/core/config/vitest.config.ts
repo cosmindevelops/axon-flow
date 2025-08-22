@@ -2,34 +2,26 @@
  * Vitest configuration for @axon/config package
  */
 
-import { defineConfig } from "vitest/config";
+import { defineProject, mergeConfig } from "vitest/config";
+import { baseConfig } from "../../../tools/config/vitest/base.js";
 
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: "node",
-    include: ["tests/**/*.{test,spec}.{ts,tsx}"],
-    exclude: ["**/node_modules/**", "**/dist/**", "**/build/**"],
-    setupFiles: ["./tests/test-setup.ts"],
-    coverage: {
-      enabled: false,
-      provider: "v8",
-      reporter: ["text", "json", "html"],
-      include: ["src/**/*.{ts,tsx}"],
-      exclude: [
-        "**/*.d.ts",
-        "**/*.config.*",
-        "**/*.test.*",
-        "**/*.spec.*",
-        "**/types/**",
-        "**/index.ts",
-      ],
-      thresholds: {
-        lines: 95,
-        functions: 95,
-        branches: 90,
-        statements: 95,
+export default defineProject(
+  mergeConfig(baseConfig, {
+    test: {
+      name: "@axon/config",
+      root: "./",
+      include: ["tests/**/*.{test,spec}.{ts,tsx}"],
+      exclude: ["**/node_modules/**", "**/dist/**", "**/build/**"],
+      coverage: {
+        enabled: true,
+        include: ["src/**/*.{ts,tsx}"],
+        thresholds: {
+          lines: 95,
+          functions: 95,
+          branches: 90,
+          statements: 95,
+        },
       },
     },
-  },
-});
+  }),
+);

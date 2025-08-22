@@ -9,14 +9,9 @@ import { CachedConfigRepository, MemoryConfigRepository } from "../../repositori
 import { CompositeConfigRepository } from "../../repositories/composite/composite.classes.js";
 import { EnvironmentConfigRepository } from "../../repositories/environment/environment.classes.js";
 import { FileConfigRepository, LocalStorageConfigRepository } from "../../repositories/storage/storage.classes.js";
-import type { ConfigPlatform, ICompositeSource, IConfigRepository } from "../../types/index.js";
+import type { ICompositeSource, IConfigRepository } from "../../types/index.js";
 import { detectPlatform } from "../../utils/utils.classes.js";
-import {
-  getRepositoryPool,
-  generateConfigCacheKey,
-  generateSchemaHash,
-  globalValidationCache,
-} from "../utils/utils.classes.js";
+import { generateConfigCacheKey, generateSchemaHash, globalValidationCache } from "../utils/utils.classes.js";
 import type {
   ConfigMergeStrategy,
   IBuilderState,
@@ -264,7 +259,7 @@ export class ConfigBuilder implements IFluentConfigBuilder {
     try {
       schema.parse(config);
       globalValidationCache.set(cacheKey, "validated", schemaHash);
-    } catch (error) {
+    } catch (_error) {
       if (this.state.validationOptions.errorOnInvalidSchema) {
         throw new ConfigurationError("Configuration validation failed", {
           operation: "validateWithCache",

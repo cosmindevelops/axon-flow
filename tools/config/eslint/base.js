@@ -73,7 +73,7 @@ export default tseslint.config(
     },
     rules: {
       // TypeScript specific rules - kept relaxed for TDD
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {
@@ -161,7 +161,7 @@ export default tseslint.config(
       "no-var": "error",
       "object-shorthand": "warn",
       "prefer-template": "warn",
-      "no-duplicate-imports": "off", // Handled by TypeScript import rules
+      "no-duplicate-imports": "off",
       "no-useless-rename": "warn",
       "prefer-destructuring": "off",
 

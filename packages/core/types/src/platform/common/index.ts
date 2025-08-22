@@ -9,4 +9,4 @@ export type * from "./common.types.js";
 export * from "./common.schemas.js";
 
 // Export all common classes (placeholder)
-export * from "./common.classes.js";
+export type * from "./common.classes.js";

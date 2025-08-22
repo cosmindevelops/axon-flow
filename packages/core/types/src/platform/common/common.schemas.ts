@@ -108,8 +108,8 @@ export const platformInfoSchema = z.object({
   environment: z.string(),
 });
 
-// Environment variables schema
-export const environmentVariablesSchema = z.record(z.string(), z.string().optional());
+// Platform environment variables schema
+export const platformEnvironmentVariablesSchema = z.record(z.string(), z.string().optional());
 
 // Environment capabilities schema
 export const environmentCapabilitiesSchema = z.object({
@@ -149,15 +149,16 @@ export const runtimeInfoSchema = z.object({
   cpu: cpuInfoSchema,
 });
 
-// Environment schema
-export const environmentSchema = z.object({
+// Platform environment schema
+export const platformEnvironmentSchema = z.object({
   platform: platformInfoSchema,
-  variables: environmentVariablesSchema,
+  variables: platformEnvironmentVariablesSchema,
   capabilities: environmentCapabilitiesSchema,
   runtime: runtimeInfoSchema,
 });
 
 // Type inference helpers
 export type InferredPlatformInfo = z.infer<typeof platformInfoSchema>;
-export type InferredPlatformEnvironment = z.infer<typeof environmentSchema>;
+export type InferredPlatformEnvironment = z.infer<typeof platformEnvironmentSchema>;
 export type InferredRuntimeInfo = z.infer<typeof runtimeInfoSchema>;
+export type InferredPlatformEnvironmentVariables = z.infer<typeof platformEnvironmentVariablesSchema>;

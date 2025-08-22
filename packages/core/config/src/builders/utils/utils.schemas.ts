@@ -21,8 +21,8 @@ export const POOL_STATS_SCHEMA = z.object({
  * Object pool options schema
  */
 export const OBJECT_POOL_OPTIONS_SCHEMA = z.object({
-  factory: z.function(),
-  reset: z.function().optional(),
+  factory: z.any(), // Function - can't validate further with Zod
+  reset: z.any().optional(), // Function - can't validate further with Zod
   maxSize: z.number().min(1).optional().default(10),
   initialSize: z.number().min(0).optional().default(0),
 });

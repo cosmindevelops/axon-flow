@@ -9,4 +9,4 @@ export type * from "./task.types.js";
 export * from "./task.schemas.js";
 
 // Export all task classes (placeholder)
-export * from "./task.classes.js";
+export type * from "./task.classes.js";

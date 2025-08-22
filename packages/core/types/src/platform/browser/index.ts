@@ -9,4 +9,4 @@ export type * from "./browser.types.js";
 export * from "./browser.schemas.js";
 
 // Export all browser classes (placeholder)
-export * from "./browser.classes.js";
+export type * from "./browser.classes.js";

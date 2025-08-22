@@ -9,7 +9,7 @@ import { glob } from "glob";
 import path from "node:path";
 import { defineConfig, mergeConfig } from "vitest/config";
 
-const baseConfig = defineConfig({
+export const baseConfig = defineConfig({
   test: {
     // Performance optimizations
     globals: true,
@@ -57,14 +57,7 @@ const baseConfig = defineConfig({
       provider: "v8",
       reporter: ["text", "json", "html"],
       include: ["src/**/*.{ts,tsx}"],
-      exclude: [
-        "**/*.d.ts",
-        "**/*.config.*",
-        "**/*.test.*",
-        "**/*.spec.*",
-        "**/types/**",
-        "**/index.ts", // Barrel exports
-      ],
+      exclude: ["**/*.d.ts", "**/*.config.*", "**/*.test.*", "**/*.spec.*", "**/types/**", "**/index.ts"],
       thresholds: {
         lines: 80,
         functions: 75,

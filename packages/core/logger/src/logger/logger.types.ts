@@ -42,10 +42,4 @@ export interface ILogger {
 }
 
 // Re-export the consolidated interfaces for backward compatibility
-export type {
-  IPerformanceConfig,
-  IPerformanceMetrics,
-  ITransportConfig,
-  ICircuitBreakerConfig,
-  IObjectPoolConfig,
-};
+export type { IPerformanceConfig, IPerformanceMetrics, ITransportConfig, ICircuitBreakerConfig, IObjectPoolConfig };

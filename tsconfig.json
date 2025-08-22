@@ -15,13 +15,6 @@
       "@axon/errors/*": ["./packages/core/errors/src/*"]
     }
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "eslint.config.js",
-    "tools/config/**/*"
-  ],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "eslint.config.js", "tools/config/**/*"],
   "exclude": ["node_modules", "packages/*/dist", "packages/*/build", "apps/*/dist", "apps/*/build", ".next", "coverage"]
 }

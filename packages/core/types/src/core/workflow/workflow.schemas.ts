@@ -44,7 +44,7 @@ export const orchestrationStrategySchema = z.enum([
 export const validationRuleSchema = z.object({
   type: z.enum(["required", "range", "pattern", "custom"]),
   field: z.string().optional(),
-  params: z.record(z.unknown()),
+  params: z.record(z.string(), z.unknown()),
   errorMessage: z.string(),
 });
 
@@ -52,7 +52,7 @@ export const validationRuleSchema = z.object({
 export const transactionSchema = z.object({
   agentId: agentIdSchema,
   capability: z.string(),
-  parameters: z.record(z.unknown()),
+  parameters: z.record(z.string(), z.unknown()),
   resultType: z.string().optional(),
   validation: z.array(validationRuleSchema).optional(),
 });
@@ -77,7 +77,7 @@ export const sagaDefinitionSchema = z.object({
   steps: z.array(sagaStepSchema),
   timeout: z.number().positive(),
   isolationLevel: isolationLevelSchema,
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Step metrics schema
@@ -103,7 +103,7 @@ export const sagaErrorSchema = z.object({
   message: z.string(),
   failedStep: z.string(),
   compensated: z.boolean(),
-  context: z.record(z.unknown()).optional(),
+  context: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Saga execution schema
@@ -123,7 +123,7 @@ export const sagaExecutionSchema = z.object({
 export const conditionSchema = z.object({
   type: z.enum(["expression", "rule", "function"]),
   value: z.string(),
-  params: z.record(z.unknown()).optional(),
+  params: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Loop config schema

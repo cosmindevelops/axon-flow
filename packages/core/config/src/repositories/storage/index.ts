@@ -8,5 +8,5 @@
 
 // Export storage-based repository implementations
 export * from "./storage.classes.js";
-export * from "./storage.types.js";
+export type * from "./storage.types.js";
 export * from "./storage.schemas.js";

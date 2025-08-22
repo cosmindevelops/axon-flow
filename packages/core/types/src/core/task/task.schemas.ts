@@ -42,12 +42,12 @@ export const taskDefinitionSchema = z.object({
   description: z.string(),
   agentId: agentIdSchema,
   capability: z.string(),
-  parameters: z.record(z.unknown()),
+  parameters: z.record(z.string(), z.unknown()),
   dependencies: z.array(taskIdSchema),
   timeout: z.number().positive(),
   priority: taskPrioritySchema,
   retryPolicy: retryPolicySchema,
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Task result schema
@@ -85,7 +85,7 @@ export const workflowDefinitionSchema = z.object({
   timeout: z.number().positive(),
   useSaga: z.boolean(),
   compensationStrategy: z.enum(["sequential", "parallel", "custom"]).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Workflow result schema

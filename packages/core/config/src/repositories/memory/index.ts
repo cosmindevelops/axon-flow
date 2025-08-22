@@ -8,5 +8,5 @@
 
 // Export memory-based repository implementations
 export * from "./memory.classes.js";
-export * from "./memory.types.js";
+export type * from "./memory.types.js";
 export * from "./memory.schemas.js";

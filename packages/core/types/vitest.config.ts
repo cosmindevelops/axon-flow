@@ -3,14 +3,14 @@
  */
 
 import { defineProject, mergeConfig } from "vitest/config";
-import baseConfig from "../../../tools/config/vitest/base.js";
+import { baseConfig } from "../../../tools/config/vitest/base.js";
 
 export default defineProject(
   mergeConfig(baseConfig, {
     test: {
       name: "@axon/types",
       root: "./",
-      include: ["src/**/*.{test,spec}.{ts,tsx}", "tests/**/*.{test,spec}.{ts,tsx}"],
+      include: ["tests/**/*.{test,spec}.{ts,tsx}"],
       exclude: ["**/node_modules/**", "**/dist/**", "**/build/**"],
       coverage: {
         enabled: true,

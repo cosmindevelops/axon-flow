@@ -2,8 +2,8 @@
  * High-performance transport implementations for different output destinations
  */
 
-import pino from "pino";
 import type { SonicBoom } from "sonic-boom";
+import { createWriteStream, type WriteStream } from "fs";
 
 import type { ITransportProvider, ILogEntry, TransportType, ITransportConfig } from "../types/index.js";
 
@@ -15,18 +15,9 @@ export class ConsoleTransportProvider implements ITransportProvider {
   private readonly stream: NodeJS.WriteStream | SonicBoom;
   private healthy = true;
 
-  constructor(config: ITransportConfig) {
-    // Use pino-pretty for development, raw JSON for production
-    const isDevelopment = process.env['NODE_ENV'] === "development";
-
-    if (isDevelopment && config.options?.['pretty'] !== false) {
-      this.stream = pino.destination({
-        sync: false,
-        ...config.options,
-      });
-    } else {
-      this.stream = process.stdout;
-    }
+  constructor(_config: ITransportConfig) {
+    // Use stdout for now - will enhance with pino.destination later
+    this.stream = process.stdout;
 
     // Handle stream errors
     this.stream.on("error", (error) => {
@@ -53,7 +44,7 @@ export class ConsoleTransportProvider implements ITransportProvider {
 
   async flush(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if ('writable' in this.stream && this.stream.writable) {
+      if ("writable" in this.stream && this.stream.writable) {
         this.stream.write("", (error) => {
           if (error) {
             reject(error);
@@ -61,7 +52,7 @@ export class ConsoleTransportProvider implements ITransportProvider {
             resolve();
           }
         });
-      } else if ('flush' in this.stream) {
+      } else if ("flush" in this.stream) {
         // SonicBoom has a flush method
         this.stream.flush();
         resolve();
@@ -74,11 +65,11 @@ export class ConsoleTransportProvider implements ITransportProvider {
   async close(): Promise<void> {
     return new Promise((resolve) => {
       if (this.stream !== process.stdout && this.stream !== process.stderr) {
-        if ('end' in this.stream && typeof this.stream.end === 'function') {
+        if ("end" in this.stream && typeof this.stream.end === "function") {
           this.stream.end(() => {
             resolve();
           });
-        } else if ('destroy' in this.stream && typeof this.stream.destroy === 'function') {
+        } else if ("destroy" in this.stream && typeof this.stream.destroy === "function") {
           // SonicBoom has a destroy method
           this.stream.destroy();
           resolve();
@@ -101,7 +92,7 @@ export class ConsoleTransportProvider implements ITransportProvider {
  */
 export class FileTransportProvider implements ITransportProvider {
   readonly type: TransportType = "file";
-  private readonly stream: SonicBoom;
+  private readonly stream: WriteStream;
   private healthy = true;
   private buffer: string[] = [];
   private flushInterval: NodeJS.Timeout | null = null;
@@ -111,8 +102,8 @@ export class FileTransportProvider implements ITransportProvider {
       throw new Error("File transport requires a destination path");
     }
 
-    // Use only destination path for pino.destination
-    this.stream = pino.destination(config.destination);
+    // Create a simple file stream for now - will enhance with pino.destination later
+    this.stream = createWriteStream(config.destination, { flags: "a" });
 
     // Handle stream errors
     this.stream.on("error", (error) => {
@@ -121,7 +112,8 @@ export class FileTransportProvider implements ITransportProvider {
     });
 
     // Set up automatic flushing
-    const flushIntervalMs = typeof config.options?.['flushIntervalMs'] === "number" ? config.options['flushIntervalMs'] : 5000;
+    const flushIntervalMs =
+      typeof config.options?.["flushIntervalMs"] === "number" ? config.options["flushIntervalMs"] : 5000;
     this.flushInterval = setInterval(() => {
       void this.flush();
     }, flushIntervalMs);
@@ -202,14 +194,14 @@ export class RemoteTransportProvider implements ITransportProvider {
     this.endpoint = config.destination;
     this.headers = {
       "Content-Type": "application/json",
-      ...(typeof config.options?.['headers'] === "object" && config.options['headers'] !== null
-        ? (config.options['headers'] as Record<string, string>)
+      ...(typeof config.options?.["headers"] === "object" && config.options["headers"] !== null
+        ? (config.options["headers"] as Record<string, string>)
         : {}),
     };
 
     // Set up automatic flushing
     const flushIntervalMs =
-      typeof config.options?.['flushIntervalMs'] === "number" ? config.options['flushIntervalMs'] : 10000;
+      typeof config.options?.["flushIntervalMs"] === "number" ? config.options["flushIntervalMs"] : 10000;
     this.flushInterval = setInterval(() => {
       void this.flush();
     }, flushIntervalMs);

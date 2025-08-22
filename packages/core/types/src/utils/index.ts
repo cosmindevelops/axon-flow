@@ -6,5 +6,5 @@
  */
 
 // Export all subdomain types and schemas
-export * from "./branded/index.js";
+export type * from "./branded/index.js";
 export * from "./guards/index.js";

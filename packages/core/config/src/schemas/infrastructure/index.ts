@@ -10,7 +10,7 @@
 export * from "./infrastructure.schemas.js";
 
 // Export infrastructure schema types
-export * from "./infrastructure.types.js";
+export type * from "./infrastructure.types.js";
 
 // Export infrastructure schema classes
 export * from "./infrastructure.classes.js";

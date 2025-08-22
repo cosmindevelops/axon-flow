@@ -9,4 +9,4 @@ export type * from "./status.types.js";
 export * from "./status.schemas.js";
 
 // Export all classes (placeholder)
-export * from "./status.classes.js";
+export type * from "./status.classes.js";

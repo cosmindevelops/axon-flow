@@ -26,12 +26,10 @@ import { LoggerFactory } from "@axon/logger";
 
 // Create high-performance logger
 const logger = LoggerFactory.create({
-  transports: [
-    { type: "console", enabled: true, level: "info" }
-  ],
+  transports: [{ type: "console", enabled: true, level: "info" }],
   performance: { enabled: true, sampleRate: 0.1, thresholdMs: 50 },
   circuitBreaker: { enabled: true, failureThreshold: 5, resetTimeoutMs: 30000 },
-  objectPool: { enabled: true, initialSize: 100, maxSize: 1000 }
+  objectPool: { enabled: true, initialSize: 100, maxSize: 1000 },
 });
 
 // Structured logging with correlation
@@ -44,15 +42,18 @@ logger.withCorrelation("req-123").info("Processing request", { userId: "user-456
 ### Core Components
 
 **Logger Core:**
+
 - `Logger` - Main logging implementation with performance optimizations
 - `LoggerFactory` - Factory for creating configured logger instances
 
 **Performance & Reliability:**
+
 - `PerformanceTracker` - Real-time metrics and latency monitoring
 - `CircuitBreaker` - Failure detection and automatic recovery
 - `ObjectPool` - Memory-efficient object pooling for log entries
 
 **Transport System:**
+
 - `TransportProvider` - Pluggable transport interface
 - `ConsoleTransport` - High-performance console logging
 - `FileTransport` - Asynchronous file-based logging
@@ -61,16 +62,19 @@ logger.withCorrelation("req-123").info("Processing request", { userId: "user-456
 ### Performance Features
 
 **Object Pooling:**
+
 - Pre-allocated log entry objects reduce GC pressure
 - Configurable pool sizes with automatic growth
 - Memory-efficient design for high-throughput scenarios
 
 **Circuit Breaker:**
+
 - Automatic failure detection and recovery
 - Prevents cascading failures in logging infrastructure
 - Configurable thresholds and timeout periods
 
 **Performance Monitoring:**
+
 - Real-time throughput metrics (logs/second)
 - Latency tracking with percentile calculations
 - Resource utilization monitoring
@@ -84,40 +88,40 @@ import { LoggerFactory } from "@axon/logger";
 
 const logger = LoggerFactory.create({
   transports: [
-    { 
-      type: "console", 
-      enabled: true, 
+    {
+      type: "console",
+      enabled: true,
       level: "info",
-      options: { colorize: false } // Faster console output
+      options: { colorize: false }, // Faster console output
     },
     {
       type: "file",
       enabled: true,
       level: "warn",
-      destination: "/var/log/axon.log"
-    }
+      destination: "/var/log/axon.log",
+    },
   ],
   performance: {
     enabled: true,
     sampleRate: 0.05, // Monitor 5% of logs
-    thresholdMs: 10   // Warn on logs taking >10ms
+    thresholdMs: 10, // Warn on logs taking >10ms
   },
   circuitBreaker: {
     enabled: true,
     failureThreshold: 3,
     resetTimeoutMs: 15000,
-    monitorTimeWindowMs: 60000
+    monitorTimeWindowMs: 60000,
   },
   objectPool: {
     enabled: true,
     initialSize: 500,
     maxSize: 2000,
-    growthFactor: 1.5
+    growthFactor: 1.5,
   },
   bufferSize: 1000,
   flushIntervalMs: 5000,
   enableCorrelationIds: true,
-  timestampFormat: "iso"
+  timestampFormat: "iso",
 });
 ```
 
@@ -145,7 +149,7 @@ console.log({
   avgLatency: `${metrics.averageLatencyMs}ms`,
   peakLatency: `${metrics.peakLatencyMs}ms`,
   circuitState: metrics.circuitBreakerState,
-  poolUtilization: `${metrics.objectPoolUtilization}%`
+  poolUtilization: `${metrics.objectPoolUtilization}%`,
 });
 
 // Health monitoring
@@ -161,25 +165,25 @@ import { ITransportProvider, ILogEntry } from "@axon/logger";
 
 class DatabaseTransport implements ITransportProvider {
   readonly type = "remote";
-  
+
   async write(entry: ILogEntry): Promise<void> {
     await this.database.logs.insert({
       level: entry.level,
       message: entry.message,
       timestamp: new Date(entry.timestamp),
       correlationId: entry.correlationId,
-      metadata: entry.meta
+      metadata: entry.meta,
     });
   }
-  
+
   async flush(): Promise<void> {
     await this.database.flush();
   }
-  
+
   async close(): Promise<void> {
     await this.database.close();
   }
-  
+
   isHealthy(): boolean {
     return this.database.isConnected();
   }
@@ -200,7 +204,7 @@ Static factory methods for creating logger instances:
 Core logging interface with performance features:
 
 - `debug(message: string, meta?: object)` - Debug level logging
-- `info(message: string, meta?: object)` - Info level logging  
+- `info(message: string, meta?: object)` - Info level logging
 - `warn(message: string, meta?: object)` - Warning level logging
 - `error(message: string, meta?: object)` - Error level logging
 - `withCorrelation(id: string)` - Create correlated logger instance
@@ -211,16 +215,19 @@ Core logging interface with performance features:
 ### Performance Classes
 
 **PerformanceTracker:**
+
 - Real-time throughput and latency monitoring
 - Configurable sampling and thresholds
 - Historical metrics with percentile calculations
 
 **CircuitBreaker:**
+
 - Automatic failure detection and recovery
 - State management (closed/open/half-open)
 - Metrics tracking for failure patterns
 
 **ObjectPool:**
+
 - Memory-efficient object pooling
 - Configurable size limits and growth policies
 - Performance monitoring and utilization tracking
@@ -232,8 +239,8 @@ interface ILoggerConfig {
   transports: ITransportConfig[];
   performance: {
     enabled: boolean;
-    sampleRate: number;      // 0-1, percentage of logs to monitor
-    thresholdMs: number;     // Latency threshold for warnings
+    sampleRate: number; // 0-1, percentage of logs to monitor
+    thresholdMs: number; // Latency threshold for warnings
   };
   circuitBreaker: {
     enabled: boolean;
@@ -292,18 +299,21 @@ pnpm test:performance
 ## Performance Tuning
 
 **High-Throughput Scenarios:**
+
 - Enable object pooling with larger initial/max sizes
 - Use file transports for better performance than console
 - Reduce sampling rate for performance monitoring
 - Use "unix" timestamp format for faster serialization
 
 **Memory-Constrained Environments:**
+
 - Disable object pooling if memory is limited
 - Reduce buffer sizes and flush intervals
 - Use synchronous console transport
 - Disable performance monitoring
 
 **Development vs Production:**
+
 - Development: Enable pretty formatting, detailed monitoring
 - Production: Disable colors, optimize for throughput, enable circuit breakers
 

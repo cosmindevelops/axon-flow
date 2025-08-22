@@ -5,14 +5,6 @@
  */
 
 import { z } from "zod";
-import type {
-  IBrowserInfo,
-  INavigatorInfo,
-  ILocationInfo,
-  IScreenInfo,
-  IDocumentInfo,
-  IWindowInfo,
-} from "./browser.types.js";
 
 // Browser info schema
 export const browserInfoSchema = z.object({

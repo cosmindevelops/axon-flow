@@ -15,7 +15,7 @@ import type {
 } from "./node.types.js";
 
 // Node info schema
-export const NodeInfoSchema = z.object({
+export const nodeInfoSchema = z.object({
   version: z.string(),
   platform: z.string(),
   arch: z.string(),
@@ -38,7 +38,7 @@ export const NodeInfoSchema = z.object({
 }) satisfies z.ZodType<INodeInfo>;
 
 // Process info schema
-export const ProcessInfoSchema = z.object({
+export const processInfoSchema = z.object({
   pid: z.number(),
   ppid: z.number(),
   platform: z.string(),
@@ -66,7 +66,7 @@ export const ProcessInfoSchema = z.object({
 }) satisfies z.ZodType<IProcessInfo>;
 
 // File system info schema
-export const FileSystemInfoSchema = z.object({
+export const fileSystemInfoSchema = z.object({
   homedir: z.string(),
   tmpdir: z.string(),
   separator: z.string(),
@@ -81,7 +81,7 @@ export const FileSystemInfoSchema = z.object({
 }) satisfies z.ZodType<IFileSystemInfo>;
 
 // Network info schema
-export const NetworkInfoSchema = z.object({
+export const networkInfoSchema = z.object({
   hostname: z.string(),
   networkInterfaces: z.record(
     z.string(),
@@ -100,7 +100,7 @@ export const NetworkInfoSchema = z.object({
 }) satisfies z.ZodType<INetworkInfo>;
 
 // Operating system info schema
-export const OperatingSystemInfoSchema = z.object({
+export const operatingSystemInfoSchema = z.object({
   type: z.string(),
   platform: z.string(),
   arch: z.string(),
@@ -132,7 +132,7 @@ export const OperatingSystemInfoSchema = z.object({
 }) satisfies z.ZodType<IOperatingSystemInfo>;
 
 // Module info schema
-export const ModuleInfoSchema = z.object({
+export const moduleInfoSchema = z.object({
   id: z.string(),
   filename: z.string(),
   loaded: z.boolean(),
@@ -143,9 +143,9 @@ export const ModuleInfoSchema = z.object({
 }) satisfies z.ZodType<IModuleInfo>;
 
 // Type inference helpers
-export type InferredNodeInfo = z.infer<typeof NodeInfoSchema>;
-export type InferredProcessInfo = z.infer<typeof ProcessInfoSchema>;
-export type InferredFileSystemInfo = z.infer<typeof FileSystemInfoSchema>;
-export type InferredNetworkInfo = z.infer<typeof NetworkInfoSchema>;
-export type InferredOperatingSystemInfo = z.infer<typeof OperatingSystemInfoSchema>;
-export type InferredModuleInfo = z.infer<typeof ModuleInfoSchema>;
+export type InferredNodeInfo = z.infer<typeof nodeInfoSchema>;
+export type InferredProcessInfo = z.infer<typeof processInfoSchema>;
+export type InferredFileSystemInfo = z.infer<typeof fileSystemInfoSchema>;
+export type InferredNetworkInfo = z.infer<typeof networkInfoSchema>;
+export type InferredOperatingSystemInfo = z.infer<typeof operatingSystemInfoSchema>;
+export type InferredModuleInfo = z.infer<typeof moduleInfoSchema>;

@@ -18,7 +18,7 @@ export const statusWithMetadataSchema = z.object({
   status: statusSchema,
   timestamp: z.string(),
   message: z.string().optional(),
-  details: z.record(z.unknown()).optional(),
+  details: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Status transition schema

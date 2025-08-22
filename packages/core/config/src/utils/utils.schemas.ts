@@ -39,7 +39,7 @@ export const PERFORMANCE_MEASUREMENT_SCHEMA = z.object({
   endTime: z.number(),
   duration: z.number().min(0),
   operation: z.string(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**

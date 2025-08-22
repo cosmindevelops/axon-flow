@@ -8,5 +8,5 @@
 
 // Export composite repository implementations
 export * from "./composite.classes.js";
-export * from "./composite.types.js";
+export type * from "./composite.types.js";
 export * from "./composite.schemas.js";

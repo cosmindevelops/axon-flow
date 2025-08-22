@@ -9,4 +9,4 @@ export type * from "./workflow.types.js";
 export * from "./workflow.schemas.js";
 
 // Export all workflow classes (placeholder)
-export * from "./workflow.classes.js";
+export type * from "./workflow.classes.js";

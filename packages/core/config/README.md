@@ -24,9 +24,7 @@ pnpm add @axon/config
 import { ConfigBuilderFactory } from "@axon/config";
 
 // Create environment-specific configuration
-const config = ConfigBuilderFactory
-  .forEnvironment(process.env.NODE_ENV)
-  .build();
+const config = ConfigBuilderFactory.forEnvironment(process.env.NODE_ENV).build();
 
 // Access typed configuration values
 const dbUrl = config.database.url;
@@ -88,20 +86,18 @@ Utility functions and classes:
 import { ConfigBuilderFactory } from "@axon/config";
 
 // Production configuration with security defaults
-const prodConfig = ConfigBuilderFactory
-  .forEnvironment("production")
+const prodConfig = ConfigBuilderFactory.forEnvironment("production")
   .withDefaults({
     service: { port: 3000 },
-    security: { enabled: true }
+    security: { enabled: true },
   })
   .build();
 
 // Development configuration with debug options
-const devConfig = ConfigBuilderFactory
-  .forEnvironment("development")
+const devConfig = ConfigBuilderFactory.forEnvironment("development")
   .withDefaults({
     logging: { level: "debug" },
-    development: { hotReload: true }
+    development: { hotReload: true },
   })
   .build();
 ```
@@ -109,11 +105,7 @@ const devConfig = ConfigBuilderFactory
 ### Custom Repository Configuration
 
 ```typescript
-import { 
-  CompositeConfigRepository,
-  EnvironmentConfigRepository,
-  FileConfigRepository
-} from "@axon/config";
+import { CompositeConfigRepository, EnvironmentConfigRepository, FileConfigRepository } from "@axon/config";
 
 // Combine multiple configuration sources
 const repository = new CompositeConfigRepository([
@@ -121,10 +113,7 @@ const repository = new CompositeConfigRepository([
   new EnvironmentConfigRepository(),
 ]);
 
-const config = ConfigBuilderFactory
-  .create()
-  .withRepository(repository)
-  .build();
+const config = ConfigBuilderFactory.create().withRepository(repository).build();
 ```
 
 ### Validation and Error Handling
@@ -135,12 +124,14 @@ import { z } from "zod";
 
 try {
   const config = new ConfigBuilder()
-    .withSchema(z.object({
-      database: z.object({
-        url: z.string().url(),
-        maxConnections: z.number().min(1).max(100)
-      })
-    }))
+    .withSchema(
+      z.object({
+        database: z.object({
+          url: z.string().url(),
+          maxConnections: z.number().min(1).max(100),
+        }),
+      }),
+    )
     .build();
 } catch (error) {
   // Handle validation errors
@@ -192,21 +183,21 @@ The package includes comprehensive schemas for common configuration domains:
 const dbConfig = {
   url: "postgresql://localhost:5432/axon",
   maxConnections: 20,
-  ssl: true
+  ssl: true,
 };
 
-// Service configuration  
+// Service configuration
 const serviceConfig = {
   port: 3000,
   host: "localhost",
-  cors: { origins: ["http://localhost:3000"] }
+  cors: { origins: ["http://localhost:3000"] },
 };
 
 // Authentication configuration
 const authConfig = {
   jwtSecret: "your-secret-key",
   tokenExpiration: "24h",
-  providers: ["local", "oauth"]
+  providers: ["local", "oauth"],
 };
 ```
 

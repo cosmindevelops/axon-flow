@@ -8,5 +8,5 @@
 
 // Export environment-based repository implementations
 export * from "./environment.classes.js";
-export * from "./environment.types.js";
+export type * from "./environment.types.js";
 export * from "./environment.schemas.js";

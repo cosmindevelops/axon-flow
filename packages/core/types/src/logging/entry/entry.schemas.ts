@@ -61,7 +61,7 @@ export const logContextSchema = z.object({
   spanId: z.string().optional(),
   parentSpanId: z.string().optional(),
   performance: performanceContextSchema.optional(),
-  custom: z.record(z.unknown()).optional(),
+  custom: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Log entry schema

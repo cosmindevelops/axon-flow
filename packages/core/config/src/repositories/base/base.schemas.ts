@@ -53,7 +53,7 @@ export const REPOSITORY_ERROR_CONTEXT_SCHEMA = z.object({
   repository: z.string().min(1),
   operation: z.string().min(1),
   source: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**

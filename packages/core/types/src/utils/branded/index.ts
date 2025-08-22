@@ -6,7 +6,7 @@
 export type * from "./branded.types.js";
 
 // Export all branded schemas
-export * from "./branded.schemas.js";
+export type * from "./branded.schemas.js";
 
 // Export all branded classes (placeholder)
-export * from "./branded.classes.js";
+export type * from "./branded.classes.js";

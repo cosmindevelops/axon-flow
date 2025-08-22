@@ -9,4 +9,4 @@ export type * from "./node.types.js";
 export * from "./node.schemas.js";
 
 // Export all node classes (placeholder)
-export * from "./node.classes.js";
+export type * from "./node.classes.js";

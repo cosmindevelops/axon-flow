@@ -33,17 +33,13 @@ yarn add @axon/types
 ### Importing Types
 
 ```typescript
-import type { 
-  IAgentMetadata, 
-  ITaskDefinition, 
-  IMessage 
-} from '@axon/types';
+import type { IAgentMetadata, ITaskDefinition, IMessage } from "@axon/types";
 
 // Use the types in your code
 const agent: IAgentMetadata = {
-  id: 'agent-123' as AgentId,
-  name: 'DataProcessor',
-  version: '1.0.0',
+  id: "agent-123" as AgentId,
+  name: "DataProcessor",
+  version: "1.0.0",
   // ... other properties
 };
 ```
@@ -51,10 +47,7 @@ const agent: IAgentMetadata = {
 ### Using Zod Schemas for Validation
 
 ```typescript
-import { 
-  AgentMetadataSchema, 
-  TaskDefinitionSchema 
-} from '@axon/types';
+import { AgentMetadataSchema, TaskDefinitionSchema } from "@axon/types";
 
 // Validate data at runtime
 const result = AgentMetadataSchema.safeParse(incomingData);
@@ -71,11 +64,7 @@ if (result.success) {
 ### Using Type Guards
 
 ```typescript
-import { 
-  isAgentMetadata, 
-  isTaskDefinition, 
-  isMessage 
-} from '@axon/types';
+import { isAgentMetadata, isTaskDefinition, isMessage } from "@axon/types";
 
 // Runtime type checking
 function processData(data: unknown) {
@@ -148,6 +137,7 @@ src/
 ## Type Categories
 
 ### Core Types
+
 - **Agent Types**: Agent metadata, capabilities, health, and registration
 - **Registry Types**: Service discovery and agent registry management
 - **Task Types**: Task definitions, executions, and workflow orchestration
@@ -155,21 +145,25 @@ src/
 - **Workflow Types**: Saga patterns and distributed transaction management
 
 ### Configuration Types
+
 - **Schema Types**: Configuration schema definitions and validation rules
 - **Provider Types**: Configuration provider abstractions and sources
 - **Hierarchy Types**: Layered configuration management and resolution
 
 ### Logging Types
+
 - **Entry Types**: Structured log entries with context and metadata
 - **Error Types**: Enhanced errors with context, severity, and recovery info
 - **Performance Types**: Performance metrics and resource usage tracking
 
 ### Platform Types
+
 - **Common Types**: Platform-agnostic types for cross-platform code
 - **Node.js Types**: Node.js specific platform features and APIs
 - **Browser Types**: Browser-specific features and Web APIs
 
 ### Utility Types
+
 - **Branded Types**: Type-safe identifiers using nominal typing
 - **Type Guards**: Runtime type checking functions for safe narrowing
 
@@ -178,25 +172,21 @@ src/
 ### Working with Agent Types
 
 ```typescript
-import { 
-  IAgentRegistration, 
-  AgentRegistrationSchema,
-  isAgentHealth 
-} from '@axon/types';
+import { IAgentRegistration, AgentRegistrationSchema, isAgentHealth } from "@axon/types";
 
 // Define an agent registration
 const registration: IAgentRegistration = {
-  name: 'DataProcessor',
-  version: '1.0.0',
+  name: "DataProcessor",
+  version: "1.0.0",
   capabilities: [
     {
-      name: 'processData',
-      version: '1.0.0',
-      description: 'Processes incoming data',
+      name: "processData",
+      version: "1.0.0",
+      description: "Processes incoming data",
       parameters: [],
-      returns: { type: 'object', description: 'Processed data' }
-    }
-  ]
+      returns: { type: "object", description: "Processed data" },
+    },
+  ],
 };
 
 // Validate registration data
@@ -213,26 +203,22 @@ function checkHealth(data: unknown) {
 ### Working with Message Types
 
 ```typescript
-import { 
-  ICommand, 
-  CommandSchema,
-  MessageIdSchema 
-} from '@axon/types';
+import { ICommand, CommandSchema, MessageIdSchema } from "@axon/types";
 
 // Create a command message
 const command: ICommand = {
-  id: MessageIdSchema.parse('msg-123'),
-  correlationId: 'corr-456',
-  type: 'command',
-  commandName: 'ProcessData',
+  id: MessageIdSchema.parse("msg-123"),
+  correlationId: "corr-456",
+  type: "command",
+  commandName: "ProcessData",
   expectsReply: true,
-  payload: { data: 'example' },
+  payload: { data: "example" },
   metadata: {
-    source: 'hub',
+    source: "hub",
     timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    version: "1.0.0",
   },
-  timestamp: new Date().toISOString()
+  timestamp: new Date().toISOString(),
 };
 
 // Validate command
@@ -242,27 +228,23 @@ const validCommand = CommandSchema.parse(command);
 ### Working with Configuration Types
 
 ```typescript
-import { 
-  IConfigSchema,
-  ConfigSchemaSchema,
-  ConfigFieldTypeSchema 
-} from '@axon/types';
+import { IConfigSchema, ConfigSchemaSchema, ConfigFieldTypeSchema } from "@axon/types";
 
 // Define a configuration schema
 const configSchema: IConfigSchema = {
-  name: 'DatabaseConfig',
-  version: '1.0.0',
-  description: 'Database configuration schema',
+  name: "DatabaseConfig",
+  version: "1.0.0",
+  description: "Database configuration schema",
   fields: [
     {
-      name: 'url',
-      type: 'url',
-      description: 'Database connection URL',
+      name: "url",
+      type: "url",
+      description: "Database connection URL",
       required: true,
       sensitive: true,
-      env: 'DATABASE_URL'
-    }
-  ]
+      env: "DATABASE_URL",
+    },
+  ],
 };
 
 // Validate schema
@@ -299,15 +281,19 @@ pnpm lint
 ## API Reference
 
 ### Type Exports
+
 All TypeScript type definitions are exported from their respective domain modules and re-exported from the main index.
 
 ### Schema Exports
+
 All Zod schemas are exported alongside their corresponding types with the `Schema` suffix.
 
 ### Type Guard Exports
+
 Type guards are exported from `utils/guards.ts` and follow the pattern `is[TypeName]`.
 
 ### Branded Type Utilities
+
 Branded type utilities are exported from `utils/branded.types.ts`.
 
 ## Contributing

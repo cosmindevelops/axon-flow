@@ -34,14 +34,14 @@ export const agentQuerySchema: z.ZodType<IAgentQuery> = z.object({
   status: agentStatusSchema.optional(),
   capabilities: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   options: agentQueryOptionsSchema.optional(),
 });
 
 // Agent update schema
 export const agentUpdateSchema = z.object({
   capabilities: z.array(agentCapabilitySchema).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   status: z.string().optional(),
   updatedAt: z.string(),
 });
@@ -61,7 +61,7 @@ export const registryEventSchema = z.object({
   type: registryEventTypeSchema,
   agentId: agentIdSchema,
   timestamp: z.string(),
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
 });
 
 // Type inference helpers

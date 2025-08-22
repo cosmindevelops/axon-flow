@@ -9,4 +9,4 @@ export type * from "./environment.types.js";
 export * from "./environment.schemas.js";
 
 // Export all classes (placeholder)
-export * from "./environment.classes.js";
+export type * from "./environment.classes.js";

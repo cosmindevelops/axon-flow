@@ -68,7 +68,7 @@ export const enhancedErrorSchema = z.object({
   stack: z.string().optional(),
   parsedStack: z.array(errorStackSchema).optional(),
   cause: z.unknown().optional(),
-  details: z.record(z.unknown()).optional(),
+  details: z.record(z.string(), z.unknown()).optional(),
   suggestions: z.array(z.string()).optional(),
   documentation: z.string().optional(),
 });

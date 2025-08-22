@@ -66,10 +66,10 @@ export const performanceEntrySchema = z.object({
   value: z.number(),
   unit: z.string(),
   timestamp: z.string(),
-  labels: z.record(z.string()).optional(),
+  labels: z.record(z.string(), z.string()).optional(),
   metrics: performanceMetricsSchema.optional(),
   correlationId: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Type inference helpers
