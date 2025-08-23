@@ -204,6 +204,11 @@ export interface IObjectPool<T> {
   warmup(): Promise<void>;
 
   /**
+   * Alias for warmup method (camelCase naming convention)
+   */
+  warmUp(): Promise<void>;
+
+  /**
    * Validate all instances in the pool
    */
   validate(): Promise<void>;

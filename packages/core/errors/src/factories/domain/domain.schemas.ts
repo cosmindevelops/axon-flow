@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { ErrorSeverity, ErrorCategory } from "../base/base-error.types.js";
+import { ErrorSeverity, ErrorCategory } from "../../base/base-error.types.js";
 import {
   SecurityErrorReason,
   DatabaseOperation,
@@ -11,7 +11,7 @@ import {
   ConflictType,
   AuthMethod,
   AuthFailureReason,
-} from "../categories/categories.types.js";
+} from "../../categories/categories.types.js";
 
 /**
  * Base error creation options schema

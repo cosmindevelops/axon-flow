@@ -12,7 +12,9 @@
       "@axon/logger": ["./packages/core/logger/src"],
       "@axon/logger/*": ["./packages/core/logger/src/*"],
       "@axon/errors": ["./packages/core/errors/src"],
-      "@axon/errors/*": ["./packages/core/errors/src/*"]
+      "@axon/errors/*": ["./packages/core/errors/src/*"],
+      "@axon/di": ["./packages/core/di/src"],
+      "@axon/di/*": ["./packages/core/di/src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "eslint.config.js", "tools/config/**/*"],

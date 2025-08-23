@@ -15,7 +15,7 @@ import {
   platformInfoSchema,
   metricsExportFormatSchema,
   memoryTrendSchema,
-} from "../../../src/performance/performance.schemas.js";
+} from "../../../src/performance/core/core.schemas.js";
 
 describe("Performance Schemas", () => {
   describe("memoryMetricsSchema", () => {

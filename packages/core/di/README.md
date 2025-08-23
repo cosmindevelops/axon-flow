@@ -16,16 +16,16 @@ Lightweight dependency injection container for Axon Flow with factory pattern su
 ## Quick Start
 
 ```typescript
-import { Container } from '@axon/di';
+import { Container } from "@axon/di";
 
 // Create container
 const container = new Container();
 
 // Register services
-container.register('IAuthProvider', JWTAuthProvider, { lifecycle: 'singleton' });
+container.register("IAuthProvider", JWTAuthProvider, { lifecycle: "singleton" });
 
 // Resolve dependencies
-const auth = container.resolve<IAuthProvider>('IAuthProvider');
+const auth = container.resolve<IAuthProvider>("IAuthProvider");
 ```
 
 ## Installation

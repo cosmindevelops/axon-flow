@@ -30,8 +30,8 @@ import {
   getActiveExporters,
   createJSONExporter,
   createPrometheusExporter,
-} from "../../../src/performance/performance.decorators.js";
-import { EnhancedPerformanceTracker } from "../../../src/performance/performance.classes.js";
+} from "../../../src/performance/decorators/index.js";
+import { EnhancedPerformanceTracker } from "../../../src/performance/tracker/tracker.classes.js";
 import type {
   IEnhancedPerformanceConfig,
   IPerformanceBudget,

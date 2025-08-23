@@ -10,8 +10,8 @@ import {
   CorrelationManagerFactory,
   CorrelationMiddlewareChain,
   HttpCorrelationMiddleware,
-} from "../../src/correlation/correlation.classes.js";
-import type { IEnhancedCorrelationManager } from "../../src/correlation/correlation.types.js";
+} from "../../src/correlation/core/core.classes.js";
+import type { IEnhancedCorrelationManager } from "../../src/correlation/core/core.types.js";
 import { HighPerformancePinoLogger } from "../../src/logger/logger.classes.js";
 import type { ILoggerConfig } from "../../src/types/index.js";
 

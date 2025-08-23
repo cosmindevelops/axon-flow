@@ -6,14 +6,13 @@
 
 import type {
   IPerformanceDecoratorOptions,
-  IEnhancedPerformanceTracker,
   IDecoratorActivationConditions,
-  IPerformanceBudget,
   IParameterInspection,
   IPerformanceExporter,
-  PerformanceCategory,
-} from "./performance.types.js";
-import { EnhancedPerformanceTracker } from "./performance.classes.js";
+  IDecoratorGlobalConfig,
+} from "./decorators.types.js";
+import type { IEnhancedPerformanceTracker, IPerformanceBudget, PerformanceCategory } from "../core/core.types.js";
+import { EnhancedPerformanceTracker } from "../core/core.classes.js";
 
 /**
  * Global performance tracker instance for decorators
@@ -23,17 +22,6 @@ let globalPerformanceTracker: IEnhancedPerformanceTracker | null = null;
 /**
  * Global decorator configuration
  */
-interface IDecoratorGlobalConfig {
-  /** Global activation conditions */
-  activation?: IDecoratorActivationConditions;
-  /** Performance budgets by category */
-  budgets?: Map<PerformanceCategory | string, IPerformanceBudget>;
-  /** Global exporters */
-  exporters?: IPerformanceExporter[];
-  /** Global sampling rate override */
-  globalSampleRate?: number;
-}
-
 let globalDecoratorConfig: IDecoratorGlobalConfig = {};
 
 /**
@@ -222,7 +210,7 @@ function inspectParameters(
     const inspection: IParameterInspection = {
       name: paramName,
       type: typeof arg,
-      index,
+      size: 0,
     };
 
     if (parameterOptions.includeValues) {
@@ -232,7 +220,7 @@ function inspectParameters(
       if (typeof arg === "object" && arg !== null) {
         try {
           const serialized = JSON.stringify(arg);
-          inspection.serializedSize = new Blob([serialized]).size;
+          inspection.size = new Blob([serialized]).size;
 
           if (parameterOptions.maxValueLength && serialized.length > parameterOptions.maxValueLength) {
             value = `${serialized.substring(0, parameterOptions.maxValueLength)}...`;

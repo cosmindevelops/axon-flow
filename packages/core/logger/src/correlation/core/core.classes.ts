@@ -11,8 +11,8 @@ import type {
   ICorrelationMiddlewareChain,
   ICorrelationMiddlewareConfig,
   IEnhancedCorrelationManager,
-} from "./correlation.types.js";
-import { CorrelationPlatform } from "./correlation.types.js";
+} from "./core.types.js";
+import { CorrelationPlatform } from "./core.types.js";
 
 /**
  * Platform detection utilities

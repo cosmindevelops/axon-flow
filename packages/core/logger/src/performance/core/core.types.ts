@@ -3,7 +3,7 @@
  * Supports memory tracking, GC monitoring, and operation profiling
  */
 
-import type { CircuitBreakerState } from "../types/index.js";
+import type { CircuitBreakerState } from "../../types/index.js";
 
 /**
  * Memory usage metrics for heap, RSS, and external memory
@@ -324,18 +324,6 @@ export type PerformanceCategory =
 /**
  * Environment-based decorator activation conditions
  */
-export interface IDecoratorActivationConditions {
-  /** Enable only in specific environments */
-  environments?: string[];
-  /** Enable only when NODE_ENV matches */
-  nodeEnv?: string[];
-  /** Enable only when specific feature flags are set */
-  featureFlags?: string[];
-  /** Custom activation function */
-  customCondition?: () => boolean;
-  /** Enable based on log level */
-  logLevel?: string;
-}
 
 /**
  * Performance budget configuration for method categories
@@ -354,67 +342,14 @@ export interface IPerformanceBudget {
 /**
  * Enhanced performance decorator options
  */
-export interface IPerformanceDecoratorOptions {
-  /** Operation category */
-  category?: string;
-  /** Performance category for classification */
-  performanceCategory?: PerformanceCategory;
-  /** Custom threshold for this operation */
-  threshold?: number;
-  /** Enable sampling for this operation */
-  sample?: boolean;
-  /** Sampling rate (0-1) for this specific decorator */
-  sampleRate?: number;
-  /** Metadata to include with measurements */
-  metadata?: Record<string, unknown>;
-  /** Activation conditions */
-  activation?: IDecoratorActivationConditions;
-  /** Performance budget for this operation */
-  budget?: IPerformanceBudget;
-  /** Enable parameter inspection */
-  trackParameters?: boolean;
-  /** Parameter serialization options */
-  parameterOptions?: {
-    /** Include parameter values in metadata */
-    includeValues?: boolean;
-    /** Include parameter types in metadata */
-    includeTypes?: boolean;
-    /** Maximum parameter value length for logging */
-    maxValueLength?: number;
-    /** Parameter names to exclude from tracking */
-    excludeParams?: string[];
-  };
-  /** Custom metric exporters */
-  exporters?: IPerformanceExporter[];
-}
 
 /**
  * Performance exporter interface for custom metrics
  */
-export interface IPerformanceExporter {
-  /** Exporter name */
-  name: string;
-  /** Export format */
-  format: "json" | "prometheus" | "csv" | "custom";
-  /** Export function */
-  export: (metrics: IOperationMetrics, metadata?: Record<string, unknown>) => string | void;
-  /** Export interval in milliseconds (0 for manual export) */
-  interval?: number;
-}
 
 /**
  * Decorator composition configuration
  */
-export interface IDecoratorComposition {
-  /** Order of decorator execution */
-  executionOrder?: number;
-  /** Dependencies on other decorators */
-  dependencies?: string[];
-  /** Whether this decorator can be combined with others */
-  combinable?: boolean;
-  /** Shared context between composed decorators */
-  sharedContext?: Record<string, unknown>;
-}
 
 /**
  * Method parameter inspection result

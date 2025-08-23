@@ -285,6 +285,13 @@ export class ObjectPool<T> implements IObjectPool<T> {
     await Promise.allSettled(warmupPromises);
   }
 
+  /**
+   * Alias for warmup method (camelCase naming convention)
+   */
+  public async warmUp(): Promise<void> {
+    return this.warmup();
+  }
+
   public async validate(): Promise<void> {
     if (this.isDestroyed) return;
 

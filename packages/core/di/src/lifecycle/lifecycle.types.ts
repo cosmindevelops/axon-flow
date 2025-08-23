@@ -165,14 +165,22 @@ export interface IScopeManager {
   getInstance<T>(token: DIToken<T>): T | undefined;
 
   /**
-   * Set scoped instance for token
+   * Set scoped instance for token (sync version for backward compatibility)
    */
   setInstance<T>(token: DIToken<T>, instance: T): void;
+  /**
+   * Set scoped instance for token (async version with thread safety)
+   */
+  setInstance<T>(token: DIToken<T>, instance: T, options: { async: true }): Promise<void>;
 
   /**
-   * Remove scoped instance for token
+   * Remove scoped instance for token (sync version for backward compatibility)
    */
   removeInstance<T>(token: DIToken<T>): boolean;
+  /**
+   * Remove scoped instance for token (async version with thread safety)
+   */
+  removeInstance<T>(token: DIToken<T>, options: { async: true }): Promise<boolean>;
 
   /**
    * Check if token has scoped instance
@@ -180,19 +188,31 @@ export interface IScopeManager {
   hasInstance<T>(token: DIToken<T>): boolean;
 
   /**
-   * Create child scope
+   * Create child scope (sync version for backward compatibility)
    */
   createChildScope(scopeId?: string): IScopeManager;
+  /**
+   * Create child scope (async version with thread safety)
+   */
+  createChildScope(scopeId?: string, options?: { async: true }): Promise<IScopeManager>;
 
   /**
-   * Clear all instances in this scope
+   * Clear all instances in this scope (sync version for backward compatibility)
    */
   clear(): void;
+  /**
+   * Clear all instances in this scope (async version with thread safety)
+   */
+  clear(options: { async: true }): Promise<void>;
 
   /**
-   * Dispose scope and cleanup resources
+   * Dispose scope and cleanup resources (sync version for backward compatibility)
    */
   dispose(): void;
+  /**
+   * Dispose scope and cleanup resources (async version with thread safety)
+   */
+  dispose(options: { async: true }): Promise<void>;
 
   /**
    * Get scope statistics

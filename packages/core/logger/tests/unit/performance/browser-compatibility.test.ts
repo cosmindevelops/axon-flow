@@ -8,8 +8,8 @@ import {
   PerformancePlatformDetector,
   MemoryMonitor,
   EnhancedPerformanceTracker,
-} from "../../../src/performance/performance.classes.js";
-import type { IEnhancedPerformanceConfig, IPlatformInfo } from "../../../src/performance/performance.types.js";
+} from "../../../src/performance/core/core.classes.js";
+import type { IEnhancedPerformanceConfig, IPlatformInfo } from "../../../src/performance/core/core.types.js";
 
 // Mock browser globals for testing
 const createBrowserMocks = () => {

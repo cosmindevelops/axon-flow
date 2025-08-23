@@ -14,6 +14,7 @@ import type {
   IPlatformError,
   IPlatformPerformance,
   IPlatformValidation,
+  ITiming,
   PlatformType,
 } from "./platform.types.js";
 
@@ -484,4 +485,68 @@ export function getCurrentPlatformCapabilities(): IPlatformCapabilities {
 export function isPlatformSupported(): boolean {
   const validation = validateCurrentPlatform();
   return validation.criticalFailures.length === 0;
+}
+
+/**
+ * Performance timing implementation with cross-platform fallbacks
+ */
+export class PlatformTiming implements ITiming {
+  private readonly capabilities: IPlatformCapabilities;
+  private readonly useHighResTimer: boolean;
+
+  constructor() {
+    this.capabilities = platformCompat.getPlatformCapabilities();
+    this.useHighResTimer = this.capabilities.performanceSupport;
+  }
+
+  /**
+   * Get high-resolution timestamp in milliseconds
+   * Falls back to Date.now() if performance.now() unavailable
+   */
+  public now(): number {
+    if (this.useHighResTimer && typeof performance !== "undefined" && performance.now) {
+      return performance.now();
+    }
+    return Date.now();
+  }
+
+  /**
+   * Check if high-resolution timing is available
+   */
+  public isHighResolution(): boolean {
+    return this.useHighResTimer;
+  }
+
+  /**
+   * Get current timestamp (always uses Date.now() for consistency)
+   */
+  public getTimestamp(): number {
+    return Date.now();
+  }
+}
+
+/**
+ * Global timing instance for dependency injection
+ */
+export const platformTiming = new PlatformTiming();
+
+/**
+ * Factory function to create timing instance
+ */
+export function createPlatformTiming(): PlatformTiming {
+  return new PlatformTiming();
+}
+
+/**
+ * Convenience function for getting current time
+ */
+export function now(): number {
+  return platformTiming.now();
+}
+
+/**
+ * Convenience function for checking high-resolution support
+ */
+export function isHighResolutionTimingAvailable(): boolean {
+  return platformTiming.isHighResolution();
 }

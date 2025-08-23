@@ -152,14 +152,24 @@ export interface IDIContainer {
   registerAbstractFactory(name: string, abstractFactory: IAbstractFactory): void;
 
   /**
-   * Resolve a dependency
+   * Resolve a dependency synchronously
    */
   resolve<T>(token: DIToken<T>, context?: IResolutionContext): T;
 
   /**
-   * Try to resolve a dependency (returns undefined if not found)
+   * Resolve a dependency asynchronously (supports async factories)
+   */
+  resolveAsync<T>(token: DIToken<T>, context?: IResolutionContext): Promise<T>;
+
+  /**
+   * Try to resolve a dependency synchronously (returns undefined if not found)
    */
   tryResolve<T>(token: DIToken<T>, context?: IResolutionContext): T | undefined;
+
+  /**
+   * Try to resolve a dependency asynchronously (returns undefined if not found)
+   */
+  tryResolveAsync<T>(token: DIToken<T>, context?: IResolutionContext): Promise<T | undefined>;
 
   /**
    * Check if a token is registered

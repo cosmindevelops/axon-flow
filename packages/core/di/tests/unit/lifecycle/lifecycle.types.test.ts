@@ -1,10 +1,10 @@
 /**
  * Lifecycle types unit tests
- * 
+ *
  * Tests for TypeScript type definitions and interfaces in lifecycle management
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from "vitest";
 import type {
   LifecycleStrategy,
   ILifecycleManager,
@@ -16,121 +16,121 @@ import type {
   IScopeManager,
   IScopeStats,
   ILifecyclePerformanceMetrics,
-} from '../../../src/lifecycle/lifecycle.types.js';
-import type { DIToken, IResolutionContext } from '../../../src/container/container.types.js';
+} from "../../../src/lifecycle/lifecycle.types.js";
+import type { DIToken, IResolutionContext } from "../../../src/container/container.types.js";
 
 // Type assertion helper
 function assertType<T>(value: T): T {
   return value;
 }
 
-describe('Lifecycle Types', () => {
-  describe('LifecycleStrategy', () => {
-    it('should only accept valid strategy values', () => {
-      const singleton: LifecycleStrategy = 'singleton';
-      const transient: LifecycleStrategy = 'transient';
-      const scoped: LifecycleStrategy = 'scoped';
+describe("Lifecycle Types", () => {
+  describe("LifecycleStrategy", () => {
+    it("should only accept valid strategy values", () => {
+      const singleton: LifecycleStrategy = "singleton";
+      const transient: LifecycleStrategy = "transient";
+      const scoped: LifecycleStrategy = "scoped";
 
-      expect(singleton).toBe('singleton');
-      expect(transient).toBe('transient');
-      expect(scoped).toBe('scoped');
+      expect(singleton).toBe("singleton");
+      expect(transient).toBe("transient");
+      expect(scoped).toBe("scoped");
     });
 
-    it('should be used as union type', () => {
-      const strategies: LifecycleStrategy[] = ['singleton', 'transient', 'scoped'];
-      
-      strategies.forEach(strategy => {
-        expect(['singleton', 'transient', 'scoped']).toContain(strategy);
+    it("should be used as union type", () => {
+      const strategies: LifecycleStrategy[] = ["singleton", "transient", "scoped"];
+
+      strategies.forEach((strategy) => {
+        expect(["singleton", "transient", "scoped"]).toContain(strategy);
       });
     });
   });
 
-  describe('ILifecycleManager', () => {
-    it('should define complete lifecycle management interface', () => {
+  describe("ILifecycleManager", () => {
+    it("should define complete lifecycle management interface", () => {
       // Type-only test to verify interface structure
       type ManagerMethods = keyof ILifecycleManager;
-      
+
       const requiredMethods: ManagerMethods[] = [
-        'strategy',
-        'getInstance',
-        'hasInstance',
-        'clearInstance',
-        'clearAll',
-        'getStats',
-        'dispose',
+        "strategy",
+        "getInstance",
+        "hasInstance",
+        "clearInstance",
+        "clearAll",
+        "getStats",
+        "dispose",
       ];
 
-      requiredMethods.forEach(method => {
-        expect(typeof method).toBe('string');
+      requiredMethods.forEach((method) => {
+        expect(typeof method).toBe("string");
       });
     });
 
-    it('should support generic type parameter', () => {
+    it("should support generic type parameter", () => {
       interface ITestService {
         getValue(): string;
       }
 
       // Should compile without issues
       type TypedManager = ILifecycleManager<ITestService>;
-      
+
       // Verify the generic type is preserved
       const mockManager = {} as TypedManager;
-      const mockToken = 'TestService' as DIToken<ITestService>;
-      const mockFactory = (): ITestService => ({ getValue: () => 'test' });
+      const mockToken = "TestService" as DIToken<ITestService>;
+      const mockFactory = (): ITestService => ({ getValue: () => "test" });
 
       // This should type-check correctly
-      type GetInstanceReturn = ReturnType<TypedManager['getInstance']>;
+      type GetInstanceReturn = ReturnType<TypedManager["getInstance"]>;
       const returnType: GetInstanceReturn = mockFactory();
 
-      expect(returnType.getValue()).toBe('test');
+      expect(returnType.getValue()).toBe("test");
     });
 
-    it('should require readonly strategy property', () => {
+    it("should require readonly strategy property", () => {
       // Verify strategy is readonly by ensuring it's assignable from literal types
-      type StrategyProperty = ILifecycleManager['strategy'];
-      
-      const singletonStrategy: StrategyProperty = 'singleton';
-      const transientStrategy: StrategyProperty = 'transient';
-      const scopedStrategy: StrategyProperty = 'scoped';
+      type StrategyProperty = ILifecycleManager["strategy"];
 
-      expect(singletonStrategy).toBe('singleton');
-      expect(transientStrategy).toBe('transient');
-      expect(scopedStrategy).toBe('scoped');
+      const singletonStrategy: StrategyProperty = "singleton";
+      const transientStrategy: StrategyProperty = "transient";
+      const scopedStrategy: StrategyProperty = "scoped";
+
+      expect(singletonStrategy).toBe("singleton");
+      expect(transientStrategy).toBe("transient");
+      expect(scopedStrategy).toBe("scoped");
     });
 
-    it('should accept optional resolution context', () => {
+    it("should accept optional resolution context", () => {
       interface IService {
         execute(): void;
       }
 
       const mockManager = {} as ILifecycleManager<IService>;
-      const token = 'Service' as DIToken<IService>;
+      const token = "Service" as DIToken<IService>;
       const factory = (): IService => ({ execute: () => {} });
 
       // Both with and without context should be valid
       type GetInstanceWithContext = (
         token: DIToken<IService>,
         factory: () => IService,
-        context: IResolutionContext
+        context: IResolutionContext,
       ) => IService;
 
       type GetInstanceWithoutContext = (
         token: DIToken<IService>,
         factory: () => IService,
-        context?: undefined
+        context?: undefined,
       ) => IService;
 
       // Method should accept both signatures
       const methodWithContext: GetInstanceWithContext = mockManager.getInstance;
       const methodWithoutContext: GetInstanceWithoutContext = mockManager.getInstance;
 
-      expect(typeof methodWithContext).toBe('function');
-      expect(typeof methodWithoutContext).toBe('function');
+      expect(typeof methodWithContext).toBe("function");
+      expect(typeof methodWithoutContext).toBe("function");
     });
   });
 
-  describe('ILifecycleStats', () => {
-    it('should define comprehensive statistics structure', () => {
+  describe("ILifecycleStats", () => {
+    it("should define comprehensive statistics structure", () => {
       const stats: ILifecycleStats = {
         totalInstancesCreated: 10,
         cachedInstancesCount: 5,
@@ -148,7 +148,7 @@ describe('Lifecycle Types', () => {
       expect(stats.peakCreationTime).toBe(5.2);
     });
 
-    it('should support zero values for new managers', () => {
+    it("should support zero values for new managers", () => {
       const emptyStats: ILifecycleStats = {
         totalInstancesCreated: 0,
         cachedInstancesCount: 0,
@@ -162,7 +162,7 @@ describe('Lifecycle Types', () => {
       expect(emptyStats.cacheHitRatio).toBe(0);
     });
 
-    it('should require all numeric properties', () => {
+    it("should require all numeric properties", () => {
       // Verify all properties are numbers
       const stats: ILifecycleStats = {
         totalInstancesCreated: 1,
@@ -173,18 +173,18 @@ describe('Lifecycle Types', () => {
         peakCreationTime: 2.0,
       };
 
-      Object.values(stats).forEach(value => {
-        expect(typeof value).toBe('number');
+      Object.values(stats).forEach((value) => {
+        expect(typeof value).toBe("number");
       });
     });
   });
 
-  describe('Configuration Interfaces', () => {
-    describe('ISingletonLifecycleConfig', () => {
-      it('should define optional singleton configuration', () => {
+  describe("Configuration Interfaces", () => {
+    describe("ISingletonLifecycleConfig", () => {
+      it("should define optional singleton configuration", () => {
         // All properties should be optional
         const emptyConfig: ISingletonLifecycleConfig = {};
-        
+
         const fullConfig: ISingletonLifecycleConfig = {
           lazy: true,
           threadSafe: false,
@@ -197,7 +197,7 @@ describe('Lifecycle Types', () => {
         expect(fullConfig.maxInstances).toBe(100);
       });
 
-      it('should accept boolean flags', () => {
+      it("should accept boolean flags", () => {
         const lazyConfig: ISingletonLifecycleConfig = { lazy: true };
         const eagerConfig: ISingletonLifecycleConfig = { lazy: false };
         const threadSafeConfig: ISingletonLifecycleConfig = { threadSafe: true };
@@ -207,7 +207,7 @@ describe('Lifecycle Types', () => {
         expect(threadSafeConfig.threadSafe).toBe(true);
       });
 
-      it('should accept numeric maxInstances', () => {
+      it("should accept numeric maxInstances", () => {
         const limitedConfig: ISingletonLifecycleConfig = { maxInstances: 50 };
         const unlimitedConfig: ISingletonLifecycleConfig = { maxInstances: Infinity };
 
@@ -216,10 +216,10 @@ describe('Lifecycle Types', () => {
       });
     });
 
-    describe('ITransientLifecycleConfig', () => {
-      it('should define optional transient configuration', () => {
+    describe("ITransientLifecycleConfig", () => {
+      it("should define optional transient configuration", () => {
         const emptyConfig: ITransientLifecycleConfig = {};
-        
+
         const fullConfig: ITransientLifecycleConfig = {
           trackInstances: true,
           enablePooling: false,
@@ -235,7 +235,7 @@ describe('Lifecycle Types', () => {
         expect(fullConfig.poolSize).toBe(10);
       });
 
-      it('should support simple pooling configuration', () => {
+      it("should support simple pooling configuration", () => {
         const poolingConfig: ITransientLifecycleConfig = {
           enablePooling: true,
           poolSize: 20,
@@ -245,7 +245,7 @@ describe('Lifecycle Types', () => {
         expect(poolingConfig.poolSize).toBe(20);
       });
 
-      it('should support advanced pool configuration', () => {
+      it("should support advanced pool configuration", () => {
         const advancedConfig: ITransientLifecycleConfig = {
           poolConfig: {
             min: 1,
@@ -257,7 +257,7 @@ describe('Lifecycle Types', () => {
         expect(advancedConfig.poolConfig).toBeDefined();
       });
 
-      it('should accept validator and cleanup functions', () => {
+      it("should accept validator and cleanup functions", () => {
         const validator = (instance: unknown): boolean => instance !== null;
         const cleanupHandler = (instance: unknown): void => {
           // Cleanup logic
@@ -268,41 +268,41 @@ describe('Lifecycle Types', () => {
           cleanupHandler,
         };
 
-        expect(typeof config.validator).toBe('function');
-        expect(typeof config.cleanupHandler).toBe('function');
+        expect(typeof config.validator).toBe("function");
+        expect(typeof config.cleanupHandler).toBe("function");
       });
     });
 
-    describe('IScopedLifecycleConfig', () => {
-      it('should define optional scoped configuration', () => {
+    describe("IScopedLifecycleConfig", () => {
+      it("should define optional scoped configuration", () => {
         const emptyConfig: IScopedLifecycleConfig = {};
-        
+
         const fullConfig: IScopedLifecycleConfig = {
-          isolationStrategy: 'strict',
+          isolationStrategy: "strict",
           autoDispose: true,
           maxInstancesPerScope: 50,
         };
 
         expect(emptyConfig).toBeDefined();
-        expect(fullConfig.isolationStrategy).toBe('strict');
+        expect(fullConfig.isolationStrategy).toBe("strict");
         expect(fullConfig.autoDispose).toBe(true);
         expect(fullConfig.maxInstancesPerScope).toBe(50);
       });
 
-      it('should accept isolation strategy values', () => {
+      it("should accept isolation strategy values", () => {
         const strictConfig: IScopedLifecycleConfig = {
-          isolationStrategy: 'strict',
+          isolationStrategy: "strict",
         };
 
         const inheritedConfig: IScopedLifecycleConfig = {
-          isolationStrategy: 'inherited',
+          isolationStrategy: "inherited",
         };
 
-        expect(strictConfig.isolationStrategy).toBe('strict');
-        expect(inheritedConfig.isolationStrategy).toBe('inherited');
+        expect(strictConfig.isolationStrategy).toBe("strict");
+        expect(inheritedConfig.isolationStrategy).toBe("inherited");
       });
 
-      it('should accept scope limits', () => {
+      it("should accept scope limits", () => {
         const limitedConfig: IScopedLifecycleConfig = {
           maxInstancesPerScope: 25,
         };
@@ -312,24 +312,24 @@ describe('Lifecycle Types', () => {
     });
   });
 
-  describe('ILifecycleFactory', () => {
-    it('should define factory interface methods', () => {
+  describe("ILifecycleFactory", () => {
+    it("should define factory interface methods", () => {
       // Type-only test to verify interface structure
       type FactoryMethods = keyof ILifecycleFactory;
-      
+
       const requiredMethods: FactoryMethods[] = [
-        'createSingleton',
-        'createTransient',
-        'createScoped',
-        'getLifecycleManager',
+        "createSingleton",
+        "createTransient",
+        "createScoped",
+        "getLifecycleManager",
       ];
 
-      requiredMethods.forEach(method => {
-        expect(typeof method).toBe('string');
+      requiredMethods.forEach((method) => {
+        expect(typeof method).toBe("string");
       });
     });
 
-    it('should support generic type parameters', () => {
+    it("should support generic type parameters", () => {
       interface ITestService {
         execute(): void;
       }
@@ -337,9 +337,9 @@ describe('Lifecycle Types', () => {
       const mockFactory = {} as ILifecycleFactory;
 
       // Methods should support generic types
-      type CreateSingletonReturn = ReturnType<ILifecycleFactory['createSingleton']>;
-      type CreateTransientReturn = ReturnType<ILifecycleFactory['createTransient']>;
-      type CreateScopedReturn = ReturnType<ILifecycleFactory['createScoped']>;
+      type CreateSingletonReturn = ReturnType<ILifecycleFactory["createSingleton"]>;
+      type CreateTransientReturn = ReturnType<ILifecycleFactory["createTransient"]>;
+      type CreateScopedReturn = ReturnType<ILifecycleFactory["createScoped"]>;
 
       // All should return lifecycle managers
       const singletonManager: CreateSingletonReturn = mockFactory.createSingleton<ITestService>();
@@ -347,12 +347,12 @@ describe('Lifecycle Types', () => {
       const scopedManager: CreateScopedReturn = mockFactory.createScoped<ITestService>();
 
       // Should maintain type safety
-      expect(typeof singletonManager.strategy).toBe('string');
-      expect(typeof transientManager.strategy).toBe('string');
-      expect(typeof scopedManager.strategy).toBe('string');
+      expect(typeof singletonManager.strategy).toBe("string");
+      expect(typeof transientManager.strategy).toBe("string");
+      expect(typeof scopedManager.strategy).toBe("string");
     });
 
-    it('should accept optional configuration parameters', () => {
+    it("should accept optional configuration parameters", () => {
       const mockFactory = {} as ILifecycleFactory;
 
       // Should work with and without configuration
@@ -364,98 +364,95 @@ describe('Lifecycle Types', () => {
       const transientMethod: CreateTransientWithConfig = mockFactory.createTransient;
       const scopedMethod: CreateScopedWithConfig = mockFactory.createScoped;
 
-      expect(typeof singletonMethod).toBe('function');
-      expect(typeof transientMethod).toBe('function');
-      expect(typeof scopedMethod).toBe('function');
+      expect(typeof singletonMethod).toBe("function");
+      expect(typeof transientMethod).toBe("function");
+      expect(typeof scopedMethod).toBe("function");
     });
 
-    it('should support strategy-based manager creation', () => {
+    it("should support strategy-based manager creation", () => {
       const mockFactory = {} as ILifecycleFactory;
 
       // Generic factory method should accept strategy and optional config
-      type GenericFactoryMethod = (
-        strategy: LifecycleStrategy,
-        config?: unknown
-      ) => ILifecycleManager;
+      type GenericFactoryMethod = (strategy: LifecycleStrategy, config?: unknown) => ILifecycleManager;
 
       const genericMethod: GenericFactoryMethod = mockFactory.getLifecycleManager;
 
-      expect(typeof genericMethod).toBe('function');
+      expect(typeof genericMethod).toBe("function");
     });
   });
 
-  describe('IScopeManager', () => {
-    it('should define scope management interface', () => {
+  describe("IScopeManager", () => {
+    it("should define scope management interface", () => {
       type ScopeManagerMethods = keyof IScopeManager;
-      
+
       const requiredMethods: ScopeManagerMethods[] = [
-        'scopeId',
-        'parent',
-        'getInstance',
-        'setInstance',
-        'removeInstance',
-        'hasInstance',
-        'createChildScope',
-        'clear',
-        'dispose',
-        'getStats',
+        "scopeId",
+        "parent",
+        "getInstance",
+        "setInstance",
+        "removeInstance",
+        "hasInstance",
+        "createChildScope",
+        "clear",
+        "dispose",
+        "getStats",
       ];
 
-      requiredMethods.forEach(method => {
-        expect(typeof method).toBe('string');
+      requiredMethods.forEach((method) => {
+        expect(typeof method).toBe("string");
       });
     });
 
-    it('should require readonly scopeId and optional parent', () => {
+    it("should require readonly scopeId and optional parent", () => {
       const mockScopeManager = {} as IScopeManager;
 
       // Properties should exist and be of correct types
-      type ScopeIdType = IScopeManager['scopeId'];
-      type ParentType = IScopeManager['parent'];
+      type ScopeIdType = IScopeManager["scopeId"];
+      type ParentType = IScopeManager["parent"];
 
-      const scopeId: ScopeIdType = 'test-scope-id';
+      const scopeId: ScopeIdType = "test-scope-id";
       const parent: ParentType = undefined;
 
-      expect(typeof scopeId).toBe('string');
+      expect(typeof scopeId).toBe("string");
       expect(parent).toBeUndefined();
     });
 
-    it('should support generic instance management', () => {
+    it("should support generic instance management", () => {
       interface ITestService {
         getValue(): string;
       }
 
       const mockScopeManager = {} as IScopeManager;
-      const token = 'TestService' as DIToken<ITestService>;
-      const instance: ITestService = { getValue: () => 'test' };
+      const token = "TestService" as DIToken<ITestService>;
+      const instance: ITestService = { getValue: () => "test" };
 
       // Methods should maintain type safety
-      type GetInstanceReturn = ReturnType<IScopeManager['getInstance']>;
-      type SetInstanceParam = Parameters<IScopeManager['setInstance']>[1];
+      type GetInstanceReturn = ReturnType<IScopeManager["getInstance"]>;
+      type SetInstanceParam = Parameters<IScopeManager["setInstance"]>[1];
 
       const getInstance: GetInstanceReturn = instance;
       const setInstance: SetInstanceParam = instance;
 
-      expect(getInstance.getValue()).toBe('test');
-      expect(setInstance.getValue()).toBe('test');
+      expect(getInstance.getValue()).toBe("test");
+      expect(setInstance.getValue()).toBe("test");
     });
 
-    it('should support hierarchical scope creation', () => {
+    it("should support hierarchical scope creation", () => {
       const mockScopeManager = {} as IScopeManager;
 
       // createChildScope should accept optional scopeId and return IScopeManager
       type CreateChildScopeMethod = (scopeId?: string) => IScopeManager;
-      
+
       const createChildMethod: CreateChildScopeMethod = mockScopeManager.createChildScope;
 
-      expect(typeof createChildMethod).toBe('function');
+      expect(typeof createChildMethod).toBe("function");
     });
   });
 
-  describe('IScopeStats', () => {
-    it('should define comprehensive scope statistics', () => {
+  describe("IScopeStats", () => {
+    it("should define comprehensive scope statistics", () => {
       const stats: IScopeStats = {
-        scopeId: 'test-scope',
+        scopeId: "test-scope",
         instanceCount: 5,
         createdAt: new Date(),
         lastAccessedAt: new Date(),
@@ -463,7 +460,7 @@ describe('Lifecycle Types', () => {
         estimatedMemoryUsage: 2048,
       };
 
-      expect(stats.scopeId).toBe('test-scope');
+      expect(stats.scopeId).toBe("test-scope");
       expect(stats.instanceCount).toBe(5);
       expect(stats.createdAt).toBeInstanceOf(Date);
       expect(stats.lastAccessedAt).toBeInstanceOf(Date);
@@ -471,11 +468,11 @@ describe('Lifecycle Types', () => {
       expect(stats.estimatedMemoryUsage).toBe(2048);
     });
 
-    it('should require all properties', () => {
+    it("should require all properties", () => {
       const currentTime = new Date();
 
       const stats: IScopeStats = {
-        scopeId: 'scope',
+        scopeId: "scope",
         instanceCount: 0,
         createdAt: currentTime,
         lastAccessedAt: currentTime,
@@ -484,17 +481,17 @@ describe('Lifecycle Types', () => {
       };
 
       // Verify all required properties exist
-      expect(typeof stats.scopeId).toBe('string');
-      expect(typeof stats.instanceCount).toBe('number');
+      expect(typeof stats.scopeId).toBe("string");
+      expect(typeof stats.instanceCount).toBe("number");
       expect(stats.createdAt).toBeInstanceOf(Date);
       expect(stats.lastAccessedAt).toBeInstanceOf(Date);
-      expect(typeof stats.childScopesCount).toBe('number');
-      expect(typeof stats.estimatedMemoryUsage).toBe('number');
+      expect(typeof stats.childScopesCount).toBe("number");
+      expect(typeof stats.estimatedMemoryUsage).toBe("number");
     });
   });
 
-  describe('ILifecyclePerformanceMetrics', () => {
-    it('should define aggregate performance metrics structure', () => {
+  describe("ILifecyclePerformanceMetrics", () => {
+    it("should define aggregate performance metrics structure", () => {
       const metrics: ILifecyclePerformanceMetrics = {
         byStrategy: {
           singleton: {
@@ -537,7 +534,7 @@ describe('Lifecycle Types', () => {
       expect(metrics.overall.cacheEfficiency).toBe(0.6875);
     });
 
-    it('should require statistics for all lifecycle strategies', () => {
+    it("should require statistics for all lifecycle strategies", () => {
       const emptyStats: ILifecycleStats = {
         totalInstancesCreated: 0,
         cachedInstancesCount: 0,
@@ -568,7 +565,7 @@ describe('Lifecycle Types', () => {
       expect(metrics.overall).toBeDefined();
     });
 
-    it('should maintain consistency between individual and overall metrics', () => {
+    it("should maintain consistency between individual and overall metrics", () => {
       const singletonStats: ILifecycleStats = {
         totalInstancesCreated: 10,
         cachedInstancesCount: 8,
@@ -608,7 +605,7 @@ describe('Lifecycle Types', () => {
         },
       };
 
-      const totalByStrategy = 
+      const totalByStrategy =
         metrics.byStrategy.singleton.totalInstancesCreated +
         metrics.byStrategy.transient.totalInstancesCreated +
         metrics.byStrategy.scoped.totalInstancesCreated;
@@ -618,25 +615,25 @@ describe('Lifecycle Types', () => {
   });
 });
 
-describe('Type Relationships', () => {
-  it('should maintain type safety between managers and factories', () => {
+describe("Type Relationships", () => {
+  it("should maintain type safety between managers and factories", () => {
     interface IService {
       execute(): void;
     }
 
     const mockFactory = {} as ILifecycleFactory;
-    
+
     // Factory methods should return appropriately typed managers
     const typedSingleton: ILifecycleManager<IService> = mockFactory.createSingleton<IService>();
     const typedTransient: ILifecycleManager<IService> = mockFactory.createTransient<IService>();
     const typedScoped: ILifecycleManager<IService> = mockFactory.createScoped<IService>();
 
-    expect(typeof typedSingleton.strategy).toBe('string');
-    expect(typeof typedTransient.strategy).toBe('string');
-    expect(typeof typedScoped.strategy).toBe('string');
+    expect(typeof typedSingleton.strategy).toBe("string");
+    expect(typeof typedTransient.strategy).toBe("string");
+    expect(typeof typedScoped.strategy).toBe("string");
   });
 
-  it('should support inheritance in lifecycle management', () => {
+  it("should support inheritance in lifecycle management", () => {
     interface IBaseService {
       getType(): string;
     }
@@ -652,28 +649,28 @@ describe('Type Relationships', () => {
     // Extended manager should be assignable to base manager
     const managerAsBase: ILifecycleManager<IBaseService> = extendedManager;
 
-    expect(typeof managerAsBase.strategy).toBe('string');
+    expect(typeof managerAsBase.strategy).toBe("string");
   });
 
-  it('should maintain consistency between configuration and manager types', () => {
+  it("should maintain consistency between configuration and manager types", () => {
     // Configuration types should be usable with their corresponding managers
     const singletonConfig: ISingletonLifecycleConfig = { lazy: true };
     const transientConfig: ITransientLifecycleConfig = { enablePooling: true };
-    const scopedConfig: IScopedLifecycleConfig = { isolationStrategy: 'strict' };
+    const scopedConfig: IScopedLifecycleConfig = { isolationStrategy: "strict" };
 
     // Factory should accept these configurations
     const mockFactory = {} as ILifecycleFactory;
-    
+
     const singletonManager = mockFactory.createSingleton(singletonConfig);
     const transientManager = mockFactory.createTransient(transientConfig);
     const scopedManager = mockFactory.createScoped(scopedConfig);
 
-    expect(singletonManager.strategy).toBe('singleton');
-    expect(transientManager.strategy).toBe('transient');
-    expect(scopedManager.strategy).toBe('scoped');
+    expect(singletonManager.strategy).toBe("singleton");
+    expect(transientManager.strategy).toBe("transient");
+    expect(scopedManager.strategy).toBe("scoped");
   });
 
-  it('should support scope hierarchy types', () => {
+  it("should support scope hierarchy types", () => {
     const parentScope = {} as IScopeManager;
     const childScope = {} as IScopeManager;
 
@@ -687,7 +684,7 @@ describe('Type Relationships', () => {
     expect(typedChild.parent).toBe(parentScope);
   });
 
-  it('should maintain stats type consistency', () => {
+  it("should maintain stats type consistency", () => {
     // Stats should be compatible between different contexts
     const lifecycleStats: ILifecycleStats = {
       totalInstancesCreated: 5,
@@ -699,7 +696,7 @@ describe('Type Relationships', () => {
     };
 
     const scopeStats: IScopeStats = {
-      scopeId: 'test-scope',
+      scopeId: "test-scope",
       instanceCount: lifecycleStats.cachedInstancesCount,
       createdAt: new Date(),
       lastAccessedAt: new Date(),
@@ -713,16 +710,16 @@ describe('Type Relationships', () => {
   });
 });
 
-describe('Type Constraints', () => {
-  it('should enforce lifecycle strategy constraints', () => {
-    const validStrategies: LifecycleStrategy[] = ['singleton', 'transient', 'scoped'];
-    
-    validStrategies.forEach(strategy => {
-      expect(['singleton', 'transient', 'scoped']).toContain(strategy);
+describe("Type Constraints", () => {
+  it("should enforce lifecycle strategy constraints", () => {
+    const validStrategies: LifecycleStrategy[] = ["singleton", "transient", "scoped"];
+
+    validStrategies.forEach((strategy) => {
+      expect(["singleton", "transient", "scoped"]).toContain(strategy);
     });
   });
 
-  it('should enforce numeric constraints in configurations', () => {
+  it("should enforce numeric constraints in configurations", () => {
     const singletonConfig: ISingletonLifecycleConfig = {
       maxInstances: 100, // Must be number
     };
@@ -735,34 +732,34 @@ describe('Type Constraints', () => {
       maxInstancesPerScope: 50, // Must be number
     };
 
-    expect(typeof singletonConfig.maxInstances).toBe('number');
-    expect(typeof transientConfig.poolSize).toBe('number');
-    expect(typeof scopedConfig.maxInstancesPerScope).toBe('number');
+    expect(typeof singletonConfig.maxInstances).toBe("number");
+    expect(typeof transientConfig.poolSize).toBe("number");
+    expect(typeof scopedConfig.maxInstancesPerScope).toBe("number");
   });
 
-  it('should enforce return type constraints', () => {
+  it("should enforce return type constraints", () => {
     const mockManager = {} as ILifecycleManager<string>;
-    const token = 'StringService' as DIToken<string>;
-    const factory = (): string => 'test-string';
+    const token = "StringService" as DIToken<string>;
+    const factory = (): string => "test-string";
 
     // getInstance should return string type
     type GetInstanceReturn = ReturnType<typeof mockManager.getInstance>;
-    const result: GetInstanceReturn = 'typed-result';
+    const result: GetInstanceReturn = "typed-result";
 
-    expect(typeof result).toBe('string');
+    expect(typeof result).toBe("string");
   });
 
-  it('should enforce boolean constraints in configurations', () => {
+  it("should enforce boolean constraints in configurations", () => {
     const booleanOptions = {
-      singletonLazy: true as ISingletonLifecycleConfig['lazy'],
-      singletonThreadSafe: false as ISingletonLifecycleConfig['threadSafe'],
-      transientTracking: true as ITransientLifecycleConfig['trackInstances'],
-      transientPooling: false as ITransientLifecycleConfig['enablePooling'],
-      scopedAutoDispose: true as IScopedLifecycleConfig['autoDispose'],
+      singletonLazy: true as ISingletonLifecycleConfig["lazy"],
+      singletonThreadSafe: false as ISingletonLifecycleConfig["threadSafe"],
+      transientTracking: true as ITransientLifecycleConfig["trackInstances"],
+      transientPooling: false as ITransientLifecycleConfig["enablePooling"],
+      scopedAutoDispose: true as IScopedLifecycleConfig["autoDispose"],
     };
 
-    Object.values(booleanOptions).forEach(value => {
-      expect(typeof value).toBe('boolean');
+    Object.values(booleanOptions).forEach((value) => {
+      expect(typeof value).toBe("boolean");
     });
   });
 });

@@ -4,12 +4,12 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { PerformancePlatformDetector, EnhancedPerformanceTracker } from "../../src/performance/performance.classes.js";
+import { PerformancePlatformDetector, EnhancedPerformanceTracker } from "../../src/performance/core/core.classes.js";
 import type {
   IEnhancedPerformanceConfig,
   IPerformanceParityReport,
   IPlatformInfo,
-} from "../../src/performance/performance.types.js";
+} from "../../src/performance/core/core.types.js";
 
 describe("Performance Parity Validation", () => {
   let baseConfig: IEnhancedPerformanceConfig;

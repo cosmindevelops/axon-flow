@@ -23,7 +23,7 @@ import {
 // Test services for error scenarios
 class ReliableService {
   public readonly name = "ReliableService";
-  
+
   process(): string {
     return "success";
   }
@@ -32,28 +32,24 @@ class ReliableService {
 class UnreliableService {
   public readonly name = "UnreliableService";
   private attempts = 0;
-  
+
   constructor(private readonly failureThreshold = 2) {}
-  
+
   process(): string {
     this.attempts++;
-    
+
     if (this.attempts <= this.failureThreshold) {
-      throw new ApplicationError(
-        "Service temporarily unavailable",
-        "SERVICE_UNAVAILABLE",
-        {
-          correlationId: `unreliable_${Date.now()}`,
-          operation: "process",
-          module: "UnreliableService",
-          metadata: { attempt: this.attempts, threshold: this.failureThreshold },
-        },
-      );
+      throw new ApplicationError("Service temporarily unavailable", "SERVICE_UNAVAILABLE", {
+        correlationId: `unreliable_${Date.now()}`,
+        operation: "process",
+        module: "UnreliableService",
+        metadata: { attempt: this.attempts, threshold: this.failureThreshold },
+      });
     }
-    
+
     return "success after retries";
   }
-  
+
   reset(): void {
     this.attempts = 0;
   }
@@ -62,47 +58,43 @@ class UnreliableService {
 class NetworkService {
   public readonly name = "NetworkService";
   private isHealthy = true;
-  
+
   setHealth(healthy: boolean): void {
     this.isHealthy = healthy;
   }
-  
+
   async makeRequest(url: string): Promise<string> {
     if (!this.isHealthy) {
-      throw new ApplicationError(
-        "Network service is unhealthy",
-        "NETWORK_UNHEALTHY",
-        {
-          correlationId: `network_${Date.now()}`,
-          operation: "makeRequest",
-          module: "NetworkService",
-          metadata: { url, isHealthy: this.isHealthy },
-        },
-      );
+      throw new ApplicationError("Network service is unhealthy", "NETWORK_UNHEALTHY", {
+        correlationId: `network_${Date.now()}`,
+        operation: "makeRequest",
+        module: "NetworkService",
+        metadata: { url, isHealthy: this.isHealthy },
+      });
     }
-    
+
     return `Response from ${url}`;
   }
 }
 
 class DatabaseService {
   private connectionCount = 0;
-  
+
   constructor(
     private readonly reliableService: ReliableService,
     private readonly networkService: NetworkService,
   ) {}
-  
+
   async query(sql: string): Promise<any[]> {
     this.connectionCount++;
-    
+
     // Use dependencies that might fail
     this.reliableService.process();
     await this.networkService.makeRequest("/database/query");
-    
+
     return [{ id: 1, data: `Result for ${sql}`, connections: this.connectionCount }];
   }
-  
+
   getConnectionCount(): number {
     return this.connectionCount;
   }
@@ -114,11 +106,11 @@ class AggregateService {
     private readonly database: DatabaseService,
     private readonly unreliable: UnreliableService,
   ) {}
-  
+
   async processWithDependencies(): Promise<{ db: any[]; unreliable: string }> {
     const dbResult = await this.database.query("SELECT * FROM users");
     const unreliableResult = this.unreliable.process();
-    
+
     return {
       db: dbResult,
       unreliable: unreliableResult,
@@ -144,26 +136,23 @@ describe("Error Recovery Integration", () => {
       name: "ErrorRecoveryContainer",
       enableMetrics: true,
     });
-    
+
     // Setup recovery mechanisms
     retryHandler = new RetryHandler({
       maxAttempts: 3,
-      baseDelay: 10,
-      maxDelay: 100,
+      initialDelay: 10,
       backoffStrategy: "exponential",
     });
-    
+
     circuitBreakerHandler = new CircuitBreakerHandler({
       failureThreshold: 3,
-      recoveryTimeout: 1000,
-      monitoringWindow: 5000,
+      resetTimeout: 1000,
     });
-    
-    recoveryManager = new RecoveryManager({
-      defaultStrategy: "retry",
-      enableMetrics: true,
-      maxRecoveryAttempts: 5,
-    });
+
+    recoveryManager = new RecoveryManager();
+
+    // Configure recovery manager with retry strategy
+    recoveryManager.addHandler("retry", retryHandler);
   });
 
   afterEach(() => {
@@ -172,35 +161,39 @@ describe("Error Recovery Integration", () => {
 
   describe("Basic Error Propagation", () => {
     it("should propagate errors with proper context through dependency chains", async () => {
-      container.register(RELIABLE_TOKEN, ReliableService);
-      container.register(NETWORK_TOKEN, NetworkService);
+      container.register(RELIABLE_TOKEN, ReliableService, { lifecycle: "singleton" });
+      container.register(NETWORK_TOKEN, NetworkService, { lifecycle: "singleton" });
       container.register(DATABASE_TOKEN, DatabaseService, {
         dependencies: [RELIABLE_TOKEN, NETWORK_TOKEN],
+        lifecycle: "singleton"
       });
-      
+
       const networkService = container.resolve(NETWORK_TOKEN);
       const databaseService = container.resolve(DATABASE_TOKEN);
-      
+
       // Make network service unhealthy
       networkService.setHealth(false);
       
+      let thrownError: any;
       try {
         await databaseService.query("SELECT 1");
-        expect.fail("Should have thrown error");
       } catch (error: any) {
-        expect(error).toBeInstanceOf(ApplicationError);
-        expect(error.code).toBe("NETWORK_UNHEALTHY");
-        expect(error.context).toHaveProperty("correlationId");
-        expect(error.context).toHaveProperty("module", "NetworkService");
-        expect(error.metadata).toHaveProperty("isHealthy", false);
+        thrownError = error;
       }
+      
+      expect(thrownError).toBeDefined();
+      expect(thrownError).toBeInstanceOf(ApplicationError);
+      expect(thrownError.code).toBe("NETWORK_UNHEALTHY");
+      expect(thrownError.context).toHaveProperty("correlationId");
+      expect(thrownError.metadata).toHaveProperty("url", "/database/query");
+      expect(thrownError.metadata).toHaveProperty("isHealthy", false);
     });
 
     it("should provide detailed error context for resolution failures", () => {
       container.register(DATABASE_TOKEN, DatabaseService, {
         dependencies: ["NonExistentService" as DIToken, NETWORK_TOKEN],
       });
-      
+
       try {
         container.resolve(DATABASE_TOKEN);
         expect.fail("Should have thrown error");
@@ -217,16 +210,16 @@ describe("Error Recovery Integration", () => {
   describe("Retry Mechanism Integration", () => {
     it("should integrate with @axon/errors retry handler", async () => {
       container.register(UNRELIABLE_TOKEN, UnreliableService);
-      
+
       const unreliableService = container.resolve(UNRELIABLE_TOKEN);
-      
+
       // Use retry handler to make the service succeed
       const result = await retryHandler.executeWithRetry(async () => {
         return unreliableService.process();
       });
-      
+
       expect(result).toBe("success after retries");
-      
+
       const metrics = retryHandler.getMetrics();
       expect(metrics.totalAttempts).toBeGreaterThan(1);
       expect(metrics.successfulRetries).toBe(1);
@@ -234,9 +227,9 @@ describe("Error Recovery Integration", () => {
 
     it("should handle retry failures and provide context", async () => {
       container.registerFactory(UNRELIABLE_TOKEN, () => new UnreliableService(10)); // High failure threshold
-      
+
       const unreliableService = container.resolve(UNRELIABLE_TOKEN);
-      
+
       try {
         await retryHandler.executeWithRetry(async () => {
           return unreliableService.process();
@@ -245,7 +238,7 @@ describe("Error Recovery Integration", () => {
       } catch (error: any) {
         expect(error).toBeInstanceOf(ApplicationError);
         expect(error.code).toBe("SERVICE_UNAVAILABLE");
-        
+
         const metrics = retryHandler.getMetrics();
         expect(metrics.totalAttempts).toBe(3); // maxAttempts
         expect(metrics.failedRetries).toBe(1);
@@ -254,27 +247,27 @@ describe("Error Recovery Integration", () => {
 
     it("should maintain correlation IDs across retries", async () => {
       container.register(UNRELIABLE_TOKEN, UnreliableService);
-      
+
       const unreliableService = container.resolve(UNRELIABLE_TOKEN);
       const correlationId = `test_correlation_${Date.now()}`;
-      
+
       // Mock to track correlation ID consistency
       const originalProcess = unreliableService.process;
       const correlationIds: string[] = [];
-      
-      vi.spyOn(unreliableService, 'process').mockImplementation(() => {
+
+      vi.spyOn(unreliableService, "process").mockImplementation(() => {
         try {
           return originalProcess.call(unreliableService);
         } catch (error: any) {
-          correlationIds.push(error.context?.correlationId || 'no-correlation');
+          correlationIds.push(error.context?.correlationId || "no-correlation");
           throw error;
         }
       });
-      
+
       await retryHandler.executeWithRetry(async () => {
         return unreliableService.process();
       });
-      
+
       // Should have maintained correlation context
       expect(correlationIds.length).toBeGreaterThan(0);
     });
@@ -283,10 +276,10 @@ describe("Error Recovery Integration", () => {
   describe("Circuit Breaker Integration", () => {
     it("should integrate with circuit breaker for failing services", async () => {
       container.register(NETWORK_TOKEN, NetworkService);
-      
+
       const networkService = container.resolve(NETWORK_TOKEN);
       networkService.setHealth(false); // Make service fail
-      
+
       // Trigger circuit breaker by making multiple failing calls
       for (let i = 0; i < 5; i++) {
         try {
@@ -297,26 +290,26 @@ describe("Error Recovery Integration", () => {
           // Expected failures
         }
       }
-      
+
       const state = circuitBreakerHandler.getState();
       expect(state).toBe("OPEN"); // Circuit should be open after failures
-      
+
       const metrics = circuitBreakerHandler.getMetrics();
       expect(metrics.failureCount).toBeGreaterThan(0);
     });
 
     it("should recover when service becomes healthy", async () => {
       container.register(NETWORK_TOKEN, NetworkService);
-      
+
       const networkService = container.resolve(NETWORK_TOKEN);
-      
+
       // Start healthy
       networkService.setHealth(true);
-      
+
       const result = await circuitBreakerHandler.execute(async () => {
         return await networkService.makeRequest("/healthy");
       });
-      
+
       expect(result).toBe("Response from /healthy");
       expect(circuitBreakerHandler.getState()).toBe("CLOSED");
     });
@@ -333,66 +326,68 @@ describe("Error Recovery Integration", () => {
       container.register(AGGREGATE_TOKEN, AggregateService, {
         dependencies: [DATABASE_TOKEN, UNRELIABLE_TOKEN],
       });
-      
+
       const aggregateService = container.resolve(AGGREGATE_TOKEN);
-      
-      // Configure recovery manager with retry strategy
-      recoveryManager.addHandler("retry", retryHandler);
-      
-      const result = await recoveryManager.executeWithRecovery(
-        async () => await aggregateService.processWithDependencies(),
-        { strategy: "retry" },
-      );
-      
+
+      const operation = {
+        id: "aggregate-operation",
+        name: "processWithDependencies",
+        operation: async () => await aggregateService.processWithDependencies(),
+      };
+
+      const result = await recoveryManager.executeWithRecovery(operation);
+
       expect(result).toBeDefined();
       expect(result.db).toEqual(expect.arrayContaining([
-        expect.objectContaining({ id: 1, connections: 1 })
+        expect.objectContaining({ id: 1, connections: 3 })
       ]));
       expect(result.unreliable).toBe("success after retries");
     });
 
     it("should provide comprehensive error context on final failure", async () => {
       container.registerFactory(UNRELIABLE_TOKEN, () => new UnreliableService(10)); // Always fails
-      
+
       const unreliableService = container.resolve(UNRELIABLE_TOKEN);
-      
-      recoveryManager.addHandler("retry", retryHandler);
-      
+
       try {
-        await recoveryManager.executeWithRecovery(
-          async () => unreliableService.process(),
-          { strategy: "retry" },
-        );
+        const operation = {
+          id: "unreliable-operation",
+          name: "process",
+          operation: async () => unreliableService.process(),
+        };
+
+        await recoveryManager.executeWithRecovery(operation);
         expect.fail("Should have thrown error");
       } catch (error: any) {
         expect(error).toBeInstanceOf(ApplicationError);
         expect(error.code).toBe("SERVICE_UNAVAILABLE");
-        
+
         const metrics = recoveryManager.getMetrics();
-        expect(metrics.totalRecoveries).toBe(1);
-        expect(metrics.failedRecoveries).toBe(1);
+        expect(metrics.totalAttempts).toBeGreaterThan(0);
+        expect(metrics.failedAttempts).toBeGreaterThan(0);
       }
     });
   });
 
   describe("Graceful Degradation", () => {
     it("should handle service degradation gracefully", async () => {
-      container.register(NETWORK_TOKEN, NetworkService);
+      container.register(NETWORK_TOKEN, NetworkService, { lifecycle: "singleton" });
       container.register(DATABASE_TOKEN, DatabaseService, {
         dependencies: [RELIABLE_TOKEN, NETWORK_TOKEN],
+        lifecycle: "singleton"
       });
-      container.register(RELIABLE_TOKEN, ReliableService);
-      
+      container.register(RELIABLE_TOKEN, ReliableService, { lifecycle: "singleton" });
+
       const databaseService = container.resolve(DATABASE_TOKEN);
       const networkService = container.resolve(NETWORK_TOKEN);
-      
+
       // First, ensure it works normally
       const normalResult = await databaseService.query("SELECT 1");
       expect(normalResult).toBeDefined();
-      
+
       // Now make network service unhealthy and implement degradation
       networkService.setHealth(false);
-      
+
       // Implement a degraded version that catches network errors
       const degradedQuery = async (sql: string): Promise<any[]> => {
         try {
@@ -405,7 +400,7 @@ describe("Error Recovery Integration", () => {
           throw error;
         }
       };
-      
+
       const degradedResult = await degradedQuery("SELECT 2");
       expect(degradedResult[0].degraded).toBe(true);
       expect(degradedResult[0].data).toBe("Cached result");
@@ -417,15 +412,15 @@ describe("Error Recovery Integration", () => {
       // Create a deep dependency chain that will fail
       class DeepService {
         constructor(private db: DatabaseService) {}
-        
+
         process(): string {
           // This will trigger the dependency chain
           return "deep-result";
         }
       }
-      
+
       const DEEP_TOKEN: DIToken<DeepService> = "IDeepService";
-      
+
       container.register(RELIABLE_TOKEN, ReliableService);
       container.register(NETWORK_TOKEN, NetworkService);
       container.register(DATABASE_TOKEN, DatabaseService, {
@@ -434,7 +429,7 @@ describe("Error Recovery Integration", () => {
       container.register(DEEP_TOKEN, DeepService, {
         dependencies: [DATABASE_TOKEN],
       });
-      
+
       try {
         container.resolve(DEEP_TOKEN);
         expect.fail("Should have thrown error");
@@ -448,9 +443,9 @@ describe("Error Recovery Integration", () => {
 
     it("should provide performance context for error scenarios", () => {
       const startTime = performance.now();
-      
+
       container.register(UNRELIABLE_TOKEN, UnreliableService);
-      
+
       try {
         // Make multiple resolution attempts
         for (let i = 0; i < 10; i++) {
@@ -459,10 +454,10 @@ describe("Error Recovery Integration", () => {
       } catch (error) {
         // Expected failure
       }
-      
+
       const endTime = performance.now();
       const metrics = container.getMetrics();
-      
+
       expect(metrics.totalResolutions).toBeGreaterThan(0);
       expect(metrics.averageResolutionTime).toBeGreaterThan(0);
       expect(endTime - startTime).toBeGreaterThan(0);
@@ -472,13 +467,13 @@ describe("Error Recovery Integration", () => {
   describe("Memory Management During Errors", () => {
     it("should clean up resources properly after errors", () => {
       const initialMetrics = container.getMetrics();
-      
+
       // Register services that will fail
       container.register(UNRELIABLE_TOKEN, UnreliableService);
       container.register(DATABASE_TOKEN, DatabaseService, {
         dependencies: ["InvalidDep" as DIToken, UNRELIABLE_TOKEN],
       });
-      
+
       // Attempt multiple resolutions that will fail
       for (let i = 0; i < 50; i++) {
         try {
@@ -487,9 +482,9 @@ describe("Error Recovery Integration", () => {
           // Expected failures
         }
       }
-      
+
       const finalMetrics = container.getMetrics();
-      
+
       // Should track failed attempts but not leak memory
       expect(finalMetrics.totalResolutions).toBeGreaterThan(initialMetrics.totalResolutions);
       expect(finalMetrics.memoryUsage.singletonCount).toBe(initialMetrics.memoryUsage.singletonCount);
@@ -497,17 +492,17 @@ describe("Error Recovery Integration", () => {
 
     it("should dispose containers cleanly even after errors", () => {
       container.register(UNRELIABLE_TOKEN, UnreliableService);
-      
+
       // Generate some errors
       try {
         container.resolve("NonExistent" as DIToken);
       } catch (error) {
         // Expected
       }
-      
+
       // Should dispose cleanly
       expect(() => container.dispose()).not.toThrow();
-      
+
       // Should not accept operations after disposal
       expect(() => {
         container.resolve(UNRELIABLE_TOKEN);

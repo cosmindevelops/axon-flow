@@ -32,10 +32,19 @@ describe("Transport Circuit Breaker Integration", () => {
     mockFetch.mockClear();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Enhanced cleanup to prevent memory leaks
     TransportCircuitBreakerFactory.clear();
     vi.clearAllTimers();
     vi.useRealTimers();
+    
+    // Force garbage collection if available
+    if (typeof (global as any).gc === "function") {
+      (global as any).gc();
+    }
+    
+    // Small delay to allow cleanup
+    await new Promise(resolve => setTimeout(resolve, 10));
   });
 
   describe("Remote Transport Circuit Breaker", () => {
@@ -65,6 +74,9 @@ describe("Transport Circuit Breaker Integration", () => {
         await expect(transport.write(mockLogEntry)).rejects.toThrow();
         await transport.flush(); // Force flush to trigger circuit breaker
       }
+      
+      // Add small delay to ensure circuit breaker state updates
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       // Circuit should now be open
       const metrics = transport.getMetrics();
@@ -77,6 +89,9 @@ describe("Transport Circuit Breaker Integration", () => {
 
       // Should not make additional network calls when circuit is open
       expect(mockFetch.mock.calls.length).toBe(callCountBefore);
+      
+      // Clean up transport to prevent memory leaks
+      await transport.close();
     });
 
     it("should transition to half-open after reset timeout", async () => {
@@ -129,6 +144,9 @@ describe("Transport Circuit Breaker Integration", () => {
         await transport.flush();
 
         expect(transport.getMetrics().circuitBreakerMetrics?.state).toBe("closed");
+        
+        // Clean up transport
+        await transport.close();
       } finally {
         vi.useRealTimers();
       }
@@ -181,6 +199,9 @@ describe("Transport Circuit Breaker Integration", () => {
         // Should eventually succeed after retries
         expect(mockFetch).toHaveBeenCalledTimes(3);
         expect(transport.isHealthy()).toBe(true);
+        
+        // Clean up transport
+        await transport.close();
       } finally {
         vi.useRealTimers();
       }
@@ -230,6 +251,9 @@ describe("Transport Circuit Breaker Integration", () => {
       const healthyTransports = manager.getHealthyTransports();
       expect(healthyTransports.length).toBe(1);
       expect(healthyTransports[0].type).toBe("console");
+      
+      // Clean up manager
+      await manager.close();
     });
 
     it("should stop on high failure rate when configured", async () => {
@@ -266,6 +290,9 @@ describe("Transport Circuit Breaker Integration", () => {
 
       // Should throw due to high failure rate
       await expect(manager.write(mockLogEntry)).rejects.toThrow();
+      
+      // Clean up manager
+      await manager.close();
     });
   });
 
@@ -386,6 +413,9 @@ describe("Transport Circuit Breaker Integration", () => {
       expect(metrics.remote.messagesWritten).toBe(2);
       expect(metrics.remote.circuitBreakerMetrics?.state).toBe("closed");
       expect(metrics.remote.circuitBreakerMetrics?.totalCalls).toBeGreaterThan(0);
+      
+      // Clean up manager
+      await manager.close();
     });
   });
 });

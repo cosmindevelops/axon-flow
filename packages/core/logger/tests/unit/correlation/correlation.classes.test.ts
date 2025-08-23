@@ -17,7 +17,7 @@ import {
   HttpCorrelationMiddleware,
   MessageQueueCorrelationMiddleware,
   CorrelationMiddlewareChain,
-} from "../../../src/correlation/correlation.classes.js";
+} from "../../../src/correlation/core/core.classes.js";
 import type {
   ICorrelationIdGenerator,
   IEnhancedCorrelationManager,
@@ -25,8 +25,8 @@ import type {
   ICorrelationContext,
   ICorrelationManagerConfig,
   CorrelationPlatform,
-} from "../../../src/correlation/correlation.types.js";
-import { CorrelationPlatform } from "../../../src/correlation/correlation.types.js";
+} from "../../../src/correlation/core/core.types.js";
+import { CorrelationPlatform } from "../../../src/correlation/core/core.types.js";
 
 describe("CorrelationIdGenerator", () => {
   let generator: ICorrelationIdGenerator;

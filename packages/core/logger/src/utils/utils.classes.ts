@@ -1166,3 +1166,103 @@ export class CircularBuffer<T> {
     return this.buffer[lastIndex];
   }
 }
+
+/**
+ * Memory cleanup utilities for test environments
+ *
+ * Provides utilities to prevent memory pressure during testing by
+ * cleaning up resources and forcing garbage collection when available.
+ */
+
+/**
+ * Force garbage collection if available (Node.js with --expose-gc flag)
+ */
+export function forceGC(): void {
+  if (typeof (global as any).gc === "function") {
+    try {
+      (global as any).gc();
+    } catch (error) {
+      // GC not available or failed, continue silently
+      console.warn("Garbage collection failed:", error);
+    }
+  }
+}
+
+/**
+ * Clean up arrays and maps to prevent memory leaks
+ */
+export function cleanupCollections(...collections: (unknown[] | Map<unknown, unknown> | Set<unknown>)[]): void {
+  collections.forEach((collection) => {
+    if (Array.isArray(collection)) {
+      collection.length = 0;
+    } else if (collection instanceof Map) {
+      collection.clear();
+    } else if (collection instanceof Set) {
+      collection.clear();
+    }
+  });
+}
+
+/**
+ * Comprehensive cleanup for test environments
+ */
+export async function performTestCleanup(
+  options: {
+    forceGC?: boolean;
+    delay?: number;
+    collections?: (unknown[] | Map<unknown, unknown> | Set<unknown>)[];
+  } = {},
+): Promise<void> {
+  const { forceGC: shouldForceGC = true, delay = 10, collections = [] } = options;
+
+  // Clean up provided collections
+  if (collections.length > 0) {
+    cleanupCollections(...collections);
+  }
+
+  // Force garbage collection if requested
+  if (shouldForceGC) {
+    forceGC();
+  }
+
+  // Small delay to allow cleanup operations to complete
+  if (delay > 0) {
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+}
+
+/**
+ * Memory-safe test wrapper that automatically cleans up after test execution
+ */
+export function withMemoryCleanup<T extends (...args: any[]) => any>(
+  testFn: T,
+  cleanupOptions?: Parameters<typeof performTestCleanup>[0],
+): (...args: Parameters<T>) => Promise<ReturnType<T>> {
+  return async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+    try {
+      const result = await testFn(...args);
+      return result;
+    } finally {
+      await performTestCleanup(cleanupOptions);
+    }
+  };
+}
+
+/**
+ * Create a memory-optimized configuration for performance trackers in test environments
+ */
+export function createTestPerformanceConfig() {
+  return {
+    enabled: true,
+    sampleRate: 0.1, // Very low sampling rate for tests
+    thresholdMs: 1000, // Higher threshold to reduce noise
+    enableMemoryTracking: false, // Disable to prevent circular memory pressure
+    enableGCTracking: false,
+    maxLatencyHistory: 10, // Minimal history
+    maxGCEventHistory: 5,
+    resourceMetricsInterval: 0, // Disable periodic collection
+    enableMeasurementPooling: true,
+    measurementPoolInitialSize: 5, // Very small initial pool
+    measurementPoolMaxSize: 20, // Very small max pool
+  };
+}

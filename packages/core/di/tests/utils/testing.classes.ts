@@ -24,12 +24,12 @@ import type {
   IContainerRegistrationOptions,
   IResolutionContext,
   IContainerMetrics as _IContainerMetrics,
-} from "../container/container.types.js";
+} from "../../src/container/container.types.js";
 
-import { DIContainer } from "../container/container.classes.js";
+import { DIContainer } from "../../src/container/container.classes.js";
 
 // Import proper error classes from @axon/errors
-import { ValidationError, ApplicationError } from "@axon/errors";
+import { ValidationErrorCategory as ValidationError, ApplicationError } from "@axon/errors";
 
 /**
  * Mock container implementation with call tracking and testing features
@@ -312,6 +312,11 @@ export class TestContainerBuilder implements ITestContainerBuilder {
   }
 
   public build(): ITestContainer {
+    // Set default name if not provided
+    if (!this.options.name) {
+      this.options.name = `TestContainer_${Date.now()}`;
+    }
+    
     const container = new MockDIContainer(this.options);
 
     // Register all mock dependencies
@@ -377,7 +382,19 @@ export class DITestAssertions implements IDITestAssertions {
 
   public toResolve(container: IDIContainer, token: DIToken): void {
     try {
-      container.resolve(token);
+      const result = container.resolve(token);
+      // In non-strict mode, resolve returns undefined for unregistered services
+      // We should treat undefined as a resolution failure for assertion purposes
+      if (result === undefined) {
+        throw new ValidationError(
+          `Expected container to resolve token: ${String(token)}, but got undefined`,
+          "TEST_ASSERTION_FAILED",
+          {
+            correlationId: `assert_resolve_${Date.now()}`,
+            metadata: { token: String(token), result: "undefined" },
+          },
+        );
+      }
     } catch (error) {
       throw new ValidationError(
         `Expected container to resolve token: ${String(token)}, but got error: ${error}`,
@@ -399,7 +416,13 @@ export class DITestAssertions implements IDITestAssertions {
     let actualError: Error | undefined;
 
     try {
-      container.resolve(token);
+      const result = container.resolve(token);
+      // In non-strict mode, undefined is returned instead of throwing
+      // For assertion purposes, we want to treat this as "should throw"
+      if (result === undefined) {
+        threwError = true;
+        actualError = new Error("Service not found (returned undefined)");
+      }
     } catch (error) {
       threwError = true;
       actualError = error as Error;
@@ -418,14 +441,14 @@ export class DITestAssertions implements IDITestAssertions {
 
     if (errorType && actualError && !(actualError instanceof errorType)) {
       throw new ValidationError(
-        `Expected container to throw ${errorType.name} when resolving token: ${String(token)}, but threw ${(actualError as Error).constructor.name}`,
+        `Expected container to throw ${errorType.name} when resolving token: ${String(token)}, but threw ${actualError.constructor.name}`,
         "TEST_ASSERTION_FAILED",
         {
           correlationId: `assert_throw_type_${Date.now()}`,
           metadata: {
             token: String(token),
             expectedErrorType: errorType.name,
-            actualErrorType: (actualError as Error).constructor.name,
+            actualErrorType: actualError.constructor.name,
           },
         },
       );

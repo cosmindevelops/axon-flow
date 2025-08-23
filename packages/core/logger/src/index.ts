@@ -75,10 +75,10 @@ export * from "./transport/transport.classes.js";
 export * from "./circuit-breaker/circuit-breaker.classes.js";
 
 // Correlation ID management system
-export * from "./correlation/correlation.classes.js";
+export * from "./correlation/index.js";
 
 // Performance monitoring and metrics
-export * from "./performance/performance.classes.js";
+export * from "./performance/index.js";
 
 // ============================================================================
 // UTILITY LAYER - Supporting Functions

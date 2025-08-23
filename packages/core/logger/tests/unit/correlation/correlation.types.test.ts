@@ -11,7 +11,7 @@ import type {
   CorrelationManagerConfig,
   ICorrelationIdGenerator,
   ICorrelationManager,
-} from "../../../src/correlation/correlation.types.js";
+} from "../../../src/correlation/core/core.types.js";
 
 describe("Correlation Types", () => {
   describe("CorrelationId", () => {

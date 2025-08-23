@@ -4,23 +4,20 @@
  * Concrete implementations of lifecycle managers for singleton, transient, and scoped instances
  */
 
-import type {
-  ILifecycleManager,
-  ILifecycleStats,
-  ILifecycleFactory,
-  ISingletonLifecycleConfig,
-  ITransientLifecycleConfig,
-  IScopedLifecycleConfig,
-  IScopeManager,
-  IScopeStats,
-  LifecycleStrategy,
-} from "./lifecycle.types.js";
-
+import { ApplicationError, SystemError } from "@axon/errors";
 import type { DIToken, IResolutionContext } from "../container/container.types.js";
 import type { ObjectPool } from "../pool/pool.classes.js";
-
-// Import proper error classes from @axon/errors
-import { ApplicationError, SystemError } from "@axon/errors";
+import type {
+  ILifecycleManager,
+  IScopeManager,
+  IScopeStats,
+  IScopedLifecycleConfig,
+  ITransientLifecycleConfig,
+  ISingletonLifecycleConfig,
+  ILifecycleFactory,
+  ILifecycleStats,
+  LifecycleStrategy,
+} from "./lifecycle.types.js";
 
 /**
  * Base lifecycle manager with common functionality
@@ -342,7 +339,11 @@ export class ScopeManager implements IScopeManager {
   private readonly childScopes = new Set<IScopeManager>();
   private readonly createdAt = new Date();
   private lastAccessedAt = new Date();
-  private disposed = false;
+
+  // Thread-safe state management
+  private readonly stateManager = new DisposalStateManager();
+  private readonly operationLocks = new Map<string, Promise<void>>();
+  private readonly disposalManager = new AsyncDisposalManager();
 
   constructor(scopeId?: string, parent?: IScopeManager) {
     this.scopeId = scopeId || `scope_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -355,37 +356,137 @@ export class ScopeManager implements IScopeManager {
     }
   }
 
+  /**
+   * Acquire operation lock with atomic state checking
+   * Prevents race conditions by ensuring state check and operation start are atomic
+   */
+  private async acquireOperationLock(operationId: string): Promise<() => void> {
+    // Wait for any existing operation with the same ID
+    const existingOperation = this.operationLocks.get(operationId);
+    if (existingOperation) {
+      await existingOperation;
+    }
+
+    // Atomically check state and acquire lock
+    this.stateManager.ensureOperational(); // Throws if disposing/disposed
+
+    // Create operation promise and tracking
+    let resolveOperation: () => void;
+    const operationPromise = new Promise<void>((resolve) => {
+      resolveOperation = resolve;
+    });
+
+    this.operationLocks.set(operationId, operationPromise);
+
+    // Return release function
+    return () => {
+      this.operationLocks.delete(operationId);
+      resolveOperation();
+    };
+  }
+
+  /**
+   * Wait for all active operations to complete
+   */
+  private async waitForActiveOperations(): Promise<void> {
+    const activeOperations = Array.from(this.operationLocks.values());
+    if (activeOperations.length > 0) {
+      await Promise.all(activeOperations);
+    }
+  }
+
   public getInstance<T>(token: DIToken<T>): T | undefined {
-    this.ensureNotDisposed();
+    // Use synchronous state check for read-only operation
+    this.stateManager.ensureOperational();
     this.lastAccessedAt = new Date();
     return this.instances.get(token) as T;
   }
 
-  public setInstance<T>(token: DIToken<T>, instance: T): void {
-    this.ensureNotDisposed();
+  public setInstance<T>(token: DIToken<T>, instance: T): void;
+  public setInstance<T>(token: DIToken<T>, instance: T, options: { async: true }): Promise<void>;
+  public setInstance<T>(token: DIToken<T>, instance: T, options?: { async: true }): void | Promise<void> {
+    if (options?.async) {
+      return this.setInstanceAsync(token, instance);
+    }
+    // Sync version - minimal state checking for backward compatibility
+    this.stateManager.ensureOperational();
     this.lastAccessedAt = new Date();
     this.instances.set(token, instance);
   }
 
-  public removeInstance<T>(token: DIToken<T>): boolean {
+  private async setInstanceAsync<T>(token: DIToken<T>, instance: T): Promise<void> {
+    const releaseOperation = await this.acquireOperationLock(`setInstance_${String(token)}`);
+
+    try {
+      this.lastAccessedAt = new Date();
+      this.instances.set(token, instance);
+    } finally {
+      releaseOperation();
+    }
+  }
+
+  public removeInstance<T>(token: DIToken<T>): boolean;
+  public removeInstance<T>(token: DIToken<T>, options: { async: true }): Promise<boolean>;
+  public removeInstance<T>(token: DIToken<T>, options?: { async: true }): boolean | Promise<boolean> {
+    if (options?.async) {
+      return this.removeInstanceAsync(token);
+    }
+    // Sync version - minimal state checking for backward compatibility
+    this.stateManager.ensureOperational();
     this.lastAccessedAt = new Date();
     return this.instances.delete(token);
+  }
+
+  private async removeInstanceAsync<T>(token: DIToken<T>): Promise<boolean> {
+    const releaseOperation = await this.acquireOperationLock(`removeInstance_${String(token)}`);
+
+    try {
+      this.lastAccessedAt = new Date();
+      return this.instances.delete(token);
+    } finally {
+      releaseOperation();
+    }
   }
 
   public hasInstance<T>(token: DIToken<T>): boolean {
     return this.instances.has(token);
   }
 
-  public createChildScope(scopeId?: string): IScopeManager {
-    this.ensureNotDisposed();
+  public createChildScope(scopeId?: string): IScopeManager;
+  public createChildScope(scopeId?: string, options?: { async: true }): Promise<IScopeManager>;
+  public createChildScope(scopeId?: string, options?: { async: true }): IScopeManager | Promise<IScopeManager> {
+    if (options?.async) {
+      return this.createChildScopeAsync(scopeId);
+    }
+    // Sync version - minimal state checking for backward compatibility
+    this.stateManager.ensureOperational();
     const childScope = new ScopeManager(scopeId, this);
     this.childScopes.add(childScope);
     return childScope;
   }
 
-  public clear(): void {
+  private async createChildScopeAsync(scopeId?: string): Promise<IScopeManager> {
+    const releaseOperation = await this.acquireOperationLock(`createChildScope_${scopeId || "auto"}`);
+
+    try {
+      const childScope = new ScopeManager(scopeId, this);
+      this.childScopes.add(childScope);
+      return childScope;
+    } finally {
+      releaseOperation();
+    }
+  }
+
+  public clear(): void;
+  public clear(options: { async: true }): Promise<void>;
+  public clear(options?: { async: true }): void | Promise<void> {
+    if (options?.async) {
+      return this.clearAsync();
+    }
+    // Sync version - minimal state checking for backward compatibility
+    this.stateManager.ensureOperational();
     this.instances.clear();
-    // Clear child scopes
+    // Sync disposal of child scopes
     const children = Array.from(this.childScopes);
     for (const child of children) {
       child.dispose();
@@ -393,16 +494,138 @@ export class ScopeManager implements IScopeManager {
     this.childScopes.clear();
   }
 
-  public dispose(): void {
-    if (this.disposed) return;
+  private async clearAsync(): Promise<void> {
+    const releaseOperation = await this.acquireOperationLock("clear");
 
-    this.clear();
-    this.disposed = true;
+    try {
+      // Clear instances
+      this.instances.clear();
 
-    // Remove from parent's child scopes
-    if (this.parent instanceof ScopeManager) {
-      this.parent.childScopes.delete(this);
+      // Dispose child scopes with proper coordination
+      const childDisposalPromises = Array.from(this.childScopes).map(async (child) => {
+        if (child instanceof ScopeManager) {
+          await child.dispose({ async: true });
+        } else {
+          child.dispose();
+        }
+      });
+
+      await Promise.all(childDisposalPromises);
+      this.childScopes.clear();
+    } finally {
+      releaseOperation();
     }
+  }
+
+  public dispose(): void;
+  public dispose(options: { async: true }): Promise<void>;
+  public dispose(options?: { async: true }): void | Promise<void> {
+    if (options?.async) {
+      return this.disposeAsync();
+    }
+    // Sync version - for backward compatibility, but still check state
+    if (this.stateManager.isDisposed()) {
+      return;
+    }
+
+    try {
+      // Force transition to disposing to prevent new operations
+      this.stateManager.forceTransitionTo("disposing");
+
+      // Sync clear without state checking (since we're already disposing)
+      this.clearSync();
+
+      // Remove from parent's child scopes
+      if (this.parent instanceof ScopeManager) {
+        this.parent.childScopes.delete(this);
+      }
+
+      // Mark as disposed
+      this.stateManager.forceTransitionTo("disposed");
+    } catch (error) {
+      this.stateManager.forceTransitionTo("disposal_failed");
+      throw error;
+    }
+  }
+
+  /**
+   * Internal sync clear method that bypasses state checking (used during disposal)
+   */
+  private clearSync(): void {
+    this.instances.clear();
+    // Sync disposal of child scopes without state checks
+    const children = Array.from(this.childScopes);
+    for (const child of children) {
+      child.dispose();
+    }
+    this.childScopes.clear();
+  }
+
+  private async disposeAsync(): Promise<void> {
+    // Try to transition to disposing state
+    if (!this.stateManager.tryTransitionTo("disposing")) {
+      // Already disposing or disposed
+      await this.stateManager.waitForDisposal();
+      return;
+    }
+
+    try {
+      // Wait for all active operations to complete
+      await this.waitForActiveOperations();
+
+      // Perform async cleanup directly without operation locking (we're already disposing)
+      await this.clearAsyncInternal();
+
+      // Remove from parent's child scopes
+      if (this.parent instanceof ScopeManager) {
+        this.parent.childScopes.delete(this);
+      }
+
+      // Transition to disposed state
+      this.stateManager.tryTransitionTo("disposed");
+
+      // Dispose the disposal manager itself
+      try {
+        await this.disposalManager.dispose();
+      } catch (error) {
+        // Ignore disposal manager errors during scope cleanup
+        console.warn(`Failed to dispose AsyncDisposalManager for scope ${this.scopeId}:`, error);
+      }
+    } catch (error) {
+      // Log the actual error for debugging
+      console.error(`Async disposal error for scope ${this.scopeId}:`, error);
+
+      // Transition to disposal failed state
+      this.stateManager.tryTransitionTo("disposal_failed");
+      throw new ApplicationError(`Async disposal failed for scope ${this.scopeId}`, "SCOPE_DISPOSAL_FAILED", {
+        correlationId: `scope_disposal_${Date.now()}`,
+        metadata: {
+          scopeId: this.scopeId,
+          originalError: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        },
+      });
+    }
+  }
+
+  /**
+   * Internal async clear that bypasses operation locking (used during disposal)
+   */
+  private async clearAsyncInternal(): Promise<void> {
+    // Clear instances
+    this.instances.clear();
+
+    // Dispose child scopes with proper coordination
+    const childDisposalPromises = Array.from(this.childScopes).map(async (child) => {
+      if (child instanceof ScopeManager) {
+        await child.dispose({ async: true });
+      } else {
+        child.dispose();
+      }
+    });
+
+    await Promise.all(childDisposalPromises);
+    this.childScopes.clear();
   }
 
   public getStats(): IScopeStats {
@@ -414,15 +637,6 @@ export class ScopeManager implements IScopeManager {
       childScopesCount: this.childScopes.size,
       estimatedMemoryUsage: this.instances.size * 100, // Rough estimation
     };
-  }
-
-  private ensureNotDisposed(): void {
-    if (this.disposed) {
-      throw new ApplicationError(`Scope ${this.scopeId} has been disposed`, "SCOPE_DISPOSED", {
-        correlationId: `scope_disposed_${Date.now()}`,
-        metadata: { scopeId: this.scopeId },
-      });
-    }
   }
 }
 
@@ -558,6 +772,540 @@ export class LifecycleFactory implements ILifecycleFactory {
           correlationId: `unknown_strategy_${Date.now()}`,
           metadata: { strategy },
         });
+    }
+  }
+}
+
+/**
+ * Disposal state tracking
+ */
+export type DisposalState =
+  | "active" // Normal operation
+  | "disposing" // Disposal in progress
+  | "disposed" // Fully disposed
+  | "disposal_failed"; // Disposal encountered errors
+
+/**
+ * Async disposal configuration
+ */
+export interface IAsyncDisposalConfig {
+  /**
+   * Maximum time to wait for disposal operations to complete
+   */
+  disposalTimeout: number;
+
+  /**
+   * Maximum time to wait for async cleanup operations
+   */
+  cleanupTimeout: number;
+
+  /**
+   * Whether to force disposal after timeout
+   */
+  forceDisposalAfterTimeout: boolean;
+
+  /**
+   * Whether to collect disposal metrics
+   */
+  enableDisposalMetrics: boolean;
+
+  /**
+   * Maximum concurrent disposal operations
+   */
+  maxConcurrentDisposals: number;
+}
+
+/**
+ * Disposal operation context
+ */
+export interface IDisposalContext {
+  /**
+   * Unique disposal operation ID
+   */
+  disposalId: string;
+
+  /**
+   * Parent disposal context (for hierarchical disposal)
+   */
+  parent?: IDisposalContext;
+
+  /**
+   * Start time of disposal operation
+   */
+  startTime: number;
+
+  /**
+   * Timeout for this disposal operation
+   */
+  timeout: number;
+
+  /**
+   * Whether disposal was forced due to timeout
+   */
+  forced: boolean;
+
+  /**
+   * Errors encountered during disposal
+   */
+  errors: Error[];
+
+  /**
+   * Signal to cancel disposal operation
+   */
+  abortSignal?: AbortSignal;
+}
+
+/**
+ * Disposal metrics
+ */
+export interface IDisposalMetrics {
+  totalDisposals: number;
+  successfulDisposals: number;
+  failedDisposals: number;
+  forcedDisposals: number;
+  averageDisposalTime: number;
+  maxDisposalTime: number;
+  concurrentDisposals: number;
+}
+
+/**
+ * Thread-safe async disposal manager
+ *
+ * Handles proper cleanup sequencing, timeout management, and race condition prevention
+ * for scope disposal operations in multi-threaded or concurrent environments.
+ */
+export class AsyncDisposalManager {
+  private readonly config: IAsyncDisposalConfig;
+  private readonly activeDisposals = new Map<string, IDisposalContext>();
+  private readonly disposalMetrics: IDisposalMetrics;
+  private readonly disposalLock = new Map<string, Promise<void>>();
+  private disposed = false;
+
+  constructor(config: Partial<IAsyncDisposalConfig> = {}) {
+    this.config = {
+      disposalTimeout: 30000, // 30 seconds default timeout
+      cleanupTimeout: 10000, // 10 seconds cleanup timeout
+      forceDisposalAfterTimeout: true, // Force disposal after timeout
+      enableDisposalMetrics: true, // Enable metrics collection
+      maxConcurrentDisposals: 10, // Max concurrent operations
+      ...config,
+    };
+
+    this.disposalMetrics = {
+      totalDisposals: 0,
+      successfulDisposals: 0,
+      failedDisposals: 0,
+      forcedDisposals: 0,
+      averageDisposalTime: 0,
+      maxDisposalTime: 0,
+      concurrentDisposals: 0,
+    };
+  }
+
+  /**
+   * Dispose a scope with proper async cleanup and race condition prevention
+   */
+  public async disposeScope(
+    scopeId: string,
+    cleanupFunctions: Array<() => Promise<void> | void>,
+    parentContext?: IDisposalContext,
+  ): Promise<void> {
+    this.ensureNotDisposed();
+
+    // Check if disposal is already in progress for this scope
+    const existingDisposal = this.disposalLock.get(scopeId);
+    if (existingDisposal) {
+      return existingDisposal;
+    }
+
+    // Create disposal context
+    const context: IDisposalContext = {
+      disposalId: `disposal_${scopeId}_${Date.now()}`,
+      ...(parentContext && { parent: parentContext }),
+      startTime: performance.now(),
+      timeout: this.config.disposalTimeout,
+      forced: false,
+      errors: [],
+    };
+
+    // Create disposal promise and track it
+    const disposalPromise = this.executeDisposal(scopeId, cleanupFunctions, context);
+    this.disposalLock.set(scopeId, disposalPromise);
+
+    try {
+      await disposalPromise;
+    } finally {
+      // Always remove the disposal lock when complete
+      this.disposalLock.delete(scopeId);
+    }
+  }
+
+  /**
+   * Execute disposal with timeout and error handling
+   */
+  private async executeDisposal(
+    scopeId: string,
+    cleanupFunctions: Array<() => Promise<void> | void>,
+    context: IDisposalContext,
+  ): Promise<void> {
+    // Check concurrent disposal limit
+    if (this.activeDisposals.size >= this.config.maxConcurrentDisposals) {
+      throw new SystemError(
+        `Maximum concurrent disposals reached: ${this.config.maxConcurrentDisposals}`,
+        "DISPOSAL_CONCURRENCY_LIMIT",
+        {
+          correlationId: context.disposalId,
+          metadata: {
+            maxConcurrent: this.config.maxConcurrentDisposals,
+            currentActive: this.activeDisposals.size,
+            scopeId,
+          },
+        },
+      );
+    }
+
+    // Track active disposal
+    this.activeDisposals.set(scopeId, context);
+
+    if (this.config.enableDisposalMetrics) {
+      this.disposalMetrics.totalDisposals++;
+      this.disposalMetrics.concurrentDisposals = Math.max(
+        this.disposalMetrics.concurrentDisposals,
+        this.activeDisposals.size,
+      );
+    }
+
+    try {
+      // Execute cleanup with timeout
+      await this.executeCleanupWithTimeout(cleanupFunctions, context);
+
+      if (this.config.enableDisposalMetrics) {
+        this.disposalMetrics.successfulDisposals++;
+        this.updateDisposalTimes(context);
+      }
+    } catch (error) {
+      context.errors.push(error instanceof Error ? error : new Error(String(error)));
+
+      if (this.config.enableDisposalMetrics) {
+        this.disposalMetrics.failedDisposals++;
+      }
+
+      // Decide whether to force disposal or re-throw
+      if (this.config.forceDisposalAfterTimeout && this.isTimeoutError(error)) {
+        context.forced = true;
+
+        if (this.config.enableDisposalMetrics) {
+          this.disposalMetrics.forcedDisposals++;
+        }
+
+        // Log forced disposal but don't throw
+        console.warn(`Forced disposal for scope ${scopeId} due to timeout`, {
+          disposalId: context.disposalId,
+          errors: context.errors.map((e) => e.message),
+        });
+      } else {
+        // Re-throw non-timeout errors or if force disposal is disabled
+        throw new ApplicationError(`Disposal failed for scope ${scopeId}`, "DISPOSAL_FAILED", {
+          correlationId: context.disposalId,
+          metadata: {
+            scopeId,
+            errorCount: context.errors.length,
+            disposalTime: performance.now() - context.startTime,
+            forced: context.forced,
+          },
+        });
+      }
+    } finally {
+      // Always clean up tracking
+      this.activeDisposals.delete(scopeId);
+    }
+  }
+
+  /**
+   * Execute cleanup functions with proper timeout handling
+   */
+  private async executeCleanupWithTimeout(
+    cleanupFunctions: Array<() => Promise<void> | void>,
+    context: IDisposalContext,
+  ): Promise<void> {
+    const cleanupPromises = cleanupFunctions.map(async (cleanup, index) => {
+      try {
+        const result = cleanup();
+        if (result instanceof Promise) {
+          await result;
+        }
+      } catch (error) {
+        const cleanupError = new ApplicationError(`Cleanup function ${index} failed`, "CLEANUP_FUNCTION_FAILED", {
+          correlationId: context.disposalId,
+          metadata: {
+            cleanupIndex: index,
+            originalError: error instanceof Error ? error.message : String(error),
+          },
+        });
+        context.errors.push(cleanupError);
+        throw cleanupError;
+      }
+    });
+
+    // Execute all cleanup functions with timeout
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(
+          new ApplicationError("Disposal timeout exceeded", "DISPOSAL_TIMEOUT", {
+            correlationId: context.disposalId,
+            metadata: {
+              timeout: context.timeout,
+              elapsedTime: performance.now() - context.startTime,
+            },
+          }),
+        );
+      }, context.timeout);
+    });
+
+    try {
+      await Promise.race([Promise.all(cleanupPromises), timeoutPromise]);
+    } catch (error) {
+      // If any cleanup failed, we still want to try the others
+      // So we'll collect the errors and continue
+      if (!this.isTimeoutError(error)) {
+        // For non-timeout errors, try to wait for remaining cleanups with a shorter timeout
+        try {
+          await Promise.race([
+            Promise.allSettled(cleanupPromises),
+            new Promise((_, reject) => setTimeout(reject, this.config.cleanupTimeout)),
+          ]);
+        } catch {
+          // Ignore cleanup timeout - we already have the main error
+        }
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Check if error is a timeout error
+   */
+  private isTimeoutError(error: unknown): boolean {
+    return error instanceof ApplicationError && (error as ApplicationError).code === "DISPOSAL_TIMEOUT";
+  }
+
+  /**
+   * Update disposal timing metrics
+   */
+  private updateDisposalTimes(context: IDisposalContext): void {
+    const disposalTime = performance.now() - context.startTime;
+
+    // Update max disposal time
+    this.disposalMetrics.maxDisposalTime = Math.max(this.disposalMetrics.maxDisposalTime, disposalTime);
+
+    // Update average disposal time (rolling average)
+    const totalSuccessful = this.disposalMetrics.successfulDisposals;
+    const currentAverage = this.disposalMetrics.averageDisposalTime;
+    this.disposalMetrics.averageDisposalTime =
+      (currentAverage * (totalSuccessful - 1) + disposalTime) / totalSuccessful;
+  }
+
+  /**
+   * Get current disposal metrics
+   */
+  public getMetrics(): IDisposalMetrics {
+    return { ...this.disposalMetrics };
+  }
+
+  /**
+   * Check if any disposals are currently active
+   */
+  public hasActiveDisposals(): boolean {
+    return this.activeDisposals.size > 0;
+  }
+
+  /**
+   * Get list of active disposal contexts
+   */
+  public getActiveDisposals(): IDisposalContext[] {
+    return Array.from(this.activeDisposals.values());
+  }
+
+  /**
+   * Wait for all active disposals to complete
+   */
+  public async waitForActiveDisposals(timeout = 60000): Promise<void> {
+    const startTime = performance.now();
+
+    while (this.hasActiveDisposals()) {
+      if (performance.now() - startTime > timeout) {
+        throw new ApplicationError("Timeout waiting for active disposals to complete", "WAIT_FOR_DISPOSALS_TIMEOUT", {
+          correlationId: `wait_disposals_${Date.now()}`,
+          metadata: {
+            activeDisposals: this.activeDisposals.size,
+            timeout,
+          },
+        });
+      }
+
+      // Wait a short time before checking again
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+
+  /**
+   * Dispose the disposal manager itself
+   */
+  public async dispose(): Promise<void> {
+    if (this.disposed) return;
+
+    try {
+      // Wait for all active disposals to complete
+      await this.waitForActiveDisposals(this.config.disposalTimeout);
+
+      // Clear any remaining state
+      this.activeDisposals.clear();
+      this.disposalLock.clear();
+
+      this.disposed = true;
+    } catch (error) {
+      throw new ApplicationError("Failed to dispose AsyncDisposalManager", "DISPOSAL_MANAGER_DISPOSAL_FAILED", {
+        correlationId: `manager_disposal_${Date.now()}`,
+        metadata: {
+          activeDisposals: this.activeDisposals.size,
+          pendingLocks: this.disposalLock.size,
+          originalError: error instanceof Error ? error.message : String(error),
+        },
+      });
+    }
+  }
+
+  /**
+   * Ensure the disposal manager is not disposed
+   */
+  private ensureNotDisposed(): void {
+    if (this.disposed) {
+      throw new ApplicationError("AsyncDisposalManager has been disposed", "DISPOSAL_MANAGER_DISPOSED", {
+        correlationId: `disposed_check_${Date.now()}`,
+      });
+    }
+  }
+}
+
+/**
+ * Thread-safe state manager for disposal operations
+ *
+ * Provides atomic state transitions and prevents race conditions during disposal.
+ */
+export class DisposalStateManager {
+  private state: DisposalState = "active";
+  private readonly stateTransitions = new Map<DisposalState, Set<DisposalState>>();
+  private statePromise?: Promise<void>;
+  private stateResolve?: () => void;
+
+  constructor() {
+    // Define valid state transitions
+    this.stateTransitions.set("active", new Set<DisposalState>(["disposing"]));
+    this.stateTransitions.set("disposing", new Set<DisposalState>(["disposed", "disposal_failed"]));
+    this.stateTransitions.set("disposed", new Set<DisposalState>([])); // Terminal state
+    this.stateTransitions.set("disposal_failed", new Set<DisposalState>(["disposing"])); // Can retry
+  }
+
+  /**
+   * Get current disposal state
+   */
+  public getState(): DisposalState {
+    return this.state;
+  }
+
+  /**
+   * Check if in specific state
+   */
+  public isState(state: DisposalState): boolean {
+    return this.state === state;
+  }
+
+  /**
+   * Check if disposed (either successfully or failed)
+   */
+  public isDisposed(): boolean {
+    return this.state === "disposed" || this.state === "disposal_failed";
+  }
+
+  /**
+   * Check if disposal is in progress
+   */
+  public isDisposing(): boolean {
+    return this.state === "disposing";
+  }
+
+  /**
+   * Atomically transition to new state if transition is valid
+   */
+  public tryTransitionTo(newState: DisposalState): boolean {
+    const validTransitions = this.stateTransitions.get(this.state);
+    if (!validTransitions || !validTransitions.has(newState)) {
+      return false;
+    }
+
+    this.state = newState;
+
+    // Resolve any waiters if transitioning to terminal states
+    if (newState === "disposed" || newState === "disposal_failed") {
+      if (this.stateResolve) {
+        this.stateResolve();
+        (this as any).stateResolve = undefined;
+        (this as any).statePromise = undefined;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Force transition to new state (use with caution)
+   */
+  public forceTransitionTo(newState: DisposalState): void {
+    this.state = newState;
+
+    if (newState === "disposed" || newState === "disposal_failed") {
+      if (this.stateResolve) {
+        this.stateResolve();
+        (this as any).stateResolve = undefined;
+        (this as any).statePromise = undefined;
+      }
+    }
+  }
+
+  /**
+   * Wait for disposal to complete (successfully or not)
+   */
+  public async waitForDisposal(): Promise<DisposalState> {
+    if (this.isDisposed()) {
+      return this.state;
+    }
+
+    if (!this.statePromise) {
+      this.statePromise = new Promise<void>((resolve) => {
+        this.stateResolve = resolve;
+      });
+    }
+
+    await this.statePromise;
+    return this.state;
+  }
+
+  /**
+   * Ensure state allows operation (not disposed or disposing)
+   */
+  public ensureOperational(): void {
+    if (this.isDisposed()) {
+      throw new ApplicationError("Operation not allowed: scope is disposed", "SCOPE_DISPOSED", {
+        correlationId: `state_check_${Date.now()}`,
+        metadata: { currentState: this.state },
+      });
+    }
+
+    if (this.isDisposing()) {
+      throw new ApplicationError("Operation not allowed: scope disposal in progress", "SCOPE_DISPOSING", {
+        correlationId: `state_check_${Date.now()}`,
+        metadata: { currentState: this.state },
+      });
     }
   }
 }

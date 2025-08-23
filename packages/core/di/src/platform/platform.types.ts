@@ -266,6 +266,15 @@ export interface IPlatformPerformance {
 }
 
 /**
+ * Cross-platform timing interface
+ */
+export interface ITiming {
+  now(): number;
+  isHighResolution(): boolean;
+  getTimestamp(): number;
+}
+
+/**
  * Environment-specific error types
  */
 export interface IPlatformError extends Error {

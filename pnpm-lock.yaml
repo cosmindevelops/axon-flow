@@ -138,6 +138,9 @@ importers:
       pino-pretty:
         specifier: 13.1.1
         version: 13.1.1
+      zod:
+        specifier: ^4.0.17
+        version: 4.0.17
     devDependencies:
       '@types/node':
         specifier: ^24.3.0

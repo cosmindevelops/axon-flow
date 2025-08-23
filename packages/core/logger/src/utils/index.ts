@@ -10,3 +10,5 @@ export * from "./utils.classes.js";
 
 // Export all validation schemas
 export * from "./utils.schemas.js";
+
+// Memory cleanup utilities are now exported from utils.classes.js

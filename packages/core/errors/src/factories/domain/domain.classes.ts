@@ -2,7 +2,7 @@
  * Enhanced domain-specific error factory implementations
  */
 
-import { ErrorFactory } from "../base/base-error.classes.js";
+import { ErrorFactory } from "../../base/base-error.classes.js";
 import {
   SystemError,
   ApplicationError,
@@ -19,7 +19,7 @@ import {
   NotFoundError,
   ConflictError,
   PermissionError,
-} from "../categories/categories.classes.js";
+} from "../../categories/categories.classes.js";
 import type {
   IEnhancedErrorFactory,
   ISpecializedErrorFactory,
@@ -30,7 +30,7 @@ import type {
   DomainErrorCreationOptions,
   IFactoryMetrics,
   IErrorFactoryConfig,
-} from "./domain-factory.types.js";
+} from "./domain.types.js";
 import type {
   ISystemError,
   IApplicationError,
@@ -47,9 +47,9 @@ import type {
   INotFoundError,
   IConflictError,
   IPermissionError,
-} from "../categories/categories.types.js";
-import { ErrorSeverity, ErrorCategory } from "../base/base-error.types.js";
-import type { IEnhancedErrorContext, IBaseAxonError } from "../base/base-error.types.js";
+} from "../../categories/categories.types.js";
+import { ErrorSeverity, ErrorCategory } from "../../base/base-error.types.js";
+import type { IEnhancedErrorContext, IBaseAxonError } from "../../base/base-error.types.js";
 
 /**
  * Object pool for error instances to optimize memory allocation

@@ -210,6 +210,13 @@ export class BaseAxonError extends Error implements IBaseAxonError {
   }
 
   /**
+   * Get metadata directly for easier access
+   */
+  get metadata(): Record<string, unknown> | undefined {
+    return this.context.metadata;
+  }
+
+  /**
    * Custom string representation
    */
   override toString(): string {

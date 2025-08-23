@@ -7,13 +7,8 @@ import {
   EnhancedPerformanceTracker,
   PerformancePlatformDetector,
   MemoryMonitor,
-} from "../../src/performance/performance.classes.js";
-import {
-  Timed,
-  Profile,
-  withTiming,
-  setGlobalPerformanceTracker,
-} from "../../src/performance/performance.decorators.js";
+} from "../../src/performance/core/core.classes.js";
+import { Timed, Profile, withTiming, setGlobalPerformanceTracker } from "../../src/performance/decorators/index.js";
 import type { IEnhancedPerformanceConfig } from "../../src/performance/performance.types.js";
 
 describe("Performance Integration Tests", () => {

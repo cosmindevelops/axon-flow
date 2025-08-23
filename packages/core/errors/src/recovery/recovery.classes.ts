@@ -173,6 +173,7 @@ export class RetryHandler extends BaseRecoveryHandler {
   public readonly strategy = RecoveryStrategy.RETRY;
   private config: Required<IRetryConfig>;
   private errorFactory: ErrorFactory;
+  private handlerMetrics: IRecoveryMetrics;
 
   constructor(config: IRetryConfig, priority: HandlerPriority = Priority.MEDIUM) {
     super("RetryHandler", priority);
@@ -192,6 +193,7 @@ export class RetryHandler extends BaseRecoveryHandler {
     } as Required<IRetryConfig>;
 
     this.errorFactory = new ErrorFactory(ErrorSeverity.ERROR, ErrorCategory.APPLICATION);
+    this.handlerMetrics = this.createEmptyMetrics();
   }
 
   public canHandle(_error: IBaseAxonError): boolean {
@@ -290,6 +292,79 @@ export class RetryHandler extends BaseRecoveryHandler {
     };
   }
 
+  /**
+   * High-level retry execution method for convenient usage
+   */
+  public async executeWithRetry<T>(operation: () => Promise<T> | T): Promise<T> {
+    const startTime = PerformanceUtils.now();
+    let lastError: Error | IBaseAxonError | null = null;
+    let attempt = 0;
+
+    while (attempt < this.config.maxAttempts) {
+      attempt++;
+
+      try {
+        const result = await Promise.resolve(operation());
+
+        // Update metrics for successful retry
+        this.updateHandlerMetrics({
+          totalAttempts: attempt,
+          successfulAttempts: 1,
+          failedAttempts: attempt - 1,
+          duration: PerformanceUtils.now() - startTime,
+        });
+
+        return result;
+      } catch (error) {
+        lastError = error as Error | IBaseAxonError;
+
+        // Check if we should retry this error
+        const axonError =
+          lastError instanceof BaseAxonError ? lastError : this.errorFactory.createFromError(lastError as Error);
+
+        if (!this.config.shouldRetry!(axonError, attempt)) {
+          break;
+        }
+
+        // If this isn't the last attempt, wait before retrying
+        if (attempt < this.config.maxAttempts) {
+          const delay = this.config.customDelayFunction
+            ? this.config.customDelayFunction(attempt, axonError)
+            : PerformanceUtils.calculateBackoffDelay(attempt, this.config);
+
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+
+    // Update metrics for failed retry
+    this.updateHandlerMetrics({
+      totalAttempts: attempt,
+      successfulAttempts: 0,
+      failedAttempts: 1,
+      duration: PerformanceUtils.now() - startTime,
+    });
+
+    // All attempts failed, throw the last error
+    throw lastError;
+  }
+
+  /**
+   * Get retry handler metrics
+   */
+  public getMetrics(): IRecoveryMetrics & {
+    totalRetries?: number;
+    successfulRetries?: number;
+    failedRetries?: number;
+  } {
+    return {
+      ...this.handlerMetrics,
+      totalRetries: this.handlerMetrics.totalAttempts,
+      successfulRetries: this.handlerMetrics.successfulAttempts,
+      failedRetries: this.handlerMetrics.failedAttempts,
+    };
+  }
+
   private createMetrics(attempts: number, successful: number, duration: number): IRecoveryMetrics {
     return PerformanceUtils.getFromPool("recoveryMetrics", () => ({
       totalAttempts: attempts,
@@ -300,6 +375,48 @@ export class RetryHandler extends BaseRecoveryHandler {
       averageRecoveryTime: duration,
       totalRecoveryTime: duration,
       recoveryTimeByStrategy: { [RecoveryStrategy.RETRY]: duration } as Record<RecoveryStrategy, number>,
+    }));
+  }
+
+  private updateHandlerMetrics(update: {
+    totalAttempts: number;
+    successfulAttempts: number;
+    failedAttempts: number;
+    duration: number;
+  }): void {
+    this.handlerMetrics.totalAttempts += update.totalAttempts;
+    this.handlerMetrics.successfulAttempts += update.successfulAttempts;
+    this.handlerMetrics.failedAttempts += update.failedAttempts;
+    this.handlerMetrics.totalRecoveryTime += update.duration;
+
+    // Update average
+    if (this.handlerMetrics.totalAttempts > 0) {
+      this.handlerMetrics.averageRecoveryTime =
+        this.handlerMetrics.totalRecoveryTime / this.handlerMetrics.totalAttempts;
+    }
+
+    // Update strategy-specific metrics
+    this.handlerMetrics.attemptsByStrategy[RecoveryStrategy.RETRY] =
+      (this.handlerMetrics.attemptsByStrategy[RecoveryStrategy.RETRY] || 0) + update.totalAttempts;
+
+    this.handlerMetrics.recoveryTimeByStrategy[RecoveryStrategy.RETRY] =
+      (this.handlerMetrics.recoveryTimeByStrategy[RecoveryStrategy.RETRY] || 0) + update.duration;
+
+    const strategyAttempts = this.handlerMetrics.attemptsByStrategy[RecoveryStrategy.RETRY];
+    const strategySuccesses = update.successfulAttempts;
+    this.handlerMetrics.successRateByStrategy[RecoveryStrategy.RETRY] = strategySuccesses / strategyAttempts;
+  }
+
+  private createEmptyMetrics(): IRecoveryMetrics {
+    return PerformanceUtils.getFromPool("emptyMetrics", () => ({
+      totalAttempts: 0,
+      successfulAttempts: 0,
+      failedAttempts: 0,
+      attemptsByStrategy: {} as Record<RecoveryStrategy, number>,
+      successRateByStrategy: {} as Record<RecoveryStrategy, number>,
+      averageRecoveryTime: 0,
+      totalRecoveryTime: 0,
+      recoveryTimeByStrategy: {} as Record<RecoveryStrategy, number>,
     }));
   }
 }
@@ -328,6 +445,7 @@ export class CircuitBreakerHandler extends BaseRecoveryHandler {
   private state: ICircuitBreakerState;
   private stateHistory: Array<{ state: CircuitState; timestamp: Date; triggerError?: string }> = [];
   private errorFactory: ErrorFactory;
+  private handlerMetrics: IRecoveryMetrics;
 
   // Thread-safety using atomic operations where possible
   private stateLock = false;
@@ -360,6 +478,7 @@ export class CircuitBreakerHandler extends BaseRecoveryHandler {
     };
 
     this.errorFactory = new ErrorFactory(ErrorSeverity.WARNING, ErrorCategory.SYSTEM);
+    this.handlerMetrics = this.createEmptyBreakerMetrics();
   }
 
   public canHandle(error: IBaseAxonError): boolean {
@@ -538,6 +657,46 @@ export class CircuitBreakerHandler extends BaseRecoveryHandler {
     }
   }
 
+  /**
+   * Get current circuit breaker state
+   */
+  public getState(): "OPEN" | "CLOSED" | "HALF-OPEN" {
+    const state = this.getCircuitState();
+    return state.toUpperCase() as "OPEN" | "CLOSED" | "HALF-OPEN";
+  }
+
+  /**
+   * Execute operation with circuit breaker protection
+   */
+  public async execute<T>(operation: () => Promise<T> | T): Promise<T> {
+    const currentState = this.getCircuitState();
+
+    if (currentState === "open") {
+      throw this.config.openCircuitError();
+    }
+
+    try {
+      const result = await Promise.resolve(operation());
+      this.recordSuccess();
+      return result;
+    } catch (error) {
+      const axonError = error instanceof BaseAxonError ? error : this.errorFactory.createFromError(error as Error);
+      this.recordFailure(axonError);
+      throw error;
+    }
+  }
+
+  /**
+   * Get circuit breaker metrics
+   */
+  public getMetrics(): IRecoveryMetrics & { failureCount?: number; state?: string } {
+    return {
+      ...this.handlerMetrics,
+      failureCount: this.state.failureCount,
+      state: this.getCircuitState(),
+    };
+  }
+
   private createMetrics(successful: number, failed: number, duration: number): IRecoveryMetrics {
     return PerformanceUtils.getFromPool("circuitBreakerMetrics", () => ({
       totalAttempts: successful + failed,
@@ -555,6 +714,20 @@ export class CircuitBreakerHandler extends BaseRecoveryHandler {
       totalRecoveryTime: duration,
       recoveryTimeByStrategy: { [RecoveryStrategy.CIRCUIT_BREAKER]: duration } as Record<RecoveryStrategy, number>,
       circuitBreakerHistory: [...this.stateHistory],
+    }));
+  }
+
+  private createEmptyBreakerMetrics(): IRecoveryMetrics {
+    return PerformanceUtils.getFromPool("emptyBreakerMetrics", () => ({
+      totalAttempts: 0,
+      successfulAttempts: 0,
+      failedAttempts: 0,
+      attemptsByStrategy: {} as Record<RecoveryStrategy, number>,
+      successRateByStrategy: {} as Record<RecoveryStrategy, number>,
+      averageRecoveryTime: 0,
+      totalRecoveryTime: 0,
+      recoveryTimeByStrategy: {} as Record<RecoveryStrategy, number>,
+      circuitBreakerHistory: [],
     }));
   }
 }
@@ -1042,6 +1215,13 @@ export class RecoveryManager implements IRecoveryManager {
     this.handlers.set(handler.name, handler);
   }
 
+  /**
+   * Add handler - alias for registerHandler for test compatibility
+   */
+  public addHandler(strategyName: string, handler: IRecoveryHandler): void {
+    this.registerHandler(handler);
+  }
+
   public unregisterHandler(name: string): boolean {
     return this.handlers.delete(name);
   }
@@ -1062,8 +1242,60 @@ export class RecoveryManager implements IRecoveryManager {
       ...(operation.metadata && { metadata: operation.metadata }),
     };
 
+    // Find available retry handlers
+    const retryHandlers = Array.from(this.handlers.values())
+      .filter((handler) => handler.strategy === RecoveryStrategy.RETRY)
+      .sort((a, b) => a.priority - b.priority);
+
+    // If we have retry handlers, use the first one to execute the operation with retries
+    if (retryHandlers.length > 0) {
+      const retryHandler = retryHandlers[0] as RetryHandler;
+      try {
+        // Use the retry handler's executeWithRetry method
+        const result = await retryHandler.executeWithRetry(async () => {
+          return await Promise.resolve(operation.operation(context));
+        });
+
+        // Update metrics for successful operation
+        this.updateMetrics({
+          totalAttempts: 1,
+          successfulAttempts: 1,
+          failedAttempts: 0,
+          duration: PerformanceUtils.now() - startTime,
+        });
+
+        return result;
+      } catch (error) {
+        // The retry handler has already attempted retries, so now we can try other recovery strategies
+        const axonError = error instanceof BaseAxonError ? error : this.errorFactory.createFromError(error as Error);
+        
+        // Update metrics for failed retry operation
+        this.updateMetrics({
+          totalAttempts: 3, // maxAttempts from retry handler
+          successfulAttempts: 0,
+          failedAttempts: 1,
+          duration: PerformanceUtils.now() - startTime,
+        });
+        
+        // Attempt recovery using other handlers (excluding retry since that already failed)
+        const otherHandlers = Array.from(this.handlers.values())
+          .filter((handler) => handler.strategy !== RecoveryStrategy.RETRY)
+          .filter((handler) => handler.canHandle(axonError) && handler.canRecover(axonError, context))
+          .sort((a, b) => a.priority - b.priority);
+
+        if (otherHandlers.length > 0) {
+          const recoveryResult = await this.attemptRecovery(axonError, context);
+          if (recoveryResult.success && recoveryResult.result !== undefined) {
+            return recoveryResult.result as T;
+          }
+        }
+
+        throw axonError;
+      }
+    }
+
+    // Fallback to original behavior if no retry handlers
     try {
-      // Try operation first
       const result = await Promise.resolve(operation.operation(context));
 
       // Update metrics for successful operation

@@ -19,7 +19,7 @@ import type {
   IEnhancedPerformanceTracker,
   MemoryTrend,
   MetricsExportFormat,
-} from "../../../src/performance/performance.types.js";
+} from "../../../src/performance/core/core.types.js";
 
 describe("Performance Types", () => {
   describe("Type Definitions", () => {

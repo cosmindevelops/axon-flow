@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CorrelationPlatform, CorrelationPropagationStrategy } from "./correlation.types.js";
+import { CorrelationPlatform, CorrelationPropagationStrategy } from "./core.types.js";
 
 /**
  * UUID v4 validation schema

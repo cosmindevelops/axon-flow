@@ -30,20 +30,36 @@ export const validationStrategySchema = z.enum([
 export const poolHealthSchema = z.enum(["HEALTHY", "WARNING", "CRITICAL", "DISABLED"]) satisfies z.ZodType<PoolHealth>;
 
 /**
+ * Default pool configuration - must be defined before schema
+ */
+export const DEFAULT_POOL_CONFIG: IPoolConfig = {
+  minSize: 5,
+  maxSize: 50,
+  evictionPolicy: "LRU",
+  validationStrategy: "ON_ACQUIRE",
+  validationInterval: 30000,
+  createTimeout: 5000,
+  acquireTimeout: 2000,
+  enableMetrics: true,
+  maxIdleTime: 300000,
+  enableWarmup: false,
+};
+
+/**
  * Schema for pool configuration validation
  */
 export const poolConfigSchema = z
   .object({
-    minSize: z.number().int().min(0).max(1000),
-    maxSize: z.number().int().min(1).max(10000),
-    evictionPolicy: evictionPolicySchema,
-    validationStrategy: validationStrategySchema,
-    validationInterval: z.number().int().min(1000).max(300000),
-    createTimeout: z.number().int().min(100).max(30000),
-    acquireTimeout: z.number().int().min(100).max(10000),
-    enableMetrics: z.boolean(),
-    maxIdleTime: z.number().int().min(1000).max(3600000),
-    enableWarmup: z.boolean(),
+    minSize: z.number().int().min(0).max(1000).default(5),
+    maxSize: z.number().int().min(1).max(10000).default(50),
+    evictionPolicy: evictionPolicySchema.default("LRU"),
+    validationStrategy: validationStrategySchema.default("ON_ACQUIRE"),
+    validationInterval: z.number().int().min(10).max(300000).default(30000),
+    createTimeout: z.number().int().min(1).max(30000).default(5000),
+    acquireTimeout: z.number().int().min(100).max(10000).default(2000),
+    enableMetrics: z.boolean().default(true),
+    maxIdleTime: z.number().int().min(10).max(3600000).default(300000),
+    enableWarmup: z.boolean().default(false),
   })
   .refine((config) => config.minSize <= config.maxSize, {
     message: "minSize must be less than or equal to maxSize",
@@ -97,22 +113,6 @@ export const pooledInstanceSchema = z.object({
   isValid: z.boolean(),
   id: z.string().min(1),
 }) satisfies z.ZodType<IPooledInstance<unknown>>;
-
-/**
- * Default pool configuration
- */
-export const DEFAULT_POOL_CONFIG: IPoolConfig = {
-  minSize: 5,
-  maxSize: 50,
-  evictionPolicy: "LRU",
-  validationStrategy: "ON_ACQUIRE",
-  validationInterval: 30000,
-  createTimeout: 5000,
-  acquireTimeout: 2000,
-  enableMetrics: true,
-  maxIdleTime: 300000,
-  enableWarmup: false,
-};
 
 /**
  * High-performance pool configuration

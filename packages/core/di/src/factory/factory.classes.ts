@@ -245,7 +245,8 @@ export class CachedFactory<T> extends AbstractFactory<T> {
     const cacheKey = this.getCacheKey(args);
 
     if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey)!;
+      // Track cache hits as zero-cost operations for performance metrics
+      return this.trackCreation(() => this.cache.get(cacheKey)!) as T;
     }
 
     return this.trackCreation(() => {

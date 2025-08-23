@@ -125,7 +125,7 @@ describe("DI Container Performance Benchmarks", () => {
 
       // Benchmark resolution
       const iterations = 10000;
-      
+
       perf.measure(() => {
         for (let i = 0; i < iterations; i++) {
           container.resolve(SIMPLE_TOKEN);
@@ -138,7 +138,7 @@ describe("DI Container Performance Benchmarks", () => {
       // Performance assertions
       expect(avgPerResolution).toBeLessThan(0.01); // Less than 0.01ms per resolution
       expect(stats.total).toBeLessThan(100); // Total under 100ms for 10k resolutions
-      
+
       console.log(`Simple resolution: ${avgPerResolution.toFixed(6)}ms avg per resolution`);
     });
 
@@ -165,7 +165,7 @@ describe("DI Container Performance Benchmarks", () => {
 
       // Cached resolution should be extremely fast
       expect(avgPerResolution).toBeLessThan(0.001); // Less than 0.001ms per cached resolution
-      
+
       const metrics = container.getMetrics();
       expect(metrics.cacheHitRatio).toBeCloseTo(1.0, 2); // 100% cache hit rate
 
@@ -194,7 +194,7 @@ describe("DI Container Performance Benchmarks", () => {
 
       // Should handle complex dependency resolution reasonably quickly
       expect(avgPerResolution).toBeLessThan(2); // Less than 2ms per complex resolution (allowing for complexity)
-      
+
       console.log(`Complex resolution: ${avgPerResolution.toFixed(6)}ms avg per resolution`);
     });
   });
@@ -260,7 +260,7 @@ describe("DI Container Performance Benchmarks", () => {
           enableMetrics: true,
         },
         undefined,
-        (instance) => Promise.resolve(instance.reset())
+        (instance) => Promise.resolve(instance.reset()),
       );
 
       // Warm up the pool
@@ -307,17 +307,13 @@ describe("DI Container Performance Benchmarks", () => {
     });
 
     it("should handle pool contention under load", async () => {
-      const pool = new ObjectPool(
-        SIMPLE_TOKEN,
-        () => new SimpleService(),
-        {
-          ...DEFAULT_POOL_CONFIG,
-          minSize: 5,
-          maxSize: 20,
-          acquireTimeout: 1000,
-          enableMetrics: true,
-        }
-      );
+      const pool = new ObjectPool(SIMPLE_TOKEN, () => new SimpleService(), {
+        ...DEFAULT_POOL_CONFIG,
+        minSize: 5,
+        maxSize: 20,
+        acquireTimeout: 1000,
+        enableMetrics: true,
+      });
 
       await pool.warmup();
 
@@ -333,7 +329,7 @@ describe("DI Container Performance Benchmarks", () => {
           for (let i = 0; i < iterationsPerWorker; i++) {
             const instance = await pool.acquire();
             // Simulate some work
-            await new Promise(resolve => setTimeout(resolve, Math.random() * 10));
+            await new Promise((resolve) => setTimeout(resolve, Math.random() * 10));
             await pool.release(instance);
           }
         };
@@ -406,7 +402,7 @@ describe("DI Container Performance Benchmarks", () => {
       // Create and hold references to test memory pressure
       for (let i = 0; i < iterations; i++) {
         services.push(container.resolve(SIMPLE_TOKEN));
-        
+
         // Clear some references periodically to simulate realistic usage
         if (i % 1000 === 0 && services.length > 500) {
           services = services.slice(-500); // Keep only last 500
@@ -456,9 +452,9 @@ describe("DI Container Performance Benchmarks", () => {
 
         const totalTime = performance.now() - startTime;
         const avgTimePerResolution = totalTime / (count * iterations);
-        
+
         results.push({ count, avgTime: avgTimePerResolution });
-        
+
         console.log(`${count} services: ${avgTimePerResolution.toFixed(6)}ms avg per resolution`);
       }
 
@@ -467,7 +463,7 @@ describe("DI Container Performance Benchmarks", () => {
       const firstResult = results[0];
       const lastResult = results[results.length - 1];
       const scalingFactor = lastResult.avgTime / firstResult.avgTime;
-      
+
       expect(scalingFactor).toBeLessThan(3); // Should not scale worse than 3x
       expect(lastResult.avgTime).toBeLessThan(0.05); // Still fast at scale
     });
@@ -475,25 +471,25 @@ describe("DI Container Performance Benchmarks", () => {
     it("should handle high-frequency resolution bursts", () => {
       container.register(SIMPLE_TOKEN, SimpleService, { lifecycle: "singleton" });
       container.register(COMPLEX_TOKEN, ComplexService, {
-        lifecycle: "transient", 
+        lifecycle: "transient",
         dependencies: [SIMPLE_TOKEN, SIMPLE_TOKEN, SIMPLE_TOKEN],
       });
 
       const burstSizes = [100, 500, 1000, 5000];
-      
+
       for (const burstSize of burstSizes) {
         const startTime = performance.now();
-        
+
         // Rapid-fire resolutions
         for (let i = 0; i < burstSize; i++) {
           container.resolve(COMPLEX_TOKEN);
         }
-        
+
         const totalTime = performance.now() - startTime;
         const throughput = burstSize / (totalTime / 1000); // operations per second
-        
+
         expect(throughput).toBeGreaterThan(500); // At least 500 ops/sec
-        
+
         console.log(`Burst ${burstSize}: ${throughput.toFixed(0)} operations/sec`);
       }
     });
@@ -518,15 +514,15 @@ describe("DI Container Performance Benchmarks", () => {
 
       for (const testCase of testCases) {
         const startTime = performance.now();
-        
+
         for (let i = 0; i < testCase.iterations; i++) {
           container.resolve(testCase.token);
         }
-        
+
         const totalTime = performance.now() - startTime;
         const avgTime = totalTime / testCase.iterations;
         benchmarkResults[testCase.name] = avgTime;
-        
+
         console.log(`${testCase.name}: ${avgTime.toFixed(6)}ms avg`);
       }
 

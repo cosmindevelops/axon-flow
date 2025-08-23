@@ -20,9 +20,6 @@ export * from "./factory/index.js";
 // Performance optimizations
 export * from "./pool/index.js";
 
-// Testing utilities
-export * from "./testing/index.js";
-
 // Platform compatibility
 export * from "./platform/index.js";
 

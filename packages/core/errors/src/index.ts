@@ -62,27 +62,25 @@ export {
 // Serialization system
 export * from "./serialization/index.js";
 
-// Domain factory system - comprehensive type-safe error factories
+// Factory system - comprehensive type-safe error factories
 export {
-  // Enhanced factory classes
+  // Enhanced factory classes (simple implementation)
   EnhancedErrorFactory,
   defaultEnhancedFactory,
   createEnhancedFactory,
-  // Domain factory types (avoid conflicts with base types)
-  type IDomainErrorTypes,
-  type IDomainContextTypes,
-  type IErrorTypeGuards,
-  type DomainKey,
-  type DomainErrorType,
-  type DomainContextType,
-  type DomainErrorCreationOptions,
-  type ISpecializedErrorFactory,
-  type IFactoryMetrics,
-  type IErrorFactoryRegistry,
-  // Validation schemas
-  validateErrorCreationOptions,
-  validateFactoryConfig,
-  validateDomainKey,
+  // Simple factory aliases
+  SimpleErrorFactory,
+  defaultSimpleFactory,
+  createSimpleFactory,
+} from "./factories/index.js";
+
+// Export factory types with specific naming to avoid conflicts
+export type {
+  ISimpleErrorFactory,
+  ISimpleFactoryOptions,
+  ISystemErrorOptions,
+  IApplicationErrorOptions,
+  IValidationErrorOptions,
 } from "./factories/index.js";
 
 // Recovery mechanisms - export specific items to avoid conflicts with chain module

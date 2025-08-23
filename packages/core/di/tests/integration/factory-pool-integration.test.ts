@@ -94,14 +94,11 @@ describe("Factory-Pool Integration", () => {
   describe("Factory Integration with Container", () => {
     it("should integrate factory pattern with DI container", () => {
       // Create factory for database connections
-      const dbFactory = new SimpleFactory(
-        "DatabaseConnectionFactory",
-        () => {
-          const conn = new DatabaseConnection();
-          conn.connect();
-          return conn;
-        }
-      );
+      const dbFactory = new SimpleFactory("DatabaseConnectionFactory", () => {
+        const conn = new DatabaseConnection();
+        conn.connect();
+        return conn;
+      });
 
       // Register factory with container
       container.registerFactoryInstance(DB_CONNECTION_TOKEN, dbFactory);
@@ -114,17 +111,14 @@ describe("Factory-Pool Integration", () => {
       expect(connection2).toBeInstanceOf(DatabaseConnection);
       expect(connection1.isConnected).toBe(true);
       expect(connection2.isConnected).toBe(true);
-      
+
       // Should create new instances each time (not cached by factory)
       expect(connection1.id).not.toBe(connection2.id);
     });
 
     it("should support cached factories for performance", () => {
       // Create base factory
-      const baseFactory = new SimpleFactory(
-        "HttpClientFactory",
-        () => new HttpClient()
-      );
+      const baseFactory = new SimpleFactory("HttpClientFactory", () => new HttpClient());
 
       // Wrap with caching
       const cachedFactory = new CachedFactory("CachedHttpClient", baseFactory, 10);
@@ -133,7 +127,7 @@ describe("Factory-Pool Integration", () => {
 
       // First resolution creates instance
       const client1 = container.resolve(HTTP_CLIENT_TOKEN);
-      
+
       // Second resolution should return cached instance (same args)
       const client2 = container.resolve(HTTP_CLIENT_TOKEN);
 
@@ -142,13 +136,10 @@ describe("Factory-Pool Integration", () => {
     });
 
     it("should handle factory performance metrics", () => {
-      const factory = new SimpleFactory(
-        "PerformanceTestFactory",
-        () => {
-          // Simulate some work
-          return new HttpClient();
-        }
-      );
+      const factory = new SimpleFactory("PerformanceTestFactory", () => {
+        // Simulate some work
+        return new HttpClient();
+      });
 
       container.registerFactoryInstance(HTTP_CLIENT_TOKEN, factory);
 
@@ -178,7 +169,7 @@ describe("Factory-Pool Integration", () => {
         // Validator
         (resource) => Promise.resolve(!resource.used),
         // Cleanup
-        (resource) => Promise.resolve(resource.reset())
+        (resource) => Promise.resolve(resource.reset()),
       );
 
       poolManager.registerPool(pool);
@@ -213,16 +204,12 @@ describe("Factory-Pool Integration", () => {
     });
 
     it("should handle pool performance under load", async () => {
-      const pool = new ObjectPool(
-        DB_CONNECTION_TOKEN,
-        () => new DatabaseConnection(),
-        {
-          minSize: 5,
-          maxSize: 20,
-          acquireTimeout: 1000,
-          enableMetrics: true,
-        }
-      );
+      const pool = new ObjectPool(DB_CONNECTION_TOKEN, () => new DatabaseConnection(), {
+        minSize: 5,
+        maxSize: 20,
+        acquireTimeout: 1000,
+        enableMetrics: true,
+      });
 
       poolManager.registerPool(pool);
       await pool.warmUp();
@@ -237,7 +224,7 @@ describe("Factory-Pool Integration", () => {
         const resource = await pool.acquire();
         resource.query(`SELECT * FROM table WHERE id = ${i}`);
         acquisitions.push(resource);
-        
+
         if (i % 10 === 0) {
           // Release some resources periodically
           const toRelease = acquisitions.splice(0, 5);
@@ -271,10 +258,11 @@ describe("Factory-Pool Integration", () => {
           maxSize: 5,
           maxIdleTime: 100, // 100ms idle timeout
           validationInterval: 50, // Validate every 50ms
+          validationStrategy: "PERIODIC", // Enable periodic validation
           enableMetrics: true,
         },
         // Validator that fails used resources
-        (resource) => Promise.resolve(!resource.used)
+        (resource) => Promise.resolve(!resource.used),
       );
 
       poolManager.registerPool(pool);
@@ -286,7 +274,7 @@ describe("Factory-Pool Integration", () => {
       await pool.release(resource);
 
       // Wait for validation cycle
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       const stats = pool.getStats();
       expect(stats.validationFailures).toBeGreaterThan(0);
@@ -298,7 +286,7 @@ describe("Factory-Pool Integration", () => {
       // Create a factory that uses pooled resources
       class PooledServiceFactory implements IFactory<DatabaseConnection> {
         public readonly name = "PooledServiceFactory";
-        
+
         constructor(private readonly pool: ObjectPool<DatabaseConnection>) {}
 
         async create(): Promise<DatabaseConnection> {
@@ -312,15 +300,11 @@ describe("Factory-Pool Integration", () => {
       }
 
       // Setup pool
-      const pool = new ObjectPool(
-        DB_CONNECTION_TOKEN,
-        () => new DatabaseConnection(),
-        {
-          minSize: 3,
-          maxSize: 10,
-          enableMetrics: true,
-        }
-      );
+      const pool = new ObjectPool(DB_CONNECTION_TOKEN, () => new DatabaseConnection(), {
+        minSize: 3,
+        maxSize: 10,
+        enableMetrics: true,
+      });
 
       await pool.warmUp();
       poolManager.registerPool(pool);
@@ -331,10 +315,10 @@ describe("Factory-Pool Integration", () => {
 
       // Use through container
       const connections: DatabaseConnection[] = [];
-      
+
       // Acquire multiple connections
       for (let i = 0; i < 8; i++) {
-        const conn = await container.resolve(DB_CONNECTION_TOKEN) as DatabaseConnection;
+        const conn = (await container.resolve(DB_CONNECTION_TOKEN)) as DatabaseConnection;
         conn.connect();
         conn.query(`SELECT ${i}`);
         connections.push(conn);
@@ -359,10 +343,7 @@ describe("Factory-Pool Integration", () => {
 
     it("should handle mixed factory and pool strategies", () => {
       // Some services use factories, others use direct registration
-      const httpFactory = new SimpleFactory(
-        "HttpClientFactory",
-        () => new HttpClient()
-      );
+      const httpFactory = new SimpleFactory("HttpClientFactory", () => new HttpClient());
 
       container.registerFactoryInstance(HTTP_CLIENT_TOKEN, httpFactory);
       container.register(DB_CONNECTION_TOKEN, DatabaseConnection, { lifecycle: "singleton" });
@@ -382,7 +363,7 @@ describe("Factory-Pool Integration", () => {
       }
 
       const INTEGRATED_TOKEN: DIToken<IntegratedService> = "IntegratedService";
-      
+
       container.register(INTEGRATED_TOKEN, IntegratedService, {
         dependencies: [HTTP_CLIENT_TOKEN, DB_CONNECTION_TOKEN],
         lifecycle: "transient",
@@ -404,12 +385,9 @@ describe("Factory-Pool Integration", () => {
 
   describe("Error Handling Integration", () => {
     it("should handle factory creation failures gracefully", async () => {
-      const failingFactory = new SimpleFactory(
-        "FailingFactory",
-        () => {
-          throw new Error("Factory creation failed");
-        }
-      );
+      const failingFactory = new SimpleFactory("FailingFactory", () => {
+        throw new Error("Factory creation failed");
+      });
 
       container.registerFactoryInstance(EXPENSIVE_RESOURCE_TOKEN, failingFactory);
 
@@ -419,15 +397,11 @@ describe("Factory-Pool Integration", () => {
     });
 
     it("should handle pool exhaustion scenarios", async () => {
-      const pool = new ObjectPool(
-        DB_CONNECTION_TOKEN,
-        () => new DatabaseConnection(),
-        {
-          minSize: 1,
-          maxSize: 2,
-          acquireTimeout: 100, // Short timeout
-        }
-      );
+      const pool = new ObjectPool(DB_CONNECTION_TOKEN, () => new DatabaseConnection(), {
+        minSize: 1,
+        maxSize: 2,
+        acquireTimeout: 100, // Short timeout
+      });
 
       poolManager.registerPool(pool);
 
@@ -452,7 +426,7 @@ describe("Factory-Pool Integration", () => {
         () => {
           throw new Error("Resource creation failed");
         },
-        { minSize: 1, maxSize: 2 }
+        { minSize: 1, maxSize: 2 },
       );
 
       poolManager.registerPool(pool);

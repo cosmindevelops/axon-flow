@@ -4,7 +4,7 @@
  * Type definitions for testing dependency injection containers and mocking providers
  */
 
-import type { DIToken, IDIContainer, IContainerRegistrationOptions } from "../container/container.types.js";
+import type { DIToken, IDIContainer, IContainerRegistrationOptions } from "../../src/container/container.types.js";
 
 /**
  * Mock container configuration options

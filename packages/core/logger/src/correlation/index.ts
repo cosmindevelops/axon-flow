@@ -1,12 +1,10 @@
-// Runtime exports
-export * from "./correlation.classes.js";
+// Export core subdomain - core correlation functionality
+export * from "./core/index.js";
+
+// Export serialization subdomain
 export * from "./serialization/index.js";
 
-// Type-only exports
-export type * from "./correlation.types.js";
-export type * from "./correlation.schemas.js";
-
-// Schema exports (runtime)
+// Schema exports (runtime) - now from core subdomain
 export {
   correlationIdSchema,
   correlationIdPartsSchema,
@@ -23,4 +21,4 @@ export {
   correlationMiddlewareChainConfigSchema,
   correlationManagerFactoryConfigSchema,
   correlationSystemConfigSchema,
-} from "./correlation.schemas.js";
+} from "./core/core.schemas.js";

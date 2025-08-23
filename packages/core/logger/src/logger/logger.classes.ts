@@ -4,9 +4,9 @@
 
 // Removed problematic config import to fix lint errors
 // import { config } from "@axon/config";
-import type { CorrelationId } from "../correlation/correlation.types.js";
-import { CorrelationManagerFactory } from "../correlation/correlation.classes.js";
-import type { IEnhancedCorrelationManager } from "../correlation/correlation.types.js";
+import type { CorrelationId } from "../correlation/core/core.types.js";
+import { CorrelationManagerFactory } from "../correlation/core/core.classes.js";
+import type { IEnhancedCorrelationManager } from "../correlation/core/core.types.js";
 import type { Logger } from "pino";
 import {
   executeWithCircuitBreaker,

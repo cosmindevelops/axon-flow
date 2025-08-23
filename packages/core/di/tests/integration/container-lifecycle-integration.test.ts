@@ -26,7 +26,7 @@ class DatabaseService {
 
 class UserService {
   public readonly id = Math.random().toString(36).substr(2, 9);
-  
+
   constructor(private readonly db: DatabaseService) {}
 
   getDatabase(): DatabaseService {
@@ -41,7 +41,7 @@ class UserService {
 
 class NotificationService {
   public readonly id = Math.random().toString(36).substr(2, 9);
-  
+
   constructor(
     private readonly userService: UserService,
     private readonly db: DatabaseService,
@@ -84,12 +84,12 @@ describe("Container-Lifecycle Integration", () => {
     it("should maintain single instance across dependencies", () => {
       // Register all services as singletons
       container.register(DATABASE_TOKEN, DatabaseService, { lifecycle: "singleton" });
-      container.register(USER_TOKEN, UserService, { 
+      container.register(USER_TOKEN, UserService, {
         lifecycle: "singleton",
         dependencies: [DATABASE_TOKEN],
       });
       container.register(NOTIFICATION_TOKEN, NotificationService, {
-        lifecycle: "singleton", 
+        lifecycle: "singleton",
         dependencies: [USER_TOKEN, DATABASE_TOKEN],
       });
 
@@ -106,7 +106,7 @@ describe("Container-Lifecycle Integration", () => {
 
     it("should handle complex dependency graphs with singletons", () => {
       container.register(DATABASE_TOKEN, DatabaseService, { lifecycle: "singleton" });
-      container.register(USER_TOKEN, UserService, { 
+      container.register(USER_TOKEN, UserService, {
         lifecycle: "singleton",
         dependencies: [DATABASE_TOKEN],
       });
@@ -130,7 +130,7 @@ describe("Container-Lifecycle Integration", () => {
   describe("Transient Lifecycle Integration", () => {
     it("should create new instances for each resolution", () => {
       container.register(DATABASE_TOKEN, DatabaseService, { lifecycle: "transient" });
-      container.register(USER_TOKEN, UserService, { 
+      container.register(USER_TOKEN, UserService, {
         lifecycle: "transient",
         dependencies: [DATABASE_TOKEN],
       });
@@ -148,7 +148,7 @@ describe("Container-Lifecycle Integration", () => {
 
     it("should create new dependency instances for each parent", () => {
       container.register(DATABASE_TOKEN, DatabaseService, { lifecycle: "transient" });
-      container.register(USER_TOKEN, UserService, { 
+      container.register(USER_TOKEN, UserService, {
         lifecycle: "transient",
         dependencies: [DATABASE_TOKEN],
       });
@@ -158,11 +158,11 @@ describe("Container-Lifecycle Integration", () => {
       });
 
       const notification = container.resolve(NOTIFICATION_TOKEN);
-      
+
       // NotificationService should have its own instances of dependencies
       expect(notification.getUserService()).toBeInstanceOf(UserService);
       expect(notification.getDatabase()).toBeInstanceOf(DatabaseService);
-      
+
       // Each dependency resolution creates new instances
       expect(notification.getUserService().getDatabase()).not.toBe(notification.getDatabase());
     });
@@ -172,7 +172,7 @@ describe("Container-Lifecycle Integration", () => {
     it("should respect different lifecycle strategies in same graph", () => {
       // Database as singleton, others as transient
       container.register(DATABASE_TOKEN, DatabaseService, { lifecycle: "singleton" });
-      container.register(USER_TOKEN, UserService, { 
+      container.register(USER_TOKEN, UserService, {
         lifecycle: "transient",
         dependencies: [DATABASE_TOKEN],
       });
@@ -198,7 +198,7 @@ describe("Container-Lifecycle Integration", () => {
 
     it("should handle performance requirements with mixed lifecycles", async () => {
       container.register(DATABASE_TOKEN, DatabaseService, { lifecycle: "singleton" });
-      container.register(USER_TOKEN, UserService, { 
+      container.register(USER_TOKEN, UserService, {
         lifecycle: "transient",
         dependencies: [DATABASE_TOKEN],
       });
@@ -227,7 +227,7 @@ describe("Container-Lifecycle Integration", () => {
   describe("Error Handling Integration", () => {
     it("should provide proper error context for complex dependency failures", () => {
       // Register service with invalid dependency
-      container.register(USER_TOKEN, UserService, { 
+      container.register(USER_TOKEN, UserService, {
         dependencies: ["NonExistentService" as DIToken],
       });
 
@@ -241,7 +241,7 @@ describe("Container-Lifecycle Integration", () => {
       class ServiceA {
         constructor(private readonly serviceB: ServiceB) {}
       }
-      
+
       class ServiceB {
         constructor(private readonly serviceA: ServiceA) {}
       }
@@ -258,7 +258,7 @@ describe("Container-Lifecycle Integration", () => {
     });
 
     it("should provide detailed error information for resolution failures", () => {
-      container.register(USER_TOKEN, UserService, { 
+      container.register(USER_TOKEN, UserService, {
         dependencies: [DATABASE_TOKEN],
       });
 
@@ -283,26 +283,32 @@ describe("Container-Lifecycle Integration", () => {
         constructor(public readonly db: DatabaseService) {}
       }
       class Layer2Service {
-        constructor(public readonly layer1: Layer1Service, public readonly db: DatabaseService) {}
+        constructor(
+          public readonly layer1: Layer1Service,
+          public readonly db: DatabaseService,
+        ) {}
       }
       class Layer3Service {
-        constructor(public readonly layer2: Layer2Service, public readonly layer1: Layer1Service) {}
+        constructor(
+          public readonly layer2: Layer2Service,
+          public readonly layer1: Layer1Service,
+        ) {}
       }
 
       const LAYER1_TOKEN: DIToken<Layer1Service> = "Layer1Service";
-      const LAYER2_TOKEN: DIToken<Layer2Service> = "Layer2Service";  
+      const LAYER2_TOKEN: DIToken<Layer2Service> = "Layer2Service";
       const LAYER3_TOKEN: DIToken<Layer3Service> = "Layer3Service";
 
       container.register(DATABASE_TOKEN, DatabaseService, { lifecycle: "singleton" });
-      container.register(LAYER1_TOKEN, Layer1Service, { 
-        lifecycle: "singleton", 
+      container.register(LAYER1_TOKEN, Layer1Service, {
+        lifecycle: "singleton",
         dependencies: [DATABASE_TOKEN],
       });
-      container.register(LAYER2_TOKEN, Layer2Service, { 
+      container.register(LAYER2_TOKEN, Layer2Service, {
         lifecycle: "singleton",
         dependencies: [LAYER1_TOKEN, DATABASE_TOKEN],
       });
-      container.register(LAYER3_TOKEN, Layer3Service, { 
+      container.register(LAYER3_TOKEN, Layer3Service, {
         lifecycle: "singleton",
         dependencies: [LAYER2_TOKEN, LAYER1_TOKEN],
       });
@@ -324,7 +330,7 @@ describe("Container-Lifecycle Integration", () => {
 
     it("should track accurate metrics across lifecycle types", () => {
       container.register(DATABASE_TOKEN, DatabaseService, { lifecycle: "singleton" });
-      container.register(USER_TOKEN, UserService, { 
+      container.register(USER_TOKEN, UserService, {
         lifecycle: "transient",
         dependencies: [DATABASE_TOKEN],
       });
@@ -335,13 +341,13 @@ describe("Container-Lifecycle Integration", () => {
       }
 
       const metrics = container.getMetrics();
-      
+
       // Should track all resolutions (UserService instances + dependencies)
       expect(metrics.totalResolutions).toBeGreaterThanOrEqual(resolveCount);
-      
+
       // Should have some cache hits due to singleton database
       expect(metrics.cacheHitRatio).toBeGreaterThanOrEqual(0); // Some cache hits expected
-      
+
       expect(metrics.totalRegistrations).toBe(2);
       expect(metrics.memoryUsage.singletonCount).toBe(1); // Only database is singleton
     });

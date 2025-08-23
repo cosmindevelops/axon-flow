@@ -7,6 +7,9 @@
 // Types and interfaces
 export type * from "./decorators.types.js";
 
+// Validation schemas
+export * from "./decorators.schemas.js";
+
 // Core decorator implementations
 export {
   MetadataManager,

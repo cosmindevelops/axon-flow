@@ -105,16 +105,6 @@ export const performanceMeasurementSchema = z.object({
 });
 
 /**
- * Performance decorator options validation schema
- */
-export const performanceDecoratorOptionsSchema = z.object({
-  category: z.string().min(1).optional(),
-  threshold: z.number().min(0).optional(),
-  sample: z.boolean().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-});
-
-/**
  * Platform information validation schema
  */
 export const platformInfoSchema = z.object({
@@ -144,7 +134,6 @@ export type ResourceMetricsSchema = z.infer<typeof resourceMetricsSchema>;
 export type EnhancedPerformanceMetricsSchema = z.infer<typeof enhancedPerformanceMetricsSchema>;
 export type EnhancedPerformanceConfigSchema = z.infer<typeof enhancedPerformanceConfigSchema>;
 export type PerformanceMeasurementSchema = z.infer<typeof performanceMeasurementSchema>;
-export type PerformanceDecoratorOptionsSchema = z.infer<typeof performanceDecoratorOptionsSchema>;
 export type PlatformInfoSchema = z.infer<typeof platformInfoSchema>;
 export type MetricsExportFormatSchema = z.infer<typeof metricsExportFormatSchema>;
 export type MemoryTrendSchema = z.infer<typeof memoryTrendSchema>;

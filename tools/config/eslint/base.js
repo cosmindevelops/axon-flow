@@ -16,13 +16,22 @@ export default tseslint.config(
   // TypeScript ESLint configuration - using recommended only (no type-aware initially)
   ...tseslint.configs.recommended,
 
-  // Add type-aware configuration for files that need it
+  // Add type-aware configuration for files that need it (excluding test files)
   {
-    files: ["packages/core/**/*.{js,mjs,cjs,ts,tsx}", "apps/**/*.{js,mjs,cjs,ts,tsx}"],
+    files: [
+      "packages/core/**/*.{js,mjs,cjs,ts,tsx}",
+      "apps/**/*.{js,mjs,cjs,ts,tsx}",
+      "!**/*.test.{js,ts,tsx,jsx}",
+      "!**/*.spec.{js,ts,tsx,jsx}",
+      "!**/tests/**/*",
+      "!**/*.config.{js,ts,mjs}",
+      "!**/tools/**/*",
+      "!**/tooling/**/*",
+    ],
     languageOptions: {
       parserOptions: {
         project: ["./packages/core/*/tsconfig.json", "./apps/*/tsconfig.json"],
-        tsconfigRootDir: "../../../",
+        tsconfigRootDir: ".",
         ecmaFeatures: {
           jsx: true,
         },
@@ -82,7 +91,7 @@ export default tseslint.config(
           ignoreRestSiblings: true,
         },
       ],
-      "@typescript-eslint/consistent-type-exports": "warn",
+      "@typescript-eslint/consistent-type-exports": "off",
       "@typescript-eslint/consistent-type-imports": [
         "warn",
         { prefer: "type-imports", fixStyle: "separate-type-imports" },
@@ -186,6 +195,8 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-argument": "off",
       "@typescript-eslint/strict-boolean-expressions": "off",
       "@typescript-eslint/unbound-method": "off",
+      "@typescript-eslint/consistent-type-exports": "off",
+      "@typescript-eslint/consistent-type-imports": "off",
       "no-console": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-empty-function": "off",

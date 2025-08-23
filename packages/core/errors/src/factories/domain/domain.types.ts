@@ -8,7 +8,7 @@ import type {
   IErrorFactory,
   ErrorSeverity,
   ErrorCategory,
-} from "../base/base-error.types.js";
+} from "../../base/base-error.types.js";
 import type {
   ISystemError,
   IApplicationError,
@@ -28,7 +28,7 @@ import type {
   DatabaseOperation,
   FileOperation,
   ConflictType,
-} from "../categories/categories.types.js";
+} from "../../categories/categories.types.js";
 
 /**
  * Authentication-specific error interface

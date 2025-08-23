@@ -4,15 +4,12 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-  PerformancePlatformDetector,
-  EnhancedPerformanceTracker,
-} from "../../../src/performance/performance.classes.js";
+import { PerformancePlatformDetector, EnhancedPerformanceTracker } from "../../../src/performance/core/core.classes.js";
 import type {
   IEnhancedPerformanceConfig,
   IPlatformInfo,
   IEnvironmentProfile,
-} from "../../../src/performance/performance.types.js";
+} from "../../../src/performance/core/core.types.js";
 
 describe("Cross-Environment Compatibility", () => {
   let detector: PerformancePlatformDetector;

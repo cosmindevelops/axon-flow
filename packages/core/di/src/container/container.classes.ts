@@ -24,16 +24,11 @@ import type { IAbstractFactory, IFactory, IFactoryRegistrationOptions } from "..
 
 import { FactoryRegistry, FactoryResolver } from "../factory/factory.classes.js";
 
+// Import platform timing utilities
+import { now } from "../platform/index.js";
+
 // Import proper error classes from @axon/errors
-import {
-  ValidationError,
-  ConfigurationError,
-  ApplicationError,
-  SystemError as _SystemError,
-  RecoveryManager as _RecoveryManager,
-  RetryHandler as _RetryHandler,
-  CircuitBreakerHandler as _CircuitBreakerHandler,
-} from "@axon/errors";
+import { ApplicationError, ConfigurationError, ValidationErrorCategory as ValidationError } from "@axon/errors";
 
 /**
  * Performance-optimized dependency injection container
@@ -237,10 +232,10 @@ export class DIContainer implements IDIContainer {
   }
 
   /**
-   * Resolve a dependency
+   * Resolve a dependency synchronously
    */
   public resolve<T>(token: DIToken<T>, context?: IResolutionContext): T {
-    const startTime = performance.now();
+    const startTime = now();
 
     try {
       const instance = this.internalResolve<T>(token, context);
@@ -253,11 +248,38 @@ export class DIContainer implements IDIContainer {
   }
 
   /**
-   * Try to resolve a dependency (returns undefined if not found)
+   * Resolve a dependency asynchronously (supports async factories)
+   */
+  public async resolveAsync<T>(token: DIToken<T>, context?: IResolutionContext): Promise<T> {
+    const startTime = now();
+
+    try {
+      const instance = await this.internalResolveAsync<T>(token, context);
+      this.trackResolution(startTime);
+      return instance;
+    } catch (error) {
+      this.trackResolution(startTime);
+      throw error;
+    }
+  }
+
+  /**
+   * Try to resolve a dependency synchronously (returns undefined if not found)
    */
   public tryResolve<T>(token: DIToken<T>, context?: IResolutionContext): T | undefined {
     try {
       return this.resolve<T>(token, context);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Try to resolve a dependency asynchronously (returns undefined if not found)
+   */
+  public async tryResolveAsync<T>(token: DIToken<T>, context?: IResolutionContext): Promise<T | undefined> {
+    try {
+      return await this.resolveAsync<T>(token, context);
     } catch {
       return undefined;
     }
@@ -341,9 +363,44 @@ export class DIContainer implements IDIContainer {
   }
 
   /**
-   * Internal resolution implementation
+   * Internal resolution implementation (synchronous)
    */
   private internalResolve<T>(token: DIToken<T>, context?: IResolutionContext): T {
+    const result = this.internalResolveCore<T>(token, context);
+
+    // Ensure synchronous result
+    if (result instanceof Promise) {
+      throw new ApplicationError(
+        "Async factories not supported in synchronous resolution",
+        "DI_ASYNC_FACTORY_NOT_SUPPORTED",
+        {
+          correlationId: `asyncFactory_${Date.now()}`,
+          metadata: { token: String(token), containerName: this.name },
+        },
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Internal resolution implementation (asynchronous)
+   */
+  private async internalResolveAsync<T>(token: DIToken<T>, context?: IResolutionContext): Promise<T> {
+    const result = this.internalResolveCore<T>(token, context);
+
+    // Handle both sync and async results
+    if (result instanceof Promise) {
+      return await result;
+    }
+
+    return result;
+  }
+
+  /**
+   * Core resolution logic shared between sync and async paths
+   */
+  private internalResolveCore<T>(token: DIToken<T>, context?: IResolutionContext): T | Promise<T> {
     this.ensureNotDisposed();
 
     // Create or extend resolution context
@@ -390,18 +447,16 @@ export class DIContainer implements IDIContainer {
           if (result instanceof Promise) {
             // For now, we'll throw an error for async factories in sync resolution
             // This could be enhanced to support async resolution in the future
-            throw new ApplicationError(
-              "Async factories not supported in synchronous resolution",
-              "DI_ASYNC_FACTORY_NOT_SUPPORTED",
-              {
-                correlationId: `asyncFactory_${Date.now()}`,
-                metadata: { token: String(token), containerName: this.name },
-              },
-            );
+            // Return the promise as-is for async resolution
+            return result;
           }
           return result;
         } catch (_error) {
-          // Factory resolution failed, continue to normal error handling
+          // Re-throw DI-specific errors (like async factory not supported)
+          if (_error instanceof ApplicationError && _error.code?.startsWith("DI_")) {
+            throw _error;
+          }
+          // Factory resolution failed with non-DI error, continue to normal error handling
         }
       }
 
@@ -435,9 +490,20 @@ export class DIContainer implements IDIContainer {
     };
 
     // Create instance
-    const instance = this.createInstance<T>(registration as IContainerRegistration<T>, newContext);
+    const instance = this.createInstanceCore<T>(registration as IContainerRegistration<T>, newContext);
 
-    // Cache singleton instances
+    // Handle async instance creation
+    if (instance instanceof Promise) {
+      return instance.then((resolvedInstance) => {
+        // Cache singleton instances after async resolution
+        if (registration.options.lifecycle === "singleton") {
+          this.singletonInstances.set(token, resolvedInstance);
+        }
+        return resolvedInstance;
+      });
+    }
+
+    // Cache singleton instances for sync resolution
     if (registration.options.lifecycle === "singleton") {
       this.singletonInstances.set(token, instance);
     }
@@ -446,23 +512,45 @@ export class DIContainer implements IDIContainer {
   }
 
   /**
-   * Create instance based on registration
+   * Create instance based on registration (core implementation)
    */
-  private createInstance<T>(registration: IContainerRegistration<T>, context: IResolutionContext): T {
+  private createInstanceCore<T>(registration: IContainerRegistration<T>, context: IResolutionContext): T | Promise<T> {
     const { implementation, options } = registration;
 
     try {
       // Use factory if provided
       if (options.factory) {
-        return options.factory() as T;
+        const factoryResult = options.factory();
+        // Handle both sync and async factory results
+        return factoryResult as T | Promise<T>;
       }
 
-      // Resolve dependencies
-      const dependencies = options.dependencies?.map((dep) => this.internalResolve(dep, context)) || [];
+      // Resolve dependencies - for now, we only support sync dependency resolution
+      // TODO: Add support for async dependency resolution in the future
+      const dependencies =
+        options.dependencies?.map((dep) => {
+          const depResult = this.internalResolveCore(dep, context);
+          if (depResult instanceof Promise) {
+            throw new ApplicationError(
+              "Async dependency resolution not yet supported in instance creation",
+              "DI_ASYNC_DEPENDENCY_NOT_SUPPORTED",
+              {
+                correlationId: `asyncDep_${Date.now()}`,
+                metadata: {
+                  parentToken: String(registration.token),
+                  dependencyToken: String(dep),
+                  containerName: this.name,
+                },
+              },
+            );
+          }
+          return depResult;
+        }) || [];
 
       // Create instance
       if (typeof implementation === "function") {
-        return new (implementation as new (...args: unknown[]) => T)(...dependencies);
+        const instance = new (implementation as new (...args: unknown[]) => T)(...dependencies);
+        return instance;
       }
 
       throw new ValidationError("Invalid implementation type", "DI_INVALID_IMPLEMENTATION", {
@@ -473,7 +561,21 @@ export class DIContainer implements IDIContainer {
           containerName: this.name,
         },
       });
-    } catch (error) {
+    } catch (error: unknown) {
+      // Re-throw DI-specific errors without wrapping them
+      if (error instanceof ApplicationError && error.code?.startsWith("DI_")) {
+        throw error;
+      }
+
+      if (error instanceof ConfigurationError && error.code?.startsWith("DI_")) {
+        throw error;
+      }
+
+      if (error instanceof ValidationError && error.code?.startsWith("DI_")) {
+        throw error;
+      }
+
+      // Only wrap non-DI errors as instance creation failures
       const creationError = new ApplicationError("Failed to create instance", "DI_INSTANCE_CREATION_FAILED", {
         correlationId: `createFailed_${Date.now()}`,
         metadata: {
@@ -498,7 +600,7 @@ export class DIContainer implements IDIContainer {
     return {
       resolutionPath: [],
       depth: 0,
-      startTime: performance.now(),
+      startTime: now(),
     };
   }
 
@@ -507,7 +609,7 @@ export class DIContainer implements IDIContainer {
    */
   private trackResolution(startTime: number): void {
     if (this.config.enableMetrics) {
-      const duration = performance.now() - startTime;
+      const duration = now() - startTime;
       this.resolutionTimes.push(duration);
       this.metrics.totalResolutions++;
 

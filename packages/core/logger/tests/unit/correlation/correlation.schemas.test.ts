@@ -10,8 +10,8 @@ import {
   correlationGeneratorConfigSchema,
   correlationManagerConfigSchema,
   correlationConfigSchema,
-} from "../../../src/correlation/correlation.schemas.js";
-import type { CorrelationId } from "../../../src/correlation/correlation.types.js";
+} from "../../../src/correlation/core/core.schemas.js";
+import type { CorrelationId } from "../../../src/correlation/core/core.types.js";
 
 describe("Correlation Schemas", () => {
   describe("correlationIdSchema", () => {

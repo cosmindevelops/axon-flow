@@ -5,9 +5,14 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { createContainer } from "../container/container.classes.js";
-import { SimpleFactory, CachedFactory, FactoryRegistry, UniversalProviderFactory } from "./factory.classes.js";
-import type { IDIContainer } from "../container/container.types.js";
+import { createContainer } from "../../../src/container/container.classes.js";
+import {
+  SimpleFactory,
+  CachedFactory,
+  FactoryRegistry,
+  UniversalProviderFactory,
+} from "../../../src/factory/factory.classes.js";
+import type { IDIContainer } from "../../../src/container/container.types.js";
 
 describe("Factory Pattern Integration", () => {
   let container: IDIContainer;
@@ -22,7 +27,7 @@ describe("Factory Pattern Integration", () => {
       interface ITestService {
         getValue(): string;
       }
-      
+
       class TestService implements ITestService {
         constructor(private value: string = "test") {}
         getValue(): string {
@@ -32,7 +37,7 @@ describe("Factory Pattern Integration", () => {
 
       const factory = new SimpleFactory<ITestService>(
         "TestServiceFactory",
-        (...args: unknown[]) => new TestService(args[0] as string || "default"),
+        (...args: unknown[]) => new TestService((args[0] as string) || "default"),
       );
 
       // Act
@@ -69,7 +74,7 @@ describe("Factory Pattern Integration", () => {
         callCount++;
         return `result-${callCount}`;
       });
-      
+
       const cachedFactory = new CachedFactory<string>("CachedFactory", innerFactory, 10);
 
       // Act
@@ -99,7 +104,7 @@ describe("Factory Pattern Integration", () => {
       expect(registry.has("string")).toBe(true);
       expect(registry.has("number")).toBe(true);
       expect(registry.has("nonexistent")).toBe(false);
-      
+
       const retrievedFactory1 = registry.get<string>("string");
       expect(retrievedFactory1).toBe(factory1);
 
@@ -112,7 +117,7 @@ describe("Factory Pattern Integration", () => {
       // Arrange
       const registry = new FactoryRegistry();
       let disposed = false;
-      
+
       const factory = new SimpleFactory<string>("DisposableFactory", () => "test");
       factory.dispose = async () => {
         disposed = true;
@@ -135,7 +140,7 @@ describe("Factory Pattern Integration", () => {
       // Arrange
       const mockAuthProvider = { name: "MockAuth", authenticate: () => Promise.resolve({}) };
       const authFactory = new SimpleFactory("AuthFactory", () => mockAuthProvider);
-      
+
       const universalFactory = new UniversalProviderFactory(authFactory);
 
       // Act
@@ -161,7 +166,7 @@ describe("Factory Pattern Integration", () => {
     it("should resolve dependencies using factory fallback", () => {
       // Arrange
       const factory = new SimpleFactory<string>("FallbackFactory", () => "factory-result");
-      
+
       // Act
       container.registerFactoryInstance<string>("FallbackService", factory);
       const result = container.resolve<string>("FallbackService");

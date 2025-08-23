@@ -2,7 +2,7 @@
  * Correlation context serialization class implementations
  */
 
-import type { ICorrelationContext } from "../correlation.types.js";
+import type { ICorrelationContext } from "../core/core.types.js";
 import type {
   ISerializationOptions,
   ICorrelationContextSerializer,
