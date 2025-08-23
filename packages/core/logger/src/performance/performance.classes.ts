@@ -756,9 +756,9 @@ export class MemoryMonitor implements IMemoryMonitor {
 
         this.gcObserver.observe({ entryTypes: ["gc"] });
       }
-    } catch (error) {
+    } catch (_error) {
       // GC tracking not available, continue without it
-      console.debug("GC tracking not available:", error);
+      // Debug: GC tracking not available
     }
   }
 
@@ -1028,9 +1028,7 @@ export class MeasurementPool implements IMeasurementPool {
 
       // Only grow if we can actually increase the size meaningfully
       if (newSize > currentSize && newSize <= this.maxSize) {
-        console.debug(
-          `Growing measurement pool from ${currentSize} to ${newSize} (hit rate: ${efficiency.hitRate.toFixed(1)}%)`,
-        );
+        // Debug: Growing measurement pool
         this.resize(newSize);
       }
     }
@@ -1038,7 +1036,7 @@ export class MeasurementPool implements IMeasurementPool {
 
   private considerPoolShrink(): void {
     const now = Date.now();
-    const efficiency = this.getEfficiencyMetrics();
+    const _efficiency = this.getEfficiencyMetrics();
 
     // Only consider shrinking if:
     // 1. Pool is significantly larger than initial size
@@ -1053,9 +1051,7 @@ export class MeasurementPool implements IMeasurementPool {
     ) {
       const newSize = Math.max(this.initialSize, Math.floor(this.getSize() * 0.75));
 
-      console.debug(
-        `Shrinking measurement pool from ${this.getSize()} to ${newSize} (utilization: ${this.getUtilization().toFixed(1)}%)`,
-      );
+      // Debug: Shrinking measurement pool
       this.resize(newSize);
     }
   }
@@ -1486,7 +1482,7 @@ export class EnhancedPerformanceTracker implements IEnhancedPerformanceTracker {
         const totalTime = cpuUsage.user + cpuUsage.system;
         // Convert microseconds to percentage (simplified)
         return (totalTime / 1000000) * 100; // Very rough estimate
-      } catch (error) {
+      } catch (_error) {
         // Fallback to 0 if CPU usage calculation fails
       }
     }
@@ -1521,14 +1517,14 @@ export class EnhancedPerformanceTracker implements IEnhancedPerformanceTracker {
       });
 
       this.gcObserver.observe({ entryTypes: ["gc"] });
-    } catch (error) {
+    } catch (_error) {
       // GC tracking not available, continue without it
-      console.debug("GC tracking setup failed:", error);
+      // Debug: GC tracking setup failed
     }
   }
 
   private recordGCEvent(entry: any): void {
-    const memoryMetrics = this.memoryMonitor.getMemoryMetrics();
+    const _memoryMetrics = this.memoryMonitor.getMemoryMetrics();
     const memoryFreed = this.calculateMemoryFreed();
     const gcEvent: IGCEvent = {
       type: this.getGCType(entry.kind || entry.detail?.kind),

@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import { agentCapabilitySchema, agentIdSchema, agentStatusSchema } from "../agent/agent.schemas.js";
-import type { IAgentQuery, IAgentQueryOptions, RegistryEventType } from "./registry.types.js";
+import type { RegistryEventType } from "./registry.types.js";
 
 // Registry event type schema
 export const registryEventTypeSchema = z.enum([
@@ -19,7 +19,7 @@ export const registryEventTypeSchema = z.enum([
 ]) satisfies z.ZodType<RegistryEventType>;
 
 // Agent query options schema
-export const agentQueryOptionsSchema: z.ZodType<IAgentQueryOptions> = z.object({
+export const agentQueryOptionsSchema = z.object({
   limit: z.number().positive().optional(),
   offset: z.number().nonnegative().optional(),
   sortBy: z.enum(["name", "registeredAt", "lastHeartbeat", "status"]).optional(),
@@ -28,7 +28,7 @@ export const agentQueryOptionsSchema: z.ZodType<IAgentQueryOptions> = z.object({
 });
 
 // Agent query schema
-export const agentQuerySchema: z.ZodType<IAgentQuery> = z.object({
+export const agentQuerySchema = z.object({
   name: z.string().optional(),
   version: z.string().optional(),
   status: agentStatusSchema.optional(),

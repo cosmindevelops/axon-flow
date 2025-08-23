@@ -5,14 +5,6 @@
  */
 
 import { z } from "zod";
-import type {
-  IFileSystemInfo,
-  IModuleInfo,
-  INetworkInfo,
-  INodeInfo,
-  IOperatingSystemInfo,
-  IProcessInfo,
-} from "./node.types.js";
 
 // Node info schema
 export const nodeInfoSchema = z.object({
@@ -35,7 +27,7 @@ export const nodeInfoSchema = z.object({
     tls_ocsp: z.boolean(),
     tls: z.boolean(),
   }),
-}) satisfies z.ZodType<INodeInfo>;
+});
 
 // Process info schema
 export const processInfoSchema = z.object({
@@ -63,7 +55,7 @@ export const processInfoSchema = z.object({
     user: z.number(),
     system: z.number(),
   }),
-}) satisfies z.ZodType<IProcessInfo>;
+});
 
 // File system info schema
 export const fileSystemInfoSchema = z.object({
@@ -78,7 +70,7 @@ export const fileSystemInfoSchema = z.object({
     W_OK: z.number(),
     X_OK: z.number(),
   }),
-}) satisfies z.ZodType<IFileSystemInfo>;
+});
 
 // Network info schema
 export const networkInfoSchema = z.object({
@@ -97,7 +89,7 @@ export const networkInfoSchema = z.object({
     ),
   ),
   endianness: z.union([z.literal("BE"), z.literal("LE")]),
-}) satisfies z.ZodType<INetworkInfo>;
+});
 
 // Operating system info schema
 export const operatingSystemInfoSchema = z.object({
@@ -129,7 +121,7 @@ export const operatingSystemInfoSchema = z.object({
     errno: z.record(z.string(), z.number()),
     priority: z.record(z.string(), z.number()),
   }),
-}) satisfies z.ZodType<IOperatingSystemInfo>;
+});
 
 // Module info schema
 export const moduleInfoSchema = z.object({
@@ -140,7 +132,7 @@ export const moduleInfoSchema = z.object({
   children: z.array(z.string()),
   paths: z.array(z.string()),
   exports: z.record(z.string(), z.unknown()),
-}) satisfies z.ZodType<IModuleInfo>;
+});
 
 // Type inference helpers
 export type InferredNodeInfo = z.infer<typeof nodeInfoSchema>;
@@ -149,3 +141,34 @@ export type InferredFileSystemInfo = z.infer<typeof fileSystemInfoSchema>;
 export type InferredNetworkInfo = z.infer<typeof networkInfoSchema>;
 export type InferredOperatingSystemInfo = z.infer<typeof operatingSystemInfoSchema>;
 export type InferredModuleInfo = z.infer<typeof moduleInfoSchema>;
+
+// Type guard functions for runtime validation
+export const isNodeInfo = (value: unknown): value is InferredNodeInfo => nodeInfoSchema.safeParse(value).success;
+
+export const isProcessInfo = (value: unknown): value is InferredProcessInfo =>
+  processInfoSchema.safeParse(value).success;
+
+export const isFileSystemInfo = (value: unknown): value is InferredFileSystemInfo =>
+  fileSystemInfoSchema.safeParse(value).success;
+
+export const isNetworkInfo = (value: unknown): value is InferredNetworkInfo =>
+  networkInfoSchema.safeParse(value).success;
+
+export const isOperatingSystemInfo = (value: unknown): value is InferredOperatingSystemInfo =>
+  operatingSystemInfoSchema.safeParse(value).success;
+
+export const isModuleInfo = (value: unknown): value is InferredModuleInfo => moduleInfoSchema.safeParse(value).success;
+
+// Validation result helpers
+export const parseNodeInfo = (value: unknown) => nodeInfoSchema.parse(value);
+export const safeParseNodeInfo = (value: unknown) => nodeInfoSchema.safeParse(value);
+export const parseProcessInfo = (value: unknown) => processInfoSchema.parse(value);
+export const safeParseProcessInfo = (value: unknown) => processInfoSchema.safeParse(value);
+export const parseFileSystemInfo = (value: unknown) => fileSystemInfoSchema.parse(value);
+export const safeParseFileSystemInfo = (value: unknown) => fileSystemInfoSchema.safeParse(value);
+export const parseNetworkInfo = (value: unknown) => networkInfoSchema.parse(value);
+export const safeParseNetworkInfo = (value: unknown) => networkInfoSchema.safeParse(value);
+export const parseOperatingSystemInfo = (value: unknown) => operatingSystemInfoSchema.parse(value);
+export const safeParseOperatingSystemInfo = (value: unknown) => operatingSystemInfoSchema.safeParse(value);
+export const parseModuleInfo = (value: unknown) => moduleInfoSchema.parse(value);
+export const safeParseModuleInfo = (value: unknown) => moduleInfoSchema.safeParse(value);

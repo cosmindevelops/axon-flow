@@ -3,7 +3,6 @@
   "compilerOptions": {
     "outDir": "./dist",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "exactOptionalPropertyTypes": false,
     "composite": false
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],

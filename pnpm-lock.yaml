@@ -84,6 +84,29 @@ importers:
       zod:
         specifier: ^4.0.17
         version: 4.0.17
+    devDependencies:
+      '@vitest/ui':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
+
+  packages/core/di:
+    dependencies:
+      '@axon/errors':
+        specifier: workspace:*
+        version: link:../errors
+      '@axon/logger':
+        specifier: workspace:*
+        version: link:../logger
+      '@axon/types':
+        specifier: workspace:*
+        version: link:../types
+      zod:
+        specifier: ^4.0.17
+        version: 4.0.17
+    devDependencies:
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
 
   packages/core/errors:
     dependencies:
@@ -93,9 +116,16 @@ importers:
       zod:
         specifier: ^4.0.17
         version: 4.0.17
+    devDependencies:
+      '@vitest/ui':
+        specifier: ^3.2.4
+        version: 3.2.4(vitest@3.2.4)
 
   packages/core/logger:
     dependencies:
+      '@axon/config':
+        specifier: workspace:*
+        version: link:../config
       '@axon/errors':
         specifier: workspace:*
         version: link:../errors
@@ -1774,6 +1804,9 @@ packages:
   real-require@0.2.0:
     resolution: {integrity: sha512-57frrGM/OCTLqLOAh0mhVA9VBMHd+9U7Zb2THMGdBUoZVOtGbJzjxsYGDJ3A9AYYCP4hn6y1TVbaOfzWtm5GFg==}
     engines: {node: '>= 12.13.0'}
+
+  reflect-metadata@0.2.2:
+    resolution: {integrity: sha512-urBwgfrvVP/eAyXx4hluJivBKzuEbSQs9rKWCrCkbSxNv8mxPcUZKeuoF3Uy4mJl3Lwprp6yy5/39VWigZ4K6Q==}
 
   require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
@@ -3906,6 +3939,8 @@ snapshots:
   readdirp@4.1.2: {}
 
   real-require@0.2.0: {}
+
+  reflect-metadata@0.2.2: {}
 
   require-directory@2.1.1: {}
 

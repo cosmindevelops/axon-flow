@@ -11,6 +11,26 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./platform/node": {
+      "types": "./dist/platform/node/index.d.ts",
+      "import": "./dist/platform/node/index.mjs",
+      "require": "./dist/platform/node/index.js"
+    },
+    "./platform/browser": {
+      "types": "./dist/platform/browser/index.d.ts",
+      "import": "./dist/platform/browser/index.mjs",
+      "require": "./dist/platform/browser/index.js"
+    },
+    "./platform/common": {
+      "types": "./dist/platform/common/index.d.ts",
+      "import": "./dist/platform/common/index.mjs",
+      "require": "./dist/platform/common/index.js"
+    },
+    "./core/*": {
+      "types": "./dist/core/*/index.d.ts",
+      "import": "./dist/core/*/index.mjs",
+      "require": "./dist/core/*/index.js"
     }
   },
   "files": [

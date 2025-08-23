@@ -91,3 +91,34 @@ export type InferredLocationInfo = z.infer<typeof locationInfoSchema>;
 export type InferredScreenInfo = z.infer<typeof screenInfoSchema>;
 export type InferredDocumentInfo = z.infer<typeof documentInfoSchema>;
 export type InferredWindowInfo = z.infer<typeof windowInfoSchema>;
+
+// Type guard functions for runtime validation
+export const isBrowserInfo = (value: unknown): value is InferredBrowserInfo =>
+  browserInfoSchema.safeParse(value).success;
+
+export const isNavigatorInfo = (value: unknown): value is InferredNavigatorInfo =>
+  navigatorInfoSchema.safeParse(value).success;
+
+export const isLocationInfo = (value: unknown): value is InferredLocationInfo =>
+  locationInfoSchema.safeParse(value).success;
+
+export const isScreenInfo = (value: unknown): value is InferredScreenInfo => screenInfoSchema.safeParse(value).success;
+
+export const isDocumentInfo = (value: unknown): value is InferredDocumentInfo =>
+  documentInfoSchema.safeParse(value).success;
+
+export const isWindowInfo = (value: unknown): value is InferredWindowInfo => windowInfoSchema.safeParse(value).success;
+
+// Validation result helpers
+export const parseBrowserInfo = (value: unknown) => browserInfoSchema.parse(value);
+export const safeParseBrowserInfo = (value: unknown) => browserInfoSchema.safeParse(value);
+export const parseNavigatorInfo = (value: unknown) => navigatorInfoSchema.parse(value);
+export const safeParseNavigatorInfo = (value: unknown) => navigatorInfoSchema.safeParse(value);
+export const parseLocationInfo = (value: unknown) => locationInfoSchema.parse(value);
+export const safeParseLocationInfo = (value: unknown) => locationInfoSchema.safeParse(value);
+export const parseScreenInfo = (value: unknown) => screenInfoSchema.parse(value);
+export const safeParseScreenInfo = (value: unknown) => screenInfoSchema.safeParse(value);
+export const parseDocumentInfo = (value: unknown) => documentInfoSchema.parse(value);
+export const safeParseDocumentInfo = (value: unknown) => documentInfoSchema.safeParse(value);
+export const parseWindowInfo = (value: unknown) => windowInfoSchema.parse(value);
+export const safeParseWindowInfo = (value: unknown) => windowInfoSchema.safeParse(value);

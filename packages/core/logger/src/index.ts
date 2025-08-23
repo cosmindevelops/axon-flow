@@ -1,39 +1,102 @@
 /**
- * @axon/logger - High-performance structured logging with Pino
+ * @axon/logger - High-Performance Structured Logging System
  *
- * High-performance structured JSON logging with:
- * - Object pooling for reduced GC pressure
- * - Circuit breaker pattern for resilient logging
- * - Multiple transport support (console, file, remote)
- * - Performance monitoring and metrics
- * - Environment-specific optimizations
- * - Correlation ID support
- * - 10,000+ logs/second throughput
+ * Enterprise-grade logging with 10,000+ logs/second throughput featuring tiered
+ * performance optimization, lazy loading, and zero-overhead abstractions.
+ *
+ * ## Lightweight Core Usage (Zero Overhead)
+ * ```typescript
+ * import type { ILogger } from '@axon/logger';
+ * import { createLogger } from '@axon/logger';
+ *
+ * const logger = createLogger({ level: 'info' });
+ * logger.info('Hello world');
+ * ```
+ *
+ * ## High-Performance Usage (Object Pooling)
+ * ```typescript
+ * import { createHighPerformanceLogger } from '@axon/logger';
+ *
+ * const logger = createHighPerformanceLogger({
+ *   poolSize: 100,
+ *   enableCircuitBreaker: true
+ * });
+ * ```
+ *
+ * ## Environment-Optimized Usage
+ * ```typescript
+ * import { createProductionLogger, createDevelopmentLogger } from '@axon/logger';
+ *
+ * const logger = process.env.NODE_ENV === 'production'
+ *   ? createProductionLogger()
+ *   : createDevelopmentLogger();
+ * ```
+ *
+ * ## Advanced Features (Lazy Loaded)
+ * ```typescript
+ * const performance = await import('@axon/logger/performance');
+ * const circuitBreaker = await import('@axon/logger/circuit-breaker');
+ * ```
+ *
+ * @since 0.1.0
+ * @version 0.1.0
+ * @module @axon/logger
  */
 
-// Logger types and interfaces
+// ============================================================================
+// TYPE-ONLY EXPORTS - Zero Runtime Impact
+// ============================================================================
+
+// Core logger interfaces and types (comprehensive export from main types barrel)
 export type * from "./types/index.js";
 
-// Logger implementation classes
-export * from "./logger/logger.classes.js";
+// ============================================================================
+// CORE LAYER - Essential Lightweight Logging
+// ============================================================================
 
-// Transport providers
-export * from "./transport/transport.classes.js";
+// Core logger classes (lightweight, always available)
+export { PinoLogger, HighPerformancePinoLogger } from "./logger/logger.classes.js";
 
-// Object pooling utilities
+// ============================================================================
+// PERFORMANCE LAYER - High-Throughput Features
+// ============================================================================
+
+// Object pool management (for high-throughput scenarios)
 export * from "./pool/pool.classes.js";
 
-// Circuit breaker implementation
+// ============================================================================
+// ADVANCED FEATURES - Component Systems
+// ============================================================================
+
+// Transport system for flexible logging destinations
+export * from "./transport/transport.classes.js";
+
+// Circuit breaker for resilient logging
 export * from "./circuit-breaker/circuit-breaker.classes.js";
 
-// Correlation ID management
-export * from "./correlation/index.js";
+// Correlation ID management system
+export * from "./correlation/correlation.classes.js";
 
-// Utilities
-export * from "./utils/index.js";
+// Performance monitoring and metrics
+export * from "./performance/performance.classes.js";
 
-// Enhanced performance tracking
-export * from "./performance/index.js";
+// ============================================================================
+// UTILITY LAYER - Supporting Functions
+// ============================================================================
 
-// Optimized logger instances
-export * from "./instances/index.js";
+// Utility functions and helpers
+export * from "./utils/utils.classes.js";
+
+// ============================================================================
+// SCHEMA LAYER - Runtime Validation
+// ============================================================================
+
+// All schemas exported from main logger schemas (avoids duplicate exports)
+export * from "./logger/logger.schemas.js";
+
+// ============================================================================
+// INSTANCE LAYER - Pre-configured Ready-to-Use Loggers
+// ============================================================================
+
+// Default logger instances (tree-shakeable)
+export { logger, highPerformanceLogger, productionLogger, developmentLogger } from "./instances/index.js";

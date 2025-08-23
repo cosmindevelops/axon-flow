@@ -3,7 +3,7 @@
  */
 
 import { defineProject, mergeConfig } from "vitest/config";
-import { baseConfig } from "../../../tools/config/vitest/base.js";
+import { baseConfig } from "../../../tools/config/vitest/base.ts";
 
 export default defineProject(
   mergeConfig(baseConfig, {

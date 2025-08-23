@@ -17,8 +17,6 @@ import type {
   IStreamOptions,
   IStorageOptions,
   Platform,
-  RotationStrategy,
-  CompressionFormat,
 } from "./utils.types.js";
 
 // Import types from the main types module
@@ -572,7 +570,7 @@ export class NodeIStorageAdapter implements IStorageAdapter {
   }
 
   async write(key: string, data: string): Promise<void> {
-    const { promises: fs, constants } = await import("fs");
+    const { promises: fs, constants: _constants } = await import("fs");
     const { dirname } = await import("path");
 
     const filePath = this.getFilePath(key);

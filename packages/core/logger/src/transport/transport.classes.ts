@@ -3,7 +3,7 @@
  */
 
 import type { SonicBoom } from "sonic-boom";
-import { createWriteStream, createReadStream, type WriteStream, promises as fs } from "fs";
+import { createWriteStream, createReadStream, promises as fs } from "fs";
 import { join, dirname, basename, extname } from "path";
 import { createGzip } from "zlib";
 import { pipeline } from "stream/promises";
@@ -21,16 +21,13 @@ import type {
   IRemoteTransportOptions,
   IRoutingConfig,
   ITransportHealth,
-  TransportFilter,
 } from "./transport.types.js";
 
-import type { ILogEntry, TransportType } from "../types/index.js";
+import type { ILogEntry } from "../types/index.js";
 
-import { TransportCircuitBreakerFactory, RetryableCircuitBreaker } from "../circuit-breaker/circuit-breaker.classes.js";
+import { RetryableCircuitBreaker } from "../circuit-breaker/circuit-breaker.classes.js";
 
 import { FileRotationManager, CrossEnvironmentAdapter, PerformanceTracker } from "../utils/utils.classes.js";
-
-import type { ICircuitBreakerConfig } from "../circuit-breaker/circuit-breaker.types.js";
 
 /**
  * Enhanced console transport for development and debugging
@@ -89,10 +86,10 @@ export class ConsoleTransportProvider implements ITransportProvider {
 
       const duration = this.adapter.getCurrentTimestamp() - startTime;
       this.updateAverageWriteTime(duration);
-    } catch (error) {
+    } catch (_error) {
       this.metrics.messagesFailed++;
       this.metrics.lastErrorTime = new Date();
-      throw error;
+      throw _error;
     }
   }
 
@@ -345,9 +342,9 @@ export class FileTransportProvider implements ITransportProvider {
 
       // Clean up old files based on retention policy
       await this.cleanupOldFiles();
-    } catch (error) {
+    } catch (_error) {
       this.metrics.lastErrorTime = new Date();
-      throw new Error(`File rotation failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(`File rotation failed: ${_error instanceof Error ? _error.message : "Unknown error"}`);
     }
   }
 
@@ -393,7 +390,7 @@ export class FileTransportProvider implements ITransportProvider {
       if (this.rotationConfig.compress) {
         await this.compressFile(archivePath);
       }
-    } catch (error) {
+    } catch (_error) {
       // If rename fails, try copy and delete
       try {
         await fs.copyFile(this.options.path, archivePath);
@@ -425,14 +422,14 @@ export class FileTransportProvider implements ITransportProvider {
 
       // Remove original file after successful compression
       await fs.unlink(filePath);
-    } catch (error) {
+    } catch (_error) {
       // Clean up failed compression
       try {
         await fs.unlink(gzipPath);
       } catch {
         // Ignore cleanup errors
       }
-      throw new Error(`Compression failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw new Error(`Compression failed: ${_error instanceof Error ? _error.message : "Unknown error"}`);
     }
   }
 
@@ -554,10 +551,10 @@ export class FileTransportProvider implements ITransportProvider {
 
       const duration = this.adapter.getCurrentTimestamp() - startTime;
       this.updateAverageWriteTime(duration);
-    } catch (error) {
+    } catch (_error) {
       this.metrics.messagesFailed++;
       this.metrics.lastErrorTime = new Date();
-      throw error;
+      throw _error;
     }
   }
 
@@ -585,12 +582,12 @@ export class FileTransportProvider implements ITransportProvider {
       }
 
       this.metrics.bytesWritten += dataSize;
-    } catch (error) {
+    } catch (_error) {
       // Return lines to buffer on error
       this.buffer.unshift(...lines);
       this.healthy = false;
       this.metrics.lastErrorTime = new Date();
-      throw error;
+      throw _error;
     }
   }
 
@@ -666,7 +663,7 @@ export class FileTransportProvider implements ITransportProvider {
    */
   private performSyncFileSystemHealthChecks(details: any): void {
     try {
-      const parsedPath = this.parsePath(this.options.path);
+      const _parsedPath = this.parsePath(this.options.path);
 
       // Basic directory check (synchronous)
       try {
@@ -729,7 +726,7 @@ export class FileTransportProvider implements ITransportProvider {
         if (fs.statfs) {
           const stats = await fs.statfs(parsedPath.dir);
           const freeSpace = stats.bavail * stats.bsize;
-          const totalSpace = stats.blocks * stats.bsize;
+          const _totalSpace = stats.blocks * stats.bsize;
           details.diskSpace = freeSpace;
 
           // Mark as degraded if less than 100MB free space
@@ -887,7 +884,7 @@ export class RemoteTransportProvider implements ITransportProvider {
 
       const duration = this.adapter.getCurrentTimestamp() - startTime;
       this.updateAverageWriteTime(duration);
-    } catch (error) {
+    } catch (_error) {
       // Add to retry queue on failure
       const entryId = this.generateEntryId(entry);
       if (!this.retryAttempts.has(entryId) || this.retryAttempts.get(entryId)! < this.maxRetryAttempts) {
@@ -898,7 +895,7 @@ export class RemoteTransportProvider implements ITransportProvider {
       this.metrics.messagesFailed++;
       this.metrics.lastErrorTime = new Date();
       this.consecutiveFailures++;
-      throw error;
+      throw _error;
     }
   }
 
@@ -960,7 +957,7 @@ export class RemoteTransportProvider implements ITransportProvider {
         this.retryAttempts.delete(entryId);
         this.lastSuccessfulWrite = new Date();
         this.consecutiveFailures = 0;
-      } catch (error) {
+      } catch (_error) {
         // Failure - increment retry count and add back to queue
         this.retryAttempts.set(entryId, attemptCount + 1);
         this.retryQueue.push(entry);
@@ -969,7 +966,7 @@ export class RemoteTransportProvider implements ITransportProvider {
         // Log retry failure for debugging
         console.warn(
           `Remote transport retry failed for entry ${entryId}, attempt ${attemptCount + 1}/${this.maxRetryAttempts}:`,
-          error,
+          _error,
         );
       }
     }
@@ -1031,11 +1028,11 @@ export class RemoteTransportProvider implements ITransportProvider {
 
         const dataSize = Buffer.byteLength(JSON.stringify(payload), "utf8");
         this.metrics.bytesWritten += dataSize;
-      } catch (error) {
+      } catch (_error) {
         if (timeoutId) {
           clearTimeout(timeoutId);
         }
-        throw error;
+        throw _error;
       }
     };
 
@@ -1101,7 +1098,7 @@ export class RemoteTransportProvider implements ITransportProvider {
         this.healthy = true;
         this.lastSuccessfulWrite = new Date();
         this.consecutiveFailures = 0;
-      } catch (error) {
+      } catch (_error) {
         if (timeoutId) {
           clearTimeout(timeoutId);
         }
@@ -1118,7 +1115,7 @@ export class RemoteTransportProvider implements ITransportProvider {
         this.healthy = false;
         this.metrics.lastErrorTime = new Date();
         this.consecutiveFailures++;
-        throw error;
+        throw _error;
       }
     };
 
@@ -1129,9 +1126,9 @@ export class RemoteTransportProvider implements ITransportProvider {
       } else {
         await sendRequest();
       }
-    } catch (error) {
+    } catch (_error) {
       this.metrics.messagesFailed += entries.length;
-      throw error;
+      throw _error;
     }
   }
 
@@ -1326,9 +1323,9 @@ export class MultiTransportManager {
           await transport.write(entry as unknown as Record<string, unknown>);
           this.performanceTracker?.recordSuccess();
           return { transport: transport.type, success: true };
-        } catch (error) {
+        } catch (_error) {
           this.performanceTracker?.recordFailure();
-          return { transport: transport.type, success: false, error };
+          return { transport: transport.type, success: false, error: _error };
         }
       });
 

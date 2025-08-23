@@ -1,0 +1,45 @@
+{
+  "name": "@axon/di",
+  "version": "0.1.0",
+  "description": "Lightweight dependency injection container for Axon Flow",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist .turbo",
+    "dev": "tsup --watch",
+    "lint": "eslint src",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@axon/errors": "workspace:*",
+    "@axon/logger": "workspace:*",
+    "@axon/types": "workspace:*",
+    "zod": "^4.0.17"
+  },
+  "devDependencies": {
+    "reflect-metadata": "^0.2.2"
+  },
+  "keywords": [
+    "dependency-injection",
+    "di",
+    "container",
+    "ioc",
+    "axon-flow"
+  ]
+}
