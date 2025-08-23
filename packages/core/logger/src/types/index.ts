@@ -41,6 +41,7 @@ export type CircuitBreakerState = "closed" | "open" | "half-open";
  * Transport configuration options
  */
 export interface ITransportConfig {
+  name?: string;
   type: TransportType;
   enabled: boolean;
   level?: string;

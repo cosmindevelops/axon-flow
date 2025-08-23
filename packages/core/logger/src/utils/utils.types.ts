@@ -86,3 +86,79 @@ export type ThrottledFunction<T extends unknown[]> = {
   cancel(): void;
   flush(): void;
 };
+
+/**
+ * Platform types for cross-environment support
+ */
+export type Platform = "node" | "browser" | "deno" | "unknown";
+
+/**
+ * File rotation strategies
+ */
+export type RotationStrategy = "size" | "time" | "combined";
+
+/**
+ * Compression formats
+ */
+export type CompressionFormat = "gzip" | "deflate" | "brotli" | "none";
+
+/**
+ * Platform detection interface
+ */
+export interface IPlatformDetection {
+  platform: Platform;
+  isNode: boolean;
+  isBrowser: boolean;
+  isDeno: boolean;
+  supportsFileSystem: boolean;
+  supportsStreams: boolean;
+  supportsCompression: boolean;
+  supportsHighResTime: boolean;
+}
+
+/**
+ * File rotation options
+ */
+export interface IFileRotationOptions {
+  strategy: RotationStrategy;
+  maxSize?: number; // Size in bytes
+  maxAge?: number; // Age in milliseconds
+  maxFiles?: number; // Maximum number of files to keep
+  dateFormat?: string; // Date format for time-based rotation
+  compress?: boolean; // Whether to compress rotated files
+  compressionFormat?: CompressionFormat;
+}
+
+/**
+ * Compression options
+ */
+export interface ICompressionOptions {
+  format: CompressionFormat;
+  level?: number; // Compression level (1-9)
+  chunkSize?: number; // Chunk size for streaming compression
+  memLevel?: number; // Memory level for gzip
+}
+
+/**
+ * Stream options for cross-platform streams
+ */
+export interface IStreamOptions {
+  encoding?: BufferEncoding;
+  flags?: string;
+  mode?: number;
+  autoClose?: boolean;
+  highWaterMark?: number;
+  objectMode?: boolean;
+}
+
+/**
+ * Storage options for cross-platform storage
+ */
+export interface IStorageOptions {
+  basePath?: string;
+  maxSize?: number; // Maximum storage size in bytes
+  enableIndexedDB?: boolean; // Use IndexedDB in browser
+  fallbackToLocalStorage?: boolean; // Fallback to localStorage
+  compression?: boolean; // Enable compression for stored data
+  encryption?: boolean; // Enable encryption for stored data
+}

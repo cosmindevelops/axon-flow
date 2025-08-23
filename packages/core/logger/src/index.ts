@@ -32,5 +32,8 @@ export * from "./correlation/index.js";
 // Utilities
 export * from "./utils/index.js";
 
+// Enhanced performance tracking
+export * from "./performance/index.js";
+
 // Optimized logger instances
 export * from "./instances/index.js";

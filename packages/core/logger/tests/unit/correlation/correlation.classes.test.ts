@@ -70,15 +70,20 @@ describe("CorrelationIdGenerator", () => {
     it("should detect UUID collisions (extremely rare)", () => {
       // Create a new generator for this test to ensure clean state
       const testGenerator = new CorrelationIdGenerator();
-      
+
       // Spy on crypto.randomUUID for this specific test
-      const mockUUID = vi.spyOn(crypto, 'randomUUID')
+      const mockUUID = vi.spyOn(crypto, "randomUUID");
+      mockUUID
         .mockReturnValueOnce("12345678-1234-4234-8234-123456789abc")
         .mockReturnValueOnce("12345678-1234-4234-8234-123456789abc");
-      
-      testGenerator.generate();
+
+      // First generate() call should succeed and add to cache
+      const firstId = testGenerator.generate();
+      expect(firstId).toBe("12345678-1234-4234-8234-123456789abc");
+
+      // Second generate() call should throw due to collision
       expect(() => testGenerator.generate()).toThrow("UUID collision detected");
-      
+
       // Restore the original function
       mockUUID.mockRestore();
     });

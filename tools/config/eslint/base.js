@@ -72,7 +72,6 @@ export default tseslint.config(
       },
     },
     rules: {
-      // TypeScript specific rules - kept relaxed for TDD
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
@@ -92,7 +91,7 @@ export default tseslint.config(
 
       // Naming conventions - preserved for architecture compliance
       "@typescript-eslint/naming-convention": [
-        "warn",
+        "error",
         {
           selector: "interface",
           format: ["PascalCase"],

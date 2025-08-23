@@ -1,35 +1,15 @@
 /**
- * Correlation context serialization utilities for cross-service boundary tracking
+ * Correlation context serialization class implementations
  */
 
-import { z } from "zod";
-import type { ICorrelationContext } from "./correlation.types.js";
-
-/**
- * Serializable correlation context schema for validation
- */
-export const SERIALIZABLE_CORRELATION_CONTEXT_SCHEMA = z.object({
-  correlationId: z.string().uuid(),
-  metadata: z.record(z.string(), z.any()).optional(),
-  timestamp: z.string().datetime().optional(),
-  version: z.string().default("1.0"),
-});
-
-export type SerializableCorrelationContext = z.infer<typeof SERIALIZABLE_CORRELATION_CONTEXT_SCHEMA>;
-
-/**
- * Compression options for context serialization
- */
-export interface ISerializationOptions {
-  /** Whether to compress the serialized context */
-  compress?: boolean;
-  /** Maximum size in bytes before compression is required */
-  maxUncompressedSize?: number;
-  /** Include metadata in serialization */
-  includeMetadata?: boolean;
-  /** Custom metadata filter function */
-  metadataFilter?: (key: string, value: any) => boolean;
-}
+import type { ICorrelationContext } from "../correlation.types.js";
+import type {
+  ISerializationOptions,
+  ICorrelationContextSerializer,
+  ICorrelationSerializationUtils,
+  SerializableCorrelationContext,
+} from "./serialization.types.js";
+import { SERIALIZABLE_CORRELATION_CONTEXT_SCHEMA } from "./serialization.schemas.js";
 
 /**
  * Default serialization options
@@ -44,7 +24,7 @@ const DEFAULT_OPTIONS: Required<ISerializationOptions> = {
 /**
  * Correlation context serializer for cross-service communication
  */
-export class CorrelationContextSerializer {
+export class CorrelationContextSerializer implements ICorrelationContextSerializer {
   private options: Required<ISerializationOptions>;
 
   constructor(options: ISerializationOptions = {}) {
@@ -75,9 +55,9 @@ export class CorrelationContextSerializer {
       // Create serializable context
       const serializableContext: SerializableCorrelationContext = {
         correlationId: context.id,
-        metadata,
         timestamp: new Date().toISOString(),
         version: "1.0",
+        ...(metadata !== undefined && { metadata }),
       };
 
       // Validate the context
@@ -260,7 +240,7 @@ export const correlationSerializer = new CorrelationContextSerializer();
 /**
  * Utility functions for common serialization tasks
  */
-export const CORRELATION_SERIALIZATION_UTILS = {
+export const CORRELATION_SERIALIZATION_UTILS: ICorrelationSerializationUtils = {
   /**
    * Create a serializer with specific options
    */

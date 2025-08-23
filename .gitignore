@@ -137,6 +137,7 @@ yarn.lock
 .cursor/
 .serena/
 .taskmaster/
+.kilocode/
 CLAUDE.md
 docs/personal/
 

@@ -15,12 +15,11 @@ import type { CorrelationId } from "../../../src/correlation/correlation.types.j
 
 describe("Correlation Schemas", () => {
   describe("correlationIdSchema", () => {
-    it("should validate valid correlation ID strings", () => {
+    it("should validate valid correlation ID strings with UUID format", () => {
       const validIds = [
-        "correlation-123",
-        "axon-2024-01-01-abc123",
-        "simple-id",
-        "complex-correlation-id-with-multiple-parts",
+        "axon-12345678-1234-4123-8123-123456789012", // prefix with UUID
+        "test-87654321-4321-4987-b987-987654321098", // another valid format
+        "service-11111111-2222-4333-9444-555555555555", // service prefix
       ];
 
       validIds.forEach((id) => {
@@ -43,6 +42,9 @@ describe("Correlation Schemas", () => {
         true,
         " ", // whitespace only
         "id with spaces",
+        "simple-id", // no UUID part
+        "invalid-uuid-format", // not a UUID
+        "prefix-invalid-uuid-12345", // invalid UUID format
       ];
 
       invalidIds.forEach((id) => {
@@ -51,14 +53,13 @@ describe("Correlation Schemas", () => {
       });
     });
 
-    it("should enforce minimum length requirements", () => {
-      const result = correlationIdSchema.safeParse("a");
+    it("should enforce UUID v4 format in correlation ID", () => {
+      const result = correlationIdSchema.safeParse("prefix-12345678-1234-3123-8123-123456789012"); // version 3, should fail
       expect(result.success).toBe(false);
     });
 
-    it("should enforce maximum length limits", () => {
-      const longId = "x".repeat(1000);
-      const result = correlationIdSchema.safeParse(longId);
+    it("should require at least 5 dash-separated parts", () => {
+      const result = correlationIdSchema.safeParse("prefix-uuid"); // too few parts
       expect(result.success).toBe(false);
     });
   });
@@ -66,42 +67,39 @@ describe("Correlation Schemas", () => {
   describe("correlationIdPartsSchema", () => {
     it("should validate valid correlation ID parts", () => {
       const validParts = {
-        correlationId: "test-id" as CorrelationId,
         prefix: "axon",
-        timestamp: new Date(),
-        nodeId: "node-123",
-        sequence: 42,
+        uuid: "12345678-1234-4123-8123-123456789012",
+        timestamp: 1640995200000,
       };
 
       const result = correlationIdPartsSchema.safeParse(validParts);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.correlationId).toBe(validParts.correlationId);
         expect(result.data.prefix).toBe(validParts.prefix);
-        expect(result.data.timestamp).toBeInstanceOf(Date);
-        expect(result.data.nodeId).toBe(validParts.nodeId);
-        expect(result.data.sequence).toBe(validParts.sequence);
+        expect(result.data.uuid).toBe(validParts.uuid);
+        expect(result.data.timestamp).toBe(validParts.timestamp);
       }
     });
 
     it("should validate minimal correlation ID parts", () => {
       const minimalParts = {
-        correlationId: "minimal-id" as CorrelationId,
+        uuid: "87654321-4321-4987-b987-987654321098",
       };
 
       const result = correlationIdPartsSchema.safeParse(minimalParts);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.correlationId).toBe(minimalParts.correlationId);
+        expect(result.data.uuid).toBe(minimalParts.uuid);
       }
     });
 
     it("should reject invalid correlation ID parts", () => {
       const invalidParts = [
-        {}, // missing correlationId
-        { correlationId: "" }, // empty correlationId
-        { correlationId: "valid-id", timestamp: "invalid-date" }, // invalid timestamp
-        { correlationId: "valid-id", sequence: -1 }, // negative sequence
+        {}, // missing uuid
+        { uuid: "" }, // empty uuid
+        { uuid: "invalid-uuid-format" }, // invalid UUID
+        { uuid: "12345678-1234-4123-8123-123456789012", timestamp: -1 }, // negative timestamp
+        { uuid: "12345678-1234-3123-8123-123456789012" }, // invalid UUID version
         null,
         undefined,
         "not-an-object",
@@ -115,9 +113,9 @@ describe("Correlation Schemas", () => {
 
     it("should validate optional fields correctly", () => {
       const partsWithOptionals = {
-        correlationId: "test-id" as CorrelationId,
-        prefix: undefined, // explicitly undefined optional field
-        timestamp: new Date(),
+        uuid: "12345678-1234-4123-8123-123456789012",
+        prefix: "test",
+        timestamp: undefined, // explicitly undefined optional field
       };
 
       const result = correlationIdPartsSchema.safeParse(partsWithOptionals);
@@ -128,26 +126,22 @@ describe("Correlation Schemas", () => {
   describe("correlationContextSchema", () => {
     it("should validate valid correlation context", () => {
       const validContext = {
-        correlationId: "context-id" as CorrelationId,
-        timestamp: new Date(),
-        depth: 0,
+        id: "context-12345678-1234-4123-8123-123456789012" as CorrelationId,
+        createdAt: new Date(),
       };
 
       const result = correlationContextSchema.safeParse(validContext);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.correlationId).toBe(validContext.correlationId);
-        expect(result.data.timestamp).toBeInstanceOf(Date);
-        expect(result.data.depth).toBe(0);
+        expect(result.data.id).toBe(validContext.id);
+        expect(result.data.createdAt).toBeInstanceOf(Date);
       }
     });
 
-    it("should validate context with parent and metadata", () => {
-      const contextWithExtras = {
-        correlationId: "child-id" as CorrelationId,
-        timestamp: new Date(),
-        depth: 1,
-        parentId: "parent-id" as CorrelationId,
+    it("should validate context with metadata", () => {
+      const contextWithMetadata = {
+        id: "metadata-12345678-1234-4123-8123-123456789012" as CorrelationId,
+        createdAt: new Date(),
         metadata: {
           service: "test-service",
           operation: "test-operation",
@@ -155,20 +149,20 @@ describe("Correlation Schemas", () => {
         },
       };
 
-      const result = correlationContextSchema.safeParse(contextWithExtras);
+      const result = correlationContextSchema.safeParse(contextWithMetadata);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.parentId).toBe(contextWithExtras.parentId);
-        expect(result.data.metadata).toEqual(contextWithExtras.metadata);
+        expect(result.data.id).toBe(contextWithMetadata.id);
+        expect(result.data.metadata).toEqual(contextWithMetadata.metadata);
       }
     });
 
     it("should reject invalid correlation context", () => {
       const invalidContexts = [
         {}, // missing required fields
-        { correlationId: "valid-id" }, // missing timestamp and depth
-        { correlationId: "valid-id", timestamp: new Date(), depth: -1 }, // negative depth
-        { correlationId: "", timestamp: new Date(), depth: 0 }, // empty correlationId
+        { id: "invalid-id" }, // missing createdAt, invalid ID format
+        { id: "valid-12345678-1234-4123-8123-123456789012", createdAt: "invalid-date" }, // invalid date
+        { createdAt: new Date() }, // missing id
         null,
         undefined,
       ];
@@ -179,60 +173,62 @@ describe("Correlation Schemas", () => {
       });
     });
 
-    it("should enforce depth constraints", () => {
-      const deepContext = {
-        correlationId: "deep-id" as CorrelationId,
-        timestamp: new Date(),
-        depth: 1000, // very deep nesting
+    it("should validate optional metadata field", () => {
+      const contextWithUndefinedMetadata = {
+        id: "optional-12345678-1234-4123-8123-123456789012" as CorrelationId,
+        createdAt: new Date(),
+        metadata: undefined,
       };
 
-      const result = correlationContextSchema.safeParse(deepContext);
-      expect(result.success).toBe(false); // Should reject excessive depth
+      const result = correlationContextSchema.safeParse(contextWithUndefinedMetadata);
+      expect(result.success).toBe(true);
     });
   });
 
   describe("correlationGeneratorConfigSchema", () => {
     it("should validate valid generator configuration", () => {
       const validConfig = {
-        prefix: "axon",
-        timestampEnabled: true,
-        nodeIdEnabled: false,
-        sequenceEnabled: true,
+        maxEntropyCache: 5000,
+        enableCollisionDetection: true,
       };
 
       const result = correlationGeneratorConfigSchema.safeParse(validConfig);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data).toEqual(validConfig);
+        expect(result.data.maxEntropyCache).toBe(5000);
+        expect(result.data.enableCollisionDetection).toBe(true);
       }
     });
 
-    it("should validate empty configuration", () => {
+    it("should validate empty configuration with defaults", () => {
       const emptyConfig = {};
       const result = correlationGeneratorConfigSchema.safeParse(emptyConfig);
       expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.maxEntropyCache).toBe(10000); // default value
+        expect(result.data.enableCollisionDetection).toBe(true); // default value
+      }
     });
 
     it("should validate partial configuration", () => {
       const partialConfig = {
-        prefix: "test",
-        timestampEnabled: true,
+        maxEntropyCache: 2000,
       };
 
       const result = correlationGeneratorConfigSchema.safeParse(partialConfig);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.prefix).toBe("test");
-        expect(result.data.timestampEnabled).toBe(true);
+        expect(result.data.maxEntropyCache).toBe(2000);
+        expect(result.data.enableCollisionDetection).toBe(true); // default
       }
     });
 
     it("should reject invalid configuration values", () => {
       const invalidConfigs = [
-        { prefix: "" }, // empty prefix
-        { timestampEnabled: "yes" }, // non-boolean
-        { nodeIdEnabled: 1 }, // non-boolean
-        { sequenceEnabled: null }, // null instead of boolean
+        { maxEntropyCache: -1 }, // negative value
+        { maxEntropyCache: 0 }, // zero value  
+        { enableCollisionDetection: "yes" }, // non-boolean
+        { maxEntropyCache: "invalid" }, // non-number
         "not-an-object",
         null,
         undefined,
@@ -246,49 +242,53 @@ describe("Correlation Schemas", () => {
   });
 
   describe("correlationManagerConfigSchema", () => {
-    const mockGenerator = {
-      generate: () => "test-id" as CorrelationId,
-      validate: () => true,
-      parse: () => ({ correlationId: "test-id" as CorrelationId }),
-    };
-
     it("should validate valid manager configuration", () => {
       const validConfig = {
-        generator: mockGenerator,
-        contextTimeout: 30000,
-        maxContextDepth: 10,
-        enableMetrics: true,
+        maxContextStackSize: 50,
+        enableContextTracking: true,
+        defaultPrefix: "test",
       };
 
       const result = correlationManagerConfigSchema.safeParse(validConfig);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.generator).toBe(mockGenerator);
-        expect(result.data.contextTimeout).toBe(30000);
-        expect(result.data.maxContextDepth).toBe(10);
-        expect(result.data.enableMetrics).toBe(true);
+        expect(result.data.maxContextStackSize).toBe(50);
+        expect(result.data.enableContextTracking).toBe(true);
+        expect(result.data.defaultPrefix).toBe("test");
       }
     });
 
-    it("should validate minimal manager configuration", () => {
-      const minimalConfig = {
-        generator: mockGenerator,
-      };
-
-      const result = correlationManagerConfigSchema.safeParse(minimalConfig);
+    it("should validate empty configuration with defaults", () => {
+      const emptyConfig = {};
+      const result = correlationManagerConfigSchema.safeParse(emptyConfig);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.generator).toBe(mockGenerator);
+        expect(result.data.maxContextStackSize).toBe(100); // default value
+        expect(result.data.enableContextTracking).toBe(true); // default value
+      }
+    });
+
+    it("should validate configuration without prefix", () => {
+      const configWithoutPrefix = {
+        maxContextStackSize: 25,
+        enableContextTracking: false,
+      };
+
+      const result = correlationManagerConfigSchema.safeParse(configWithoutPrefix);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.maxContextStackSize).toBe(25);
+        expect(result.data.enableContextTracking).toBe(false);
       }
     });
 
     it("should reject invalid manager configuration", () => {
       const invalidConfigs = [
-        {}, // missing generator
-        { generator: null }, // null generator
-        { generator: mockGenerator, contextTimeout: -1 }, // negative timeout
-        { generator: mockGenerator, maxContextDepth: 0 }, // zero max depth
-        { generator: mockGenerator, enableMetrics: "yes" }, // non-boolean metrics
+        { maxContextStackSize: -1 }, // negative stack size
+        { maxContextStackSize: 0 }, // zero stack size
+        { enableContextTracking: "yes" }, // non-boolean
+        { defaultPrefix: "" }, // empty prefix
+        { maxContextStackSize: "invalid" }, // non-number
         null,
         undefined,
       ];
@@ -302,55 +302,51 @@ describe("Correlation Schemas", () => {
 
   describe("correlationConfigSchema", () => {
     it("should validate complete correlation configuration", () => {
-      const mockGenerator = {
-        generate: () => "test-id" as CorrelationId,
-        validate: () => true,
-        parse: () => ({ correlationId: "test-id" as CorrelationId }),
-      };
-
       const validConfig = {
         generator: {
-          prefix: "axon",
-          timestampEnabled: true,
-          nodeIdEnabled: true,
+          maxEntropyCache: 5000,
+          enableCollisionDetection: true,
         },
         manager: {
-          generator: mockGenerator,
-          contextTimeout: 60000,
-          maxContextDepth: 5,
+          maxContextStackSize: 50,
+          enableContextTracking: true,
+          defaultPrefix: "axon",
         },
       };
 
       const result = correlationConfigSchema.safeParse(validConfig);
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.generator).toEqual(validConfig.generator);
-        expect(result.data.manager.generator).toBe(mockGenerator);
+        expect(result.data.generator?.maxEntropyCache).toBe(5000);
+        expect(result.data.manager?.maxContextStackSize).toBe(50);
+        expect(result.data.manager?.defaultPrefix).toBe("axon");
       }
     });
 
     it("should validate minimal correlation configuration", () => {
-      const mockGenerator = {
-        generate: () => "test-id" as CorrelationId,
-        validate: () => true,
-        parse: () => ({ correlationId: "test-id" as CorrelationId }),
-      };
-
       const minimalConfig = {
-        manager: {
-          generator: mockGenerator,
+        generator: {
+          maxEntropyCache: 1000,
         },
       };
 
       const result = correlationConfigSchema.safeParse(minimalConfig);
       expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.generator?.maxEntropyCache).toBe(1000);
+      }
+    });
+
+    it("should validate empty correlation configuration", () => {
+      const emptyConfig = {};
+      const result = correlationConfigSchema.safeParse(emptyConfig);
+      expect(result.success).toBe(true);
     });
 
     it("should reject invalid correlation configuration", () => {
       const invalidConfigs = [
-        {}, // completely empty
-        { generator: { prefix: "" } }, // invalid generator config
-        { manager: {} }, // manager without generator
+        { generator: { maxEntropyCache: -1 } }, // invalid generator config
+        { manager: { maxContextStackSize: 0 } }, // invalid manager config
         null,
         undefined,
       ];
@@ -366,25 +362,34 @@ describe("Correlation Schemas", () => {
     it("should work together for complete validation flow", () => {
       // Test the full validation flow from config to context
       const generatorConfig = {
-        prefix: "integration",
-        timestampEnabled: true,
+        maxEntropyCache: 5000,
+        enableCollisionDetection: true,
       };
 
       const generatorResult = correlationGeneratorConfigSchema.safeParse(generatorConfig);
       expect(generatorResult.success).toBe(true);
 
       const contextData = {
-        correlationId: "integration-test-id" as CorrelationId,
-        timestamp: new Date(),
-        depth: 0,
+        id: "integration-12345678-1234-4123-8123-123456789012" as CorrelationId,
+        createdAt: new Date(),
       };
 
       const contextResult = correlationContextSchema.safeParse(contextData);
       expect(contextResult.success).toBe(true);
 
-      if (generatorResult.success && contextResult.success) {
-        expect(generatorResult.data.prefix).toBe("integration");
-        expect(contextResult.data.correlationId).toBe("integration-test-id");
+      const partsData = {
+        prefix: "integration",
+        uuid: "12345678-1234-4123-8123-123456789012",
+        timestamp: Date.now(),
+      };
+
+      const partsResult = correlationIdPartsSchema.safeParse(partsData);
+      expect(partsResult.success).toBe(true);
+
+      if (generatorResult.success && contextResult.success && partsResult.success) {
+        expect(generatorResult.data.maxEntropyCache).toBe(5000);
+        expect(contextResult.data.id).toBe("integration-12345678-1234-4123-8123-123456789012");
+        expect(partsResult.data.prefix).toBe("integration");
       }
     });
   });

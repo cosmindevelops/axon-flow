@@ -2,22 +2,17 @@
  * Integration tests for correlation flow across logger components
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  CorrelationManager,
-  CorrelationIdGenerator,
-  CorrelationManagerFactory,
-  AsyncLocalStorageCorrelationManager,
   BrowserCorrelationManager,
-  HttpCorrelationMiddleware,
+  CorrelationIdGenerator,
+  CorrelationManager,
+  CorrelationManagerFactory,
   CorrelationMiddlewareChain,
+  HttpCorrelationMiddleware,
 } from "../../src/correlation/correlation.classes.js";
+import type { IEnhancedCorrelationManager } from "../../src/correlation/correlation.types.js";
 import { HighPerformancePinoLogger } from "../../src/logger/logger.classes.js";
-import type {
-  IEnhancedCorrelationManager,
-  CorrelationId,
-  ICorrelationContext,
-} from "../../src/correlation/correlation.types.js";
 import type { ILoggerConfig } from "../../src/types/index.js";
 
 describe("Correlation Flow Integration", () => {
@@ -250,7 +245,7 @@ describe("Correlation Flow Integration", () => {
       // Mock console.error to throw an error (simulate transport failure)
       let errorCallCount = 0;
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation((...args) => {
         errorCallCount++;
         if (errorCallCount === 1) {
           // First call fails (simulating transport failure)
@@ -750,7 +745,7 @@ describe("Correlation Flow Integration", () => {
       for (const { enableCorrelationIds, expected } of testConfigs) {
         // Get the testStream from the main logger to ensure logs are captured
         const testStream = (logger as any).config.testStream;
-        
+
         // Create new logger with specific configuration that shares the test stream
         const testLogger = new HighPerformancePinoLogger({
           enableCorrelationIds,
@@ -762,7 +757,7 @@ describe("Correlation Flow Integration", () => {
 
         // Share the correlation manager to ensure consistent behavior
         (testLogger as any).correlationManager = correlationManager;
-        
+
         // Wait for test logger to be initialized
         await (testLogger as any).loggerInitPromise;
 

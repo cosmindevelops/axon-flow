@@ -23,8 +23,8 @@ export interface ICircuitBreaker {
 export interface ICircuitBreakerConfig {
   enabled: boolean;
   failureThreshold: number;
-  timeout: number;
-  resetTimeout: number;
+  resetTimeoutMs: number;
+  monitorTimeWindowMs: number;
 }
 
 /**
@@ -32,9 +32,12 @@ export interface ICircuitBreakerConfig {
  */
 export interface ICircuitBreakerMetrics {
   state: CircuitState;
+  failureCount: number;
+  successCount: number;
   failures: number;
   successes: number;
   totalCalls: number;
-  lastFailureTime?: Date | undefined;
-  lastSuccessTime?: Date | undefined;
+  nextRetryTime: number | undefined;
+  lastFailureTime?: Date;
+  lastSuccessTime?: Date;
 }

@@ -83,7 +83,14 @@ export class HighPerformancePinoLogger implements ILogger {
 
     // Create transport manager if transports are configured
     if (this.config.transports.length > 0) {
-      this.transportManager = new MultiTransportManager(this.config.transports);
+      // Wrap transport configs in IMultiTransportConfig structure
+      const multiTransportConfig = {
+        transports: this.config.transports.map((transport, index) => ({
+          ...transport,
+          name: transport.name || `transport-${index}`,
+        })),
+      };
+      this.transportManager = new MultiTransportManager(multiTransportConfig);
     }
 
     // Configure Pino logger asynchronously

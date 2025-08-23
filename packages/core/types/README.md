@@ -295,11 +295,3 @@ Type guards are exported from `utils/guards.ts` and follow the pattern `is[TypeN
 ### Branded Type Utilities
 
 Branded type utilities are exported from `utils/branded.types.ts`.
-
-## Contributing
-
-This package is part of the Axon Flow monorepo. Please see the main repository's contributing guidelines.
-
-## License
-
-See the main Axon Flow repository for license information.

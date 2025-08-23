@@ -59,7 +59,7 @@ export const correlationGeneratorConfigSchema = z.object({
 export const correlationManagerConfigSchema = z.object({
   maxContextStackSize: z.number().int().positive().default(100),
   enableContextTracking: z.boolean().default(true),
-  defaultPrefix: z.string().optional(),
+  defaultPrefix: z.string().min(1).optional(),
 });
 
 /**

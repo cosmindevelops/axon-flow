@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-undef */
 
 /**
  * ┌──────────────────────────────────────────────────────────────────────────────────────────┐
@@ -186,8 +187,6 @@
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 const { execSync, spawn } = require("child_process");

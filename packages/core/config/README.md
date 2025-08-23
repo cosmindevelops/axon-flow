@@ -250,7 +250,3 @@ This package follows Axon Flow development standards:
 - Zod schemas for all public APIs
 - ESLint configuration compliance
 - Provider pattern for external dependencies
-
-## License
-
-MIT - See LICENSE file for details.

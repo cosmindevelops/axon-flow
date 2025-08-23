@@ -222,8 +222,8 @@ export class AsyncLocalStorageCorrelationManager implements IEnhancedCorrelation
   private async initializeAsyncLocalStorage(): Promise<void> {
     if (platformDetection.isNode()) {
       try {
-        const { AsyncLocalStorage } = await import("async_hooks");
-        this.asyncLocalStorage = new AsyncLocalStorage<ICorrelationContext>();
+        const { AsyncLocalStorage: asyncLocalStorageClass } = await import("async_hooks");
+        this.asyncLocalStorage = new asyncLocalStorageClass<ICorrelationContext>();
       } catch (error) {
         console.warn("AsyncLocalStorage not available, falling back to manual context management:", error);
       }

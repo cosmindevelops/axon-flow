@@ -1,6 +1,6 @@
 // Runtime exports
 export * from "./correlation.classes.js";
-export * from "./serialization.js";
+export * from "./serialization/index.js";
 
 // Type-only exports
 export type * from "./correlation.types.js";
