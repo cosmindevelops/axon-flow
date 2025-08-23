@@ -115,8 +115,8 @@ describe("Cross-Environment Compatibility", () => {
 
     it("should provide fallback profile for unknown environments", () => {
       // Mock unknown environment
-      const originalDetect = detector['detectEnvironmentType'];
-      detector['detectEnvironmentType'] = () => 'unknown-env';
+      const originalDetect = detector["detectEnvironmentType"];
+      detector["detectEnvironmentType"] = () => "unknown-env";
 
       const profile = detector.getEnvironmentProfile();
 
@@ -125,7 +125,7 @@ describe("Cross-Environment Compatibility", () => {
       expect(profile.features.gcTracking).toBe(false);
 
       // Restore
-      detector['detectEnvironmentType'] = originalDetect;
+      detector["detectEnvironmentType"] = originalDetect;
     });
   });
 
@@ -249,17 +249,17 @@ describe("Cross-Environment Compatibility", () => {
 
     it("should provide recommendations for high variance", () => {
       // Mock high variance scenario
-      const originalCalculateVariance = tracker['calculateVariance'];
-      tracker['calculateVariance'] = () => 30; // 30% variance
+      const originalCalculateVariance = tracker["calculateVariance"];
+      tracker["calculateVariance"] = () => 30; // 30% variance
 
       const parityReport = tracker.validatePerformanceParity();
-      
+
       expect(parityReport.parityMaintained).toBe(false);
       expect(parityReport.recommendations.length).toBeGreaterThan(0);
       expect(parityReport.recommendations[0]).toContain("30.0% exceeds 10% threshold");
 
       // Restore
-      tracker['calculateVariance'] = originalCalculateVariance;
+      tracker["calculateVariance"] = originalCalculateVariance;
     });
   });
 
@@ -288,7 +288,7 @@ describe("Cross-Environment Compatibility", () => {
       }
 
       // Finish measurements
-      measurements.forEach(m => tracker.finishOperation(m));
+      measurements.forEach((m) => tracker.finishOperation(m));
 
       const endTime = Date.now();
       const metrics = tracker.getMetrics();
@@ -373,7 +373,6 @@ describe("Cross-Environment Compatibility", () => {
           const resilientDetector = new (PerformancePlatformDetector as any)();
           resilientDetector.detectPlatform();
         }).not.toThrow();
-
       } finally {
         // Restore
         global.process = originalProcess;
@@ -384,7 +383,9 @@ describe("Cross-Environment Compatibility", () => {
     it("should continue operating when performance APIs fail", () => {
       // Mock performance.now to throw
       const originalNow = performance.now;
-      performance.now = () => { throw new Error("Performance API unavailable"); };
+      performance.now = () => {
+        throw new Error("Performance API unavailable");
+      };
 
       expect(() => {
         const measurement = tracker.startOperation("error-resilience");
@@ -430,7 +431,7 @@ describe("Cross-Environment Compatibility", () => {
 
     it("should adapt to runtime environment changes", () => {
       const initialProfile = tracker.getEnvironmentProfile();
-      
+
       // Simulate environment change by updating detector profiles
       const customProfile: IEnvironmentProfile = {
         name: "Custom Environment",
@@ -453,7 +454,7 @@ describe("Cross-Environment Compatibility", () => {
       };
 
       tracker.updateConfig({ customProfile });
-      
+
       // Tracker should continue to function with new profile
       expect(() => {
         const measurement = tracker.startOperation("adaptive-test");

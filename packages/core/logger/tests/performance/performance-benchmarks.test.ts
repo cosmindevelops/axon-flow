@@ -31,7 +31,7 @@ describe("Performance Benchmarks", () => {
       measurementPoolInitialSize: 50,
       measurementPoolMaxSize: 200,
     };
-    
+
     tracker = new EnhancedPerformanceTracker(config);
     setGlobalPerformanceTracker(tracker);
   });
@@ -60,10 +60,10 @@ describe("Performance Benchmarks", () => {
         const measurement = tracker.startOperation("benchmark.operation", {
           iteration: i,
         });
-        
+
         // Simulate the same operation
         Math.sqrt(i * 2.5);
-        
+
         tracker.finishOperation(measurement);
         tracker.recordSuccess();
       }
@@ -88,7 +88,7 @@ describe("Performance Benchmarks", () => {
 
       // Verify operations were tracked (limited by measurement window of 1000)
       const metrics = tracker.getMetrics();
-      const expectedCount = Math.min(iterations, 1000); // Limited by trimMeasurements() 
+      const expectedCount = Math.min(iterations, 1000); // Limited by trimMeasurements()
       expect(metrics.operation.count).toBe(expectedCount);
       expect(metrics.totalLogs).toBe(iterations); // totalLogs tracks all operations
     });
@@ -97,29 +97,31 @@ describe("Performance Benchmarks", () => {
       const poolSizes = [10, 50, 100, 200];
       const iterations = 5000;
 
-      poolSizes.forEach(poolSize => {
+      poolSizes.forEach((poolSize) => {
         const poolConfig = {
           ...config,
           measurementPoolInitialSize: poolSize,
           measurementPoolMaxSize: poolSize * 2,
         };
-        
+
         const pooledTracker = new EnhancedPerformanceTracker(poolConfig);
-        
+
         // Benchmark with current pool size
         const startTime = performance.now();
-        
+
         for (let i = 0; i < iterations; i++) {
           const measurement = pooledTracker.startOperation("pooling.benchmark");
           pooledTracker.finishOperation(measurement);
           pooledTracker.recordSuccess();
         }
-        
+
         const endTime = performance.now();
         const totalTime = endTime - startTime;
         const timePerOperation = totalTime / iterations;
 
-        console.log(`Pool Size ${poolSize}: ${totalTime.toFixed(2)}ms total, ${(timePerOperation * 1000).toFixed(3)}μs per op`);
+        console.log(
+          `Pool Size ${poolSize}: ${totalTime.toFixed(2)}ms total, ${(timePerOperation * 1000).toFixed(3)}μs per op`,
+        );
 
         const metrics = pooledTracker.getMetrics();
         const expectedCount = Math.min(iterations, 1000); // Limited by measurement window
@@ -144,14 +146,14 @@ describe("Performance Benchmarks", () => {
 
       // Benchmark with memory monitoring
       memoryMonitor.startMonitoring();
-      
+
       const startWithMonitoring = performance.now();
       for (let i = 0; i < iterations; i++) {
         const measurement = tracker.startOperation("memory.benchmark.with");
-        
+
         // Get memory metrics (simulating memory tracking)
         memoryMonitor.getMemoryMetrics();
-        
+
         tracker.finishOperation(measurement);
         tracker.recordSuccess();
       }
@@ -220,13 +222,15 @@ describe("Performance Benchmarks", () => {
       console.log(`@Timed Decorator Overhead Benchmark (${iterations} operations):`);
       console.log(`  Without @Timed: ${timeUntimed.toFixed(2)}ms`);
       console.log(`  With @Timed:    ${timeTimed.toFixed(2)}ms`);
-      console.log(`  Decorator overhead: ${decoratorOverhead.toFixed(2)}ms (${decoratorOverheadPercentage.toFixed(2)}%)`);
+      console.log(
+        `  Decorator overhead: ${decoratorOverhead.toFixed(2)}ms (${decoratorOverheadPercentage.toFixed(2)}%)`,
+      );
 
       // Verify decorator is working (limited by measurement window)
       const metrics = tracker.getMetrics();
       const expectedCount = Math.min(iterations, 1000); // Limited by measurement window
       expect(metrics.operation.count).toBe(expectedCount);
-      
+
       // Decorator overhead can be substantial due to reflection and instrumentation
       expect(decoratorOverheadPercentage).toBeLessThan(10000); // Realistic bound for decorator overhead
     });
@@ -253,7 +257,7 @@ describe("Performance Benchmarks", () => {
       }
 
       const service = new BenchmarkService();
-      
+
       // Run benchmarks (these will output results to console)
       const fibResult = service.fibonacci(20);
       expect(fibResult).toBeGreaterThan(0);
@@ -269,30 +273,32 @@ describe("Performance Benchmarks", () => {
       const sampleRates = [0.1, 0.5, 1.0];
       const iterations = 5000;
 
-      sampleRates.forEach(sampleRate => {
+      sampleRates.forEach((sampleRate) => {
         const sampledConfig = {
           ...config,
           sampleRate,
         };
-        
+
         const sampledTracker = new EnhancedPerformanceTracker(sampledConfig);
-        
+
         const startTime = performance.now();
-        
+
         for (let i = 0; i < iterations; i++) {
           const measurement = sampledTracker.startOperation("sampling.benchmark");
           sampledTracker.finishOperation(measurement);
           sampledTracker.recordSuccess();
         }
-        
+
         const endTime = performance.now();
         const totalTime = endTime - startTime;
         const timePerOperation = totalTime / iterations;
 
-        console.log(`Sample Rate ${(sampleRate * 100).toFixed(0)}%: ${totalTime.toFixed(2)}ms total, ${(timePerOperation * 1000).toFixed(3)}μs per op`);
+        console.log(
+          `Sample Rate ${(sampleRate * 100).toFixed(0)}%: ${totalTime.toFixed(2)}ms total, ${(timePerOperation * 1000).toFixed(3)}μs per op`,
+        );
 
         const metrics = sampledTracker.getMetrics();
-        
+
         // With sampling, fewer operations should be tracked
         // Also account for measurement window limit
         const expectedMaxCount = Math.min(iterations, 1000);
@@ -303,7 +309,7 @@ describe("Performance Benchmarks", () => {
         } else {
           expect(metrics.operation.count).toBe(expectedMaxCount);
         }
-        
+
         // Lower sample rates should be faster
         expect(timePerOperation).toBeLessThan(2); // Less than 2ms per operation is reasonable
       });
@@ -315,9 +321,9 @@ describe("Performance Benchmarks", () => {
 
       for (const concurrency of concurrencyLevels) {
         tracker.reset();
-        
+
         const startTime = performance.now();
-        
+
         // Create concurrent operation promises
         const concurrentPromises = Array.from({ length: concurrency }, async (_, threadIndex) => {
           for (let i = 0; i < operationsPerLevel; i++) {
@@ -325,23 +331,25 @@ describe("Performance Benchmarks", () => {
               thread: threadIndex,
               operation: i,
             });
-            
+
             // Simulate small async work
-            await new Promise(resolve => setTimeout(resolve, 1));
-            
+            await new Promise((resolve) => setTimeout(resolve, 1));
+
             tracker.finishOperation(measurement);
             tracker.recordSuccess();
           }
         });
-        
+
         await Promise.all(concurrentPromises);
-        
+
         const endTime = performance.now();
         const totalTime = endTime - startTime;
         const totalOperations = concurrency * operationsPerLevel;
         const operationsPerSecond = (totalOperations / totalTime) * 1000;
 
-        console.log(`Concurrency ${concurrency}: ${totalOperations} ops in ${totalTime.toFixed(2)}ms (${operationsPerSecond.toFixed(0)} ops/sec)`);
+        console.log(
+          `Concurrency ${concurrency}: ${totalOperations} ops in ${totalTime.toFixed(2)}ms (${operationsPerSecond.toFixed(0)} ops/sec)`,
+        );
 
         const metrics = tracker.getMetrics();
         const expectedCount = Math.min(totalOperations, 1000); // Limited by measurement window
@@ -354,12 +362,12 @@ describe("Performance Benchmarks", () => {
     it("should measure memory usage growth", () => {
       const memoryMonitor = new MemoryMonitor();
       const operationCounts = [1000, 5000, 10000, 20000];
-      
-      operationCounts.forEach(count => {
+
+      operationCounts.forEach((count) => {
         tracker.reset();
-        
+
         const initialMemory = memoryMonitor.getMemoryMetrics();
-        
+
         // Perform operations
         for (let i = 0; i < count; i++) {
           const measurement = tracker.startOperation(`memory.growth.${i}`, {
@@ -369,17 +377,19 @@ describe("Performance Benchmarks", () => {
           tracker.finishOperation(measurement);
           tracker.recordSuccess();
         }
-        
+
         const finalMemory = memoryMonitor.getMemoryMetrics();
         const memoryGrowth = finalMemory.heapUsed - initialMemory.heapUsed;
         const memoryPerOperation = memoryGrowth / count;
 
-        console.log(`${count} operations: ${(memoryGrowth / 1024 / 1024).toFixed(2)}MB growth, ${(memoryPerOperation / 1024).toFixed(2)}KB per op`);
+        console.log(
+          `${count} operations: ${(memoryGrowth / 1024 / 1024).toFixed(2)}MB growth, ${(memoryPerOperation / 1024).toFixed(2)}KB per op`,
+        );
 
         const metrics = tracker.getMetrics();
         const expectedCount = Math.min(count, 1000); // Limited by measurement window
         expect(metrics.operation.count).toBe(expectedCount);
-        
+
         // Memory growth per operation should be reasonable
         expect(memoryPerOperation).toBeLessThan(1024); // Less than 1KB per operation
       });
@@ -390,7 +400,7 @@ describe("Performance Benchmarks", () => {
     it("should benchmark metrics calculation performance", () => {
       const aggregator = new MetricsAggregator({ maxHistory: 10000 });
       const measurementCount = 10000;
-      
+
       // Add measurements
       const startAdd = performance.now();
       for (let i = 0; i < measurementCount; i++) {
@@ -398,17 +408,19 @@ describe("Performance Benchmarks", () => {
       }
       const endAdd = performance.now();
       const addTime = endAdd - startAdd;
-      
+
       // Calculate metrics
       const startCalc = performance.now();
       const aggregatedMetrics = aggregator.getAggregatedMetrics();
       const endCalc = performance.now();
       const calcTime = endCalc - startCalc;
-      
+
       console.log(`Metrics Aggregation Benchmark (${measurementCount} measurements):`);
-      console.log(`  Add measurements: ${addTime.toFixed(2)}ms (${(addTime / measurementCount * 1000).toFixed(3)}μs per measurement)`);
+      console.log(
+        `  Add measurements: ${addTime.toFixed(2)}ms (${((addTime / measurementCount) * 1000).toFixed(3)}μs per measurement)`,
+      );
       console.log(`  Calculate metrics: ${calcTime.toFixed(2)}ms`);
-      
+
       // MetricsAggregator also has 1000 measurement limit
       const expectedCount = Math.min(measurementCount, 1000);
       expect(aggregatedMetrics.count).toBe(expectedCount);
@@ -422,11 +434,13 @@ describe("Performance Benchmarks", () => {
       const requestsPerSecond = 1000;
       const durationSeconds = 1;
       const totalRequests = requestsPerSecond * durationSeconds;
-      
-      console.log(`Simulating ${requestsPerSecond} req/sec for ${durationSeconds} seconds (${totalRequests} total requests)`);
-      
+
+      console.log(
+        `Simulating ${requestsPerSecond} req/sec for ${durationSeconds} seconds (${totalRequests} total requests)`,
+      );
+
       const startTime = performance.now();
-      
+
       // Simulate requests
       const requestPromises = [];
       for (let i = 0; i < totalRequests; i++) {
@@ -435,44 +449,44 @@ describe("Performance Benchmarks", () => {
             requestId: `req-${i}`,
             userId: `user-${i % 100}`,
           });
-          
+
           // Simulate database query
           const dbMeasurement = tracker.startOperation("database.query");
-          await new Promise(resolve => setTimeout(resolve, Math.random() * 2));
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * 2));
           tracker.finishOperation(dbMeasurement);
-          
+
           // Simulate processing
           const processMeasurement = tracker.startOperation("request.processing");
-          await new Promise(resolve => setTimeout(resolve, Math.random() * 1));
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * 1));
           tracker.finishOperation(processMeasurement);
-          
+
           tracker.finishOperation(requestMeasurement);
           tracker.recordSuccess();
         })();
-        
+
         requestPromises.push(requestPromise);
-        
+
         // Control rate
         if (i > 0 && i % 100 === 0) {
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise((resolve) => setTimeout(resolve, 10));
         }
       }
-      
+
       await Promise.all(requestPromises);
-      
+
       const endTime = performance.now();
       const actualDuration = endTime - startTime;
       const actualRps = (totalRequests / actualDuration) * 1000;
-      
+
       const metrics = tracker.getMetrics();
-      
+
       console.log(`Actual performance:`);
       console.log(`  Duration: ${actualDuration.toFixed(2)}ms`);
       console.log(`  Actual RPS: ${actualRps.toFixed(0)}`);
       console.log(`  Operations tracked: ${metrics.operation.count}`);
       console.log(`  Average latency: ${metrics.averageLatencyMs.toFixed(2)}ms`);
       console.log(`  Peak latency: ${metrics.peakLatencyMs.toFixed(2)}ms`);
-      
+
       // Each request generates 3 operations (api.request, database.query, request.processing)
       // but only calls recordSuccess() once per request
       const totalOperations = totalRequests * 3;

@@ -1,6 +1,6 @@
 {
   "name": "@axon/types",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Shared TypeScript types and interfaces for Axon Flow",
   "type": "module",
   "main": "./dist/index.js",

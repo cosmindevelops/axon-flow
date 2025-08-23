@@ -24,9 +24,11 @@ new EnhancedPerformanceTracker(config: IEnhancedPerformanceConfig)
 ```
 
 **Parameters:**
+
 - `config` - Configuration object defining tracking behavior
 
 **Example:**
+
 ```typescript
 const tracker = new EnhancedPerformanceTracker({
   enabled: true,
@@ -47,16 +49,18 @@ const tracker = new EnhancedPerformanceTracker({
 Starts timing an operation and returns a measurement object.
 
 **Parameters:**
+
 - `category` (optional) - Operation category for classification
 - `metadata` (optional) - Additional metadata to associate with the measurement
 
 **Returns:** `IPerformanceMeasurement` - Measurement object for tracking the operation
 
 **Example:**
+
 ```typescript
-const measurement = tracker.startOperation('database', {
-  query: 'SELECT * FROM users',
-  table: 'users'
+const measurement = tracker.startOperation("database", {
+  query: "SELECT * FROM users",
+  table: "users",
 });
 ```
 
@@ -65,9 +69,11 @@ const measurement = tracker.startOperation('database', {
 Completes timing an operation and records the measurement.
 
 **Parameters:**
+
 - `measurement` - The measurement object returned from `startOperation`
 
 **Example:**
+
 ```typescript
 tracker.finishOperation(measurement);
 ```
@@ -79,13 +85,14 @@ Returns comprehensive performance metrics including operation, resource, and GC 
 **Returns:** `IEnhancedPerformanceMetrics` - Complete performance metrics object
 
 **Example:**
+
 ```typescript
 const metrics = tracker.getMetrics();
 console.log({
   avgLatency: metrics.operation.averageLatency,
   p95Latency: metrics.operation.p95Latency,
   memoryUtilization: metrics.resource.memory.utilization,
-  gcEvents: metrics.gcEvents.length
+  gcEvents: metrics.gcEvents.length,
 });
 ```
 
@@ -94,13 +101,15 @@ console.log({
 Returns performance metrics for a specific operation category.
 
 **Parameters:**
+
 - `category` - The operation category to retrieve metrics for
 
 **Returns:** `IOperationMetrics` - Category-specific performance metrics
 
 **Example:**
+
 ```typescript
-const dbMetrics = tracker.getCategoryMetrics('database');
+const dbMetrics = tracker.getCategoryMetrics("database");
 console.log(`Database avg latency: ${dbMetrics.averageLatency}ms`);
 ```
 
@@ -111,10 +120,11 @@ Returns comprehensive memory health analysis including leak detection and recomm
 **Returns:** Memory analysis object with health status, trends, and recommendations
 
 **Example:**
+
 ```typescript
 const memoryAnalysis = tracker.getMemoryAnalysis();
 if (memoryAnalysis.leakDetected) {
-  console.error('Memory leak detected!', memoryAnalysis.recommendations);
+  console.error("Memory leak detected!", memoryAnalysis.recommendations);
 }
 ```
 
@@ -125,9 +135,10 @@ Returns detailed platform information and capabilities.
 **Returns:** `IPlatformInfo` - Platform detection and capability information
 
 **Example:**
+
 ```typescript
 const platform = tracker.getPlatformInfo();
-console.log(`Running on ${platform.isNode ? 'Node.js' : 'Browser'}`);
+console.log(`Running on ${platform.isNode ? "Node.js" : "Browser"}`);
 console.log(`Recommended pool size: ${platform.capabilities.recommendedPoolSize}`);
 ```
 
@@ -138,6 +149,7 @@ Validates performance parity across environments and returns variance report.
 **Returns:** `IPerformanceParityReport` - Performance parity validation report
 
 **Example:**
+
 ```typescript
 const parityReport = tracker.validatePerformanceParity();
 if (!parityReport.parityMaintained) {
@@ -150,14 +162,16 @@ if (!parityReport.parityMaintained) {
 Updates the tracker configuration dynamically.
 
 **Parameters:**
+
 - `config` - Partial configuration object with properties to update
 
 **Example:**
+
 ```typescript
 tracker.updateConfig({
   sampleRate: 0.5,
   thresholdMs: 150,
-  enableGCTracking: false
+  enableGCTracking: false,
 });
 ```
 
@@ -166,6 +180,7 @@ tracker.updateConfig({
 Resets all collected metrics and clears measurement history.
 
 **Example:**
+
 ```typescript
 tracker.reset();
 ```
@@ -175,9 +190,11 @@ tracker.reset();
 Enables or disables performance tracking.
 
 **Parameters:**
+
 - `enabled` - Whether to enable performance tracking
 
 **Example:**
+
 ```typescript
 tracker.setEnabled(false); // Disable tracking
 ```
@@ -253,6 +270,7 @@ Gets a measurement object from the pool, creating new ones if needed.
 Returns a measurement object to the pool for reuse.
 
 **Parameters:**
+
 - `measurement` - The measurement object to return to the pool
 
 ##### `getUtilization(): number`
@@ -269,8 +287,8 @@ Returns detailed pool efficiency metrics including reuse rates.
 
 ```typescript
 interface PoolEfficiencyMetrics {
-  reuseRate: number;      // Percentage of objects reused
-  hitRate: number;        // Percentage of acquisitions from pool
+  reuseRate: number; // Percentage of objects reused
+  hitRate: number; // Percentage of acquisitions from pool
   totalAcquisitions: number;
   totalCreations: number;
   poolSize: number;
@@ -284,6 +302,7 @@ interface PoolEfficiencyMetrics {
 Dynamically resizes the pool to the specified size.
 
 **Parameters:**
+
 - `newSize` - New maximum pool size
 
 ##### `warmUp(targetSize?: number): void`
@@ -291,6 +310,7 @@ Dynamically resizes the pool to the specified size.
 Preemptively populates the pool with objects.
 
 **Parameters:**
+
 - `targetSize` (optional) - Number of objects to pre-create
 
 ##### `compact(): void`
@@ -310,6 +330,7 @@ Statistical analysis engine for performance metrics with export capabilities.
 Adds a latency measurement for statistical analysis.
 
 **Parameters:**
+
 - `latency` - Operation latency in milliseconds
 - `category` (optional) - Operation category
 
@@ -324,6 +345,7 @@ Returns aggregated metrics with percentiles and statistical analysis.
 Returns metrics for a specific category.
 
 **Parameters:**
+
 - `category` - Category to retrieve metrics for
 
 **Returns:** `IOperationMetrics` - Category-specific metrics
@@ -333,6 +355,7 @@ Returns metrics for a specific category.
 Exports metrics in the specified format.
 
 **Parameters:**
+
 - `format` - Export format ("json" or "prometheus")
 
 **Returns:** Formatted metrics string
@@ -366,6 +389,7 @@ Returns detailed platform information and capabilities.
 Returns optimized configuration profile for the specified environment.
 
 **Parameters:**
+
 - `environment` (optional) - Target environment name
 
 **Returns:** `IEnvironmentProfile` - Optimized configuration profile
@@ -390,37 +414,40 @@ interface CompatibilityReport {
 Method decorator for automatic performance timing with advanced features.
 
 #### Signature
+
 ```typescript
 @Timed(options?: IPerformanceDecoratorOptions)
 ```
 
 #### Options
+
 ```typescript
 interface IPerformanceDecoratorOptions {
-  category?: string;                          // Operation category
-  performanceCategory?: PerformanceCategory;  // Performance classification
-  threshold?: number;                         // Custom threshold in ms
-  sample?: boolean;                          // Enable sampling
-  sampleRate?: number;                       // Sampling rate (0-1)
-  metadata?: Record<string, unknown>;        // Additional metadata
+  category?: string; // Operation category
+  performanceCategory?: PerformanceCategory; // Performance classification
+  threshold?: number; // Custom threshold in ms
+  sample?: boolean; // Enable sampling
+  sampleRate?: number; // Sampling rate (0-1)
+  metadata?: Record<string, unknown>; // Additional metadata
   activation?: IDecoratorActivationConditions; // Activation conditions
-  budget?: IPerformanceBudget;               // Performance budget
-  trackParameters?: boolean;                 // Include parameter inspection
-  parameterOptions?: ParameterOptions;       // Parameter tracking options
-  exporters?: IPerformanceExporter[];        // Custom exporters
+  budget?: IPerformanceBudget; // Performance budget
+  trackParameters?: boolean; // Include parameter inspection
+  parameterOptions?: ParameterOptions; // Parameter tracking options
+  exporters?: IPerformanceExporter[]; // Custom exporters
 }
 ```
 
 #### Example
+
 ```typescript
 class UserService {
   @Timed({
-    category: 'user-service',
-    performanceCategory: 'database',
+    category: "user-service",
+    performanceCategory: "database",
     threshold: 100,
     trackParameters: true,
-    budget: { maxLatencyMs: 200, onExceeded: 'warn' },
-    activation: { environments: ['production'] }
+    budget: { maxLatencyMs: 200, onExceeded: "warn" },
+    activation: { environments: ["production"] },
   })
   async findUser(id: string): Promise<User> {
     return await this.repository.findById(id);
@@ -435,20 +462,26 @@ class UserService {
 Class decorator for automatic timing of all methods.
 
 #### Signature
+
 ```typescript
 @Profile(options?: IPerformanceDecoratorOptions)
 ```
 
 #### Example
+
 ```typescript
 @Profile({
-  category: 'payment-service',
+  category: "payment-service",
   threshold: 50,
-  activation: { nodeEnv: ['production'] }
+  activation: { nodeEnv: ["production"] },
 })
 class PaymentService {
-  processPayment(amount: number): PaymentResult { /*...*/ }
-  validateCard(card: CreditCard): ValidationResult { /*...*/ }
+  processPayment(amount: number): PaymentResult {
+    /*...*/
+  }
+  validateCard(card: CreditCard): ValidationResult {
+    /*...*/
+  }
 }
 ```
 
@@ -459,25 +492,28 @@ class PaymentService {
 Method decorator for performance benchmarking with statistical analysis.
 
 #### Signature
+
 ```typescript
 @Benchmark(options?: BenchmarkOptions)
 ```
 
 #### Options
+
 ```typescript
 interface BenchmarkOptions {
-  runs?: number;     // Number of benchmark runs (default: 10)
-  warmup?: number;   // Warmup runs (default: 3)
+  runs?: number; // Number of benchmark runs (default: 10)
+  warmup?: number; // Warmup runs (default: 3)
   category?: string; // Benchmark category
 }
 ```
 
 #### Example
+
 ```typescript
 class DataProcessor {
-  @Benchmark({ runs: 100, warmup: 10, category: 'data-processing' })
+  @Benchmark({ runs: 100, warmup: 10, category: "data-processing" })
   processLargeDataset(data: any[]): ProcessedData[] {
-    return data.map(item => this.transform(item));
+    return data.map((item) => this.transform(item));
   }
 }
 ```
@@ -487,6 +523,7 @@ class DataProcessor {
 ### Category-Specific Decorators
 
 #### @DatabaseTimed
+
 Optimized decorator for database operations.
 
 ```typescript
@@ -495,6 +532,7 @@ async findUser(id: string): Promise<User> { }
 ```
 
 #### @NetworkTimed
+
 Optimized decorator for network operations.
 
 ```typescript
@@ -503,6 +541,7 @@ async apiCall(): Promise<ApiResponse> { }
 ```
 
 #### @ComputationTimed
+
 Optimized decorator for CPU-intensive operations.
 
 ```typescript
@@ -511,6 +550,7 @@ processData(data: any[]): ProcessedData[] { }
 ```
 
 #### @CacheTimed
+
 Optimized decorator for cache operations.
 
 ```typescript
@@ -519,6 +559,7 @@ async getCachedValue(key: string): Promise<any> { }
 ```
 
 #### @IOTimed
+
 Optimized decorator for I/O operations.
 
 ```typescript
@@ -531,6 +572,7 @@ async readFile(path: string): Promise<Buffer> { }
 ### Advanced Decorators
 
 #### @ConditionalTiming
+
 Decorator that only applies timing when conditions are met.
 
 ```typescript
@@ -542,6 +584,7 @@ async heavyQuery(): Promise<Data[]> { }
 ```
 
 #### @SampledTiming
+
 Decorator with advanced sampling strategies.
 
 ```typescript
@@ -555,6 +598,7 @@ async frequentOperation(): Promise<void> { }
 ```
 
 #### @ComposeDecorators
+
 Compose multiple decorators with execution order control.
 
 ```typescript
@@ -570,10 +614,11 @@ async complexOperation(): Promise<Result> { }
 ### Core Interfaces
 
 #### IEnhancedPerformanceConfig
+
 ```typescript
 interface IEnhancedPerformanceConfig {
   enabled: boolean;
-  sampleRate: number;                        // 0-1
+  sampleRate: number; // 0-1
   thresholdMs: number;
   enableMemoryTracking: boolean;
   enableGCTracking: boolean;
@@ -594,6 +639,7 @@ interface IEnhancedPerformanceConfig {
 ```
 
 #### IEnhancedPerformanceMetrics
+
 ```typescript
 interface IEnhancedPerformanceMetrics {
   // Legacy compatibility fields
@@ -616,6 +662,7 @@ interface IEnhancedPerformanceMetrics {
 ```
 
 #### IOperationMetrics
+
 ```typescript
 interface IOperationMetrics {
   count: number;
@@ -632,18 +679,20 @@ interface IOperationMetrics {
 ```
 
 #### IMemoryMetrics
+
 ```typescript
 interface IMemoryMetrics {
-  rss: number;                // Resident Set Size
-  heapTotal: number;          // Heap total size
-  heapUsed: number;           // Heap used size
-  external: number;           // External memory
-  arrayBuffers: number;       // Array buffers allocated
-  utilization: number;        // Memory utilization percentage
+  rss: number; // Resident Set Size
+  heapTotal: number; // Heap total size
+  heapUsed: number; // Heap used size
+  external: number; // External memory
+  arrayBuffers: number; // Array buffers allocated
+  utilization: number; // Memory utilization percentage
 }
 ```
 
 #### IResourceMetrics
+
 ```typescript
 interface IResourceMetrics {
   cpuUsage: number;
@@ -655,18 +704,20 @@ interface IResourceMetrics {
 ```
 
 #### IGCEvent
+
 ```typescript
 interface IGCEvent {
-  type: string;               // GC event type
-  duration: number;           // Duration in milliseconds
-  timestamp: number;          // Event timestamp
-  memoryFreed?: number;       // Memory freed during GC
+  type: string; // GC event type
+  duration: number; // Duration in milliseconds
+  timestamp: number; // Event timestamp
+  memoryFreed?: number; // Memory freed during GC
 }
 ```
 
 ### Platform & Environment
 
 #### IPlatformInfo
+
 ```typescript
 interface IPlatformInfo {
   isNode: boolean;
@@ -695,6 +746,7 @@ interface IPlatformInfo {
 ```
 
 #### IPlatformCapabilities
+
 ```typescript
 interface IPlatformCapabilities {
   maxConcurrentObservations: number;
@@ -709,6 +761,7 @@ interface IPlatformCapabilities {
 ```
 
 #### IEnvironmentProfile
+
 ```typescript
 interface IEnvironmentProfile {
   name: string;
@@ -731,6 +784,7 @@ interface IEnvironmentProfile {
 ### Performance Budgets & Categories
 
 #### PerformanceCategory
+
 ```typescript
 type PerformanceCategory =
   | "database"
@@ -745,29 +799,32 @@ type PerformanceCategory =
 ```
 
 #### IPerformanceBudget
+
 ```typescript
 interface IPerformanceBudget {
   maxLatencyMs: number;
-  warningThreshold?: number;      // Percentage of max (default: 0.8)
+  warningThreshold?: number; // Percentage of max (default: 0.8)
   onExceeded?: "warn" | "error" | "custom";
   customHandler?: (category: string, actualMs: number, budgetMs: number) => void;
 }
 ```
 
 #### IDecoratorActivationConditions
+
 ```typescript
 interface IDecoratorActivationConditions {
-  environments?: string[];        // Enable in specific environments
-  nodeEnv?: string[];            // Enable for specific NODE_ENV values
-  featureFlags?: string[];       // Enable when feature flags are set
+  environments?: string[]; // Enable in specific environments
+  nodeEnv?: string[]; // Enable for specific NODE_ENV values
+  featureFlags?: string[]; // Enable when feature flags are set
   customCondition?: () => boolean; // Custom activation logic
-  logLevel?: string;             // Enable based on log level
+  logLevel?: string; // Enable based on log level
 }
 ```
 
 ### Measurement & Pool
 
 #### IPerformanceMeasurement
+
 ```typescript
 interface IPerformanceMeasurement {
   id: string;
@@ -782,23 +839,25 @@ interface IPerformanceMeasurement {
 ### Export & Metrics
 
 #### IPerformanceExporter
+
 ```typescript
 interface IPerformanceExporter {
   name: string;
   format: "json" | "prometheus" | "csv" | "custom";
   export: (metrics: IOperationMetrics, metadata?: Record<string, unknown>) => string | void;
-  interval?: number;              // Export interval in ms (0 for manual)
+  interval?: number; // Export interval in ms (0 for manual)
 }
 ```
 
 #### IPerformanceParityReport
+
 ```typescript
 interface IPerformanceParityReport {
   environment: string;
   baseline: IOperationMetrics;
   current: IOperationMetrics;
-  variance: number;               // Performance variance percentage
-  parityMaintained: boolean;      // Whether parity is maintained (<10% variance)
+  variance: number; // Performance variance percentage
+  parityMaintained: boolean; // Whether parity is maintained (<10% variance)
   recommendations: string[];
   timestamp: number;
 }
@@ -809,6 +868,7 @@ interface IPerformanceParityReport {
 ### Default Configurations by Environment
 
 #### Development
+
 ```typescript
 const developmentConfig: IEnhancedPerformanceConfig = {
   enabled: true,
@@ -832,6 +892,7 @@ const developmentConfig: IEnhancedPerformanceConfig = {
 ```
 
 #### Production
+
 ```typescript
 const productionConfig: IEnhancedPerformanceConfig = {
   enabled: true,
@@ -906,8 +967,8 @@ Wraps a function with performance timing without using decorators.
 
 ```typescript
 const timedFunction = withTiming(originalFunction, {
-  category: 'utils',
-  threshold: 50
+  category: "utils",
+  threshold: 50,
 });
 ```
 
@@ -916,11 +977,13 @@ const timedFunction = withTiming(originalFunction, {
 ### Common Errors
 
 #### Configuration Errors
+
 - **Invalid sample rate**: Must be between 0 and 1
 - **Invalid pool size**: Initial size must be <= max size
 - **Invalid threshold**: Must be a positive number
 
 #### Runtime Errors
+
 - **Platform incompatibility**: Feature not supported in current environment
 - **Memory pressure**: Critical memory usage detected
 - **Pool exhaustion**: Measurement pool cannot allocate new objects

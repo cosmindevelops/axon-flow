@@ -131,7 +131,7 @@ export class PerformancePlatformDetector {
       hasPerformanceObserver,
     });
 
-    return {
+    const platformInfo: IPlatformInfo = {
       isNode: Boolean(isNode),
       isBrowser,
       isWebWorker,
@@ -150,11 +150,21 @@ export class PerformancePlatformDetector {
       hasResourceTiming,
       hasUserTiming,
       hasNavigationTiming,
-      nodeVersion,
-      browserName,
-      browserVersion,
       capabilities,
     };
+
+    // Only add optional string properties if they have values
+    if (nodeVersion) {
+      platformInfo.nodeVersion = nodeVersion;
+    }
+    if (browserName) {
+      platformInfo.browserName = browserName;
+    }
+    if (browserVersion) {
+      platformInfo.browserVersion = browserVersion;
+    }
+
+    return platformInfo;
   }
 
   private detectGCObserverSupport(): boolean {
@@ -182,25 +192,41 @@ export class PerformancePlatformDetector {
     // Chrome/Chromium detection
     if (userAgent.includes("Chrome")) {
       const match = userAgent.match(/Chrome\/(\d+)/);
-      return { browserName: "chrome", browserVersion: match?.[1] };
+      const result: { browserName: string; browserVersion?: string } = { browserName: "chrome" };
+      if (match?.[1]) {
+        result.browserVersion = match[1];
+      }
+      return result;
     }
 
     // Firefox detection
     if (userAgent.includes("Firefox")) {
       const match = userAgent.match(/Firefox\/(\d+)/);
-      return { browserName: "firefox", browserVersion: match?.[1] };
+      const result: { browserName: string; browserVersion?: string } = { browserName: "firefox" };
+      if (match?.[1]) {
+        result.browserVersion = match[1];
+      }
+      return result;
     }
 
     // Safari detection
     if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
       const match = userAgent.match(/Version\/(\d+)/);
-      return { browserName: "safari", browserVersion: match?.[1] };
+      const result: { browserName: string; browserVersion?: string } = { browserName: "safari" };
+      if (match?.[1]) {
+        result.browserVersion = match[1];
+      }
+      return result;
     }
 
     // Edge detection
     if (userAgent.includes("Edg")) {
       const match = userAgent.match(/Edg\/(\d+)/);
-      return { browserName: "edge", browserVersion: match?.[1] };
+      const result: { browserName: string; browserVersion?: string } = { browserName: "edge" };
+      if (match?.[1]) {
+        result.browserVersion = match[1];
+      }
+      return result;
     }
 
     return { browserName: "unknown" };
@@ -208,9 +234,9 @@ export class PerformancePlatformDetector {
 
   private generatePlatformCapabilities(context: Record<string, boolean>): IPlatformCapabilities {
     // Node.js optimizations
-    if (context.isNode) {
+    if (context["isNode"]) {
       const nodeVersion = process.versions?.node;
-      const majorVersion = nodeVersion ? parseInt(nodeVersion.split(".")[0], 10) : 18;
+      const majorVersion = nodeVersion ? parseInt(nodeVersion.split(".")[0]!, 10) : 18;
 
       return {
         maxConcurrentObservations: majorVersion >= 20 ? 1000 : 500,
@@ -225,7 +251,7 @@ export class PerformancePlatformDetector {
     }
 
     // Browser optimizations
-    if (context.isBrowser) {
+    if (context["isBrowser"]) {
       return {
         maxConcurrentObservations: 200,
         supportsAsyncOperations: true,
@@ -239,7 +265,7 @@ export class PerformancePlatformDetector {
     }
 
     // Web Worker optimizations
-    if (context.isWebWorker) {
+    if (context["isWebWorker"]) {
       return {
         maxConcurrentObservations: 100,
         supportsAsyncOperations: true,
@@ -271,7 +297,7 @@ export class PerformancePlatformDetector {
     if (platform.isNode) {
       if (platform.isElectron) return "electron";
       if (platform.nodeVersion) {
-        const major = parseInt(platform.nodeVersion.split(".")[0], 10);
+        const major = parseInt(platform.nodeVersion.split(".")[0]!, 10);
         return `node-${major}`;
       }
       return "node";
@@ -528,7 +554,7 @@ export class MemoryMonitor implements IMemoryMonitor {
     this.monitoringInterval = setInterval(() => {
       this.recordMemorySnapshot();
       this.analyzeMemoryHealth();
-    }, 5000);
+    }, 5000) as NodeJS.Timeout;
 
     // Take initial snapshot
     this.recordMemorySnapshot();
@@ -539,7 +565,7 @@ export class MemoryMonitor implements IMemoryMonitor {
 
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
-      this.monitoringInterval = undefined;
+      this.monitoringInterval = undefined as any;
     }
   }
 
@@ -563,7 +589,7 @@ export class MemoryMonitor implements IMemoryMonitor {
     const n = recent.length;
     const sumX = x.reduce((a, b) => a + b, 0);
     const sumY = y.reduce((a, b) => a + b, 0);
-    const sumXY = x.reduce((acc, xi, i) => acc + xi * y[i], 0);
+    const sumXY = x.reduce((acc, xi, i) => acc + xi * y[i]!, 0);
     const sumXX = x.reduce((acc, xi) => acc + xi * xi, 0);
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
@@ -624,7 +650,7 @@ export class MemoryMonitor implements IMemoryMonitor {
     if (recent.length < 2) return 0;
 
     const timeSpan = 30; // seconds
-    const memoryGrowth = recent[recent.length - 1].heapUsed - recent[0].heapUsed;
+    const memoryGrowth = recent[recent.length - 1]!.heapUsed - recent[0]!.heapUsed;
     const growthPerMinute = (memoryGrowth / timeSpan) * 60;
 
     return growthPerMinute / (1024 * 1024); // Convert to MB/minute
@@ -737,11 +763,12 @@ export class MemoryMonitor implements IMemoryMonitor {
   }
 
   private handleGCEvent(entry: any): void {
+    const memoryFreed = this.calculateMemoryFreed();
     const gcEvent: IGCEvent = {
       type: this.getGCType(entry.kind),
       duration: entry.duration,
       timestamp: Date.now(),
-      memoryFreed: this.calculateMemoryFreed(),
+      ...(memoryFreed !== undefined && { memoryFreed }),
     };
 
     // Log significant GC events
@@ -774,6 +801,8 @@ export class MemoryMonitor implements IMemoryMonitor {
 
     const current = this.memoryHistory[this.memoryHistory.length - 1];
     const previous = this.memoryHistory[this.memoryHistory.length - 2];
+
+    if (!current || !previous) return 0;
 
     const freed = previous.heapUsed - current.heapUsed;
     return freed > 0 ? freed : 0;
@@ -1324,7 +1353,7 @@ export class EnhancedPerformanceTracker implements IEnhancedPerformanceTracker {
         this.setupGCTracking();
       } else if (this.gcObserver) {
         this.gcObserver.disconnect();
-        this.gcObserver = undefined;
+        this.gcObserver = undefined as any;
       }
     }
 
@@ -1335,7 +1364,7 @@ export class EnhancedPerformanceTracker implements IEnhancedPerformanceTracker {
     ) {
       if (this.resourceMetricsInterval) {
         clearInterval(this.resourceMetricsInterval);
-        this.resourceMetricsInterval = undefined;
+        this.resourceMetricsInterval = undefined as any;
       }
 
       if (newConfig.resourceMetricsInterval > 0) {
@@ -1500,11 +1529,12 @@ export class EnhancedPerformanceTracker implements IEnhancedPerformanceTracker {
 
   private recordGCEvent(entry: any): void {
     const memoryMetrics = this.memoryMonitor.getMemoryMetrics();
+    const memoryFreed = this.calculateMemoryFreed();
     const gcEvent: IGCEvent = {
       type: this.getGCType(entry.kind || entry.detail?.kind),
       duration: entry.duration,
       timestamp: Date.now(),
-      memoryFreed: this.calculateMemoryFreed(),
+      ...(memoryFreed !== undefined && { memoryFreed }),
     };
 
     this.gcEvents.push(gcEvent);

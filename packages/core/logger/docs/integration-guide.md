@@ -17,8 +17,8 @@ This guide demonstrates how to integrate the enhanced performance tracker with p
 ### Basic Express.js Setup
 
 ```typescript
-import express from 'express';
-import { EnhancedPerformanceTracker, NetworkTimed, DatabaseTimed } from '@axon/logger/performance';
+import express from "express";
+import { EnhancedPerformanceTracker, NetworkTimed, DatabaseTimed } from "@axon/logger/performance";
 
 const app = express();
 const tracker = new EnhancedPerformanceTracker({
@@ -30,31 +30,31 @@ const tracker = new EnhancedPerformanceTracker({
 
 // Performance middleware for all routes
 app.use((req, res, next) => {
-  const measurement = tracker.startOperation('http-request', {
+  const measurement = tracker.startOperation("http-request", {
     method: req.method,
     path: req.path,
-    userAgent: req.get('User-Agent')
+    userAgent: req.get("User-Agent"),
   });
-  
+
   // Track response time
-  res.on('finish', () => {
+  res.on("finish", () => {
     tracker.finishOperation(measurement);
     tracker.recordSuccess();
   });
-  
-  res.on('error', () => {
+
+  res.on("error", () => {
     tracker.finishOperation(measurement);
     tracker.recordFailure();
   });
-  
+
   next();
 });
 
 // Performance dashboard endpoint
-app.get('/performance', (req, res) => {
+app.get("/performance", (req, res) => {
   const metrics = tracker.getMetrics();
   const memoryAnalysis = tracker.getMemoryAnalysis();
-  
+
   res.json({
     performance: {
       throughput: metrics.operation.throughput,
@@ -71,15 +71,15 @@ app.get('/performance', (req, res) => {
     pool: {
       utilization: metrics.measurementPoolUtilization,
       efficiency: tracker.getPoolEfficiency(),
-    }
+    },
   });
 });
 
 class UserController {
-  @DatabaseTimed({ 
+  @DatabaseTimed({
     threshold: 200,
     trackParameters: true,
-    budget: { maxLatencyMs: 500, onExceeded: 'warn' }
+    budget: { maxLatencyMs: 500, onExceeded: "warn" },
   })
   async getUser(req: express.Request, res: express.Response) {
     const userId = req.params.id;
@@ -87,9 +87,9 @@ class UserController {
     res.json(user);
   }
 
-  @NetworkTimed({ 
+  @NetworkTimed({
     threshold: 1000,
-    activation: { environments: ['production', 'staging'] }
+    activation: { environments: ["production", "staging"] },
   })
   async getUserProfile(req: express.Request, res: express.Response) {
     const userId = req.params.id;
@@ -99,41 +99,41 @@ class UserController {
 }
 
 app.listen(3000, () => {
-  console.log('Server running with enhanced performance tracking');
+  console.log("Server running with enhanced performance tracking");
 });
 ```
 
 ### Express.js Route-Level Performance Budgets
 
 ```typescript
-import { setPerformanceBudget, NetworkTimed } from '@axon/logger/performance';
+import { setPerformanceBudget, NetworkTimed } from "@axon/logger/performance";
 
 // Set route-specific budgets
-setPerformanceBudget('api-users', {
+setPerformanceBudget("api-users", {
   maxLatencyMs: 300,
-  onExceeded: 'warn',
-  warningThreshold: 0.8
+  onExceeded: "warn",
+  warningThreshold: 0.8,
 });
 
-setPerformanceBudget('api-payments', {
+setPerformanceBudget("api-payments", {
   maxLatencyMs: 1000,
-  onExceeded: 'error',
-  warningThreshold: 0.7
+  onExceeded: "error",
+  warningThreshold: 0.7,
 });
 
 class ApiController {
-  @NetworkTimed({ 
-    category: 'api-users',
-    performanceCategory: 'network',
-    trackParameters: true
+  @NetworkTimed({
+    category: "api-users",
+    performanceCategory: "network",
+    trackParameters: true,
   })
   async handleUserRequest(req: express.Request, res: express.Response) {
     // Automatically monitored against api-users budget
   }
 
-  @DatabaseTimed({ 
-    category: 'api-payments',
-    performanceCategory: 'database'
+  @DatabaseTimed({
+    category: "api-payments",
+    performanceCategory: "database",
   })
   async handlePayment(req: express.Request, res: express.Response) {
     // Automatically monitored against api-payments budget
@@ -147,27 +147,27 @@ class ApiController {
 
 ```typescript
 // performance.module.ts
-import { Module, Global } from '@nestjs/common';
-import { EnhancedPerformanceTracker } from '@axon/logger/performance';
+import { Module, Global } from "@nestjs/common";
+import { EnhancedPerformanceTracker } from "@axon/logger/performance";
 
 @Global()
 @Module({
   providers: [
     {
-      provide: 'PERFORMANCE_TRACKER',
+      provide: "PERFORMANCE_TRACKER",
       useFactory: () => {
         return new EnhancedPerformanceTracker({
-          enabled: process.env.NODE_ENV === 'production',
+          enabled: process.env.NODE_ENV === "production",
           enableMemoryTracking: true,
           enableGCTracking: true,
           enableEnvironmentOptimization: true,
-          sampleRate: parseFloat(process.env.PERF_SAMPLE_RATE || '0.1'),
-          thresholdMs: parseInt(process.env.PERF_THRESHOLD_MS || '100'),
+          sampleRate: parseFloat(process.env.PERF_SAMPLE_RATE || "0.1"),
+          thresholdMs: parseInt(process.env.PERF_THRESHOLD_MS || "100"),
         });
       },
     },
   ],
-  exports: ['PERFORMANCE_TRACKER'],
+  exports: ["PERFORMANCE_TRACKER"],
 })
 export class PerformanceModule {}
 ```
@@ -176,23 +176,23 @@ export class PerformanceModule {}
 
 ```typescript
 // performance.interceptor.ts
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Inject } from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
-import { EnhancedPerformanceTracker } from '@axon/logger/performance';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Inject } from "@nestjs/common";
+import { Observable } from "rxjs";
+import { tap } from "rxjs/operators";
+import { EnhancedPerformanceTracker } from "@axon/logger/performance";
 
 @Injectable()
 export class PerformanceInterceptor implements NestInterceptor {
   constructor(
-    @Inject('PERFORMANCE_TRACKER') 
-    private readonly tracker: EnhancedPerformanceTracker
+    @Inject("PERFORMANCE_TRACKER")
+    private readonly tracker: EnhancedPerformanceTracker,
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
     const className = context.getClass().name;
     const methodName = context.getHandler().name;
-    
+
     const measurement = this.tracker.startOperation(`${className}.${methodName}`, {
       className,
       methodName,
@@ -220,32 +220,32 @@ export class PerformanceInterceptor implements NestInterceptor {
 
 ```typescript
 // user.service.ts
-import { Injectable } from '@nestjs/common';
-import { DatabaseTimed, ComputationTimed } from '@axon/logger/performance';
+import { Injectable } from "@nestjs/common";
+import { DatabaseTimed, ComputationTimed } from "@axon/logger/performance";
 
 @Injectable()
 export class UserService {
-  @DatabaseTimed({ 
+  @DatabaseTimed({
     threshold: 150,
     trackParameters: true,
-    budget: { maxLatencyMs: 300, onExceeded: 'warn' }
+    budget: { maxLatencyMs: 300, onExceeded: "warn" },
   })
   async findUserById(id: string): Promise<User> {
     return await this.userRepository.findOne({ where: { id } });
   }
 
-  @DatabaseTimed({ 
-    category: 'user-search',
+  @DatabaseTimed({
+    category: "user-search",
     threshold: 500,
-    activation: { logLevel: 'debug' }
+    activation: { logLevel: "debug" },
   })
   async searchUsers(query: SearchQuery): Promise<User[]> {
     return await this.userRepository.search(query);
   }
 
-  @ComputationTimed({ 
-    category: 'user-analytics',
-    trackParameters: true
+  @ComputationTimed({
+    category: "user-analytics",
+    trackParameters: true,
   })
   generateUserAnalytics(users: User[]): UserAnalytics {
     // CPU-intensive computation
@@ -259,46 +259,46 @@ export class UserService {
 ### TypeORM Integration
 
 ```typescript
-import { DataSource } from 'typeorm';
-import { DatabaseTimed, EnhancedPerformanceTracker } from '@axon/logger/performance';
+import { DataSource } from "typeorm";
+import { DatabaseTimed, EnhancedPerformanceTracker } from "@axon/logger/performance";
 
 // Enhanced TypeORM repository with performance tracking
 export class PerformanceAwareRepository<T> {
   constructor(
     private repository: any,
-    private tracker: EnhancedPerformanceTracker
+    private tracker: EnhancedPerformanceTracker,
   ) {}
 
-  @DatabaseTimed({ 
+  @DatabaseTimed({
     threshold: 100,
     trackParameters: true,
-    budget: { maxLatencyMs: 200, onExceeded: 'warn' }
+    budget: { maxLatencyMs: 200, onExceeded: "warn" },
   })
   async findOne(criteria: any): Promise<T> {
     return await this.repository.findOne(criteria);
   }
 
-  @DatabaseTimed({ 
+  @DatabaseTimed({
     threshold: 200,
     trackParameters: true,
-    budget: { maxLatencyMs: 500, onExceeded: 'warn' }
+    budget: { maxLatencyMs: 500, onExceeded: "warn" },
   })
   async find(criteria: any): Promise<T[]> {
     return await this.repository.find(criteria);
   }
 
-  @DatabaseTimed({ 
+  @DatabaseTimed({
     threshold: 300,
-    performanceCategory: 'database',
-    trackParameters: true
+    performanceCategory: "database",
+    trackParameters: true,
   })
   async save(entity: T): Promise<T> {
     return await this.repository.save(entity);
   }
 
-  @DatabaseTimed({ 
+  @DatabaseTimed({
     threshold: 150,
-    category: 'database-delete'
+    category: "database-delete",
   })
   async delete(criteria: any): Promise<void> {
     return await this.repository.delete(criteria);
@@ -311,10 +311,7 @@ export class UserService {
   private userRepo: PerformanceAwareRepository<User>;
 
   constructor(dataSource: DataSource, tracker: EnhancedPerformanceTracker) {
-    this.userRepo = new PerformanceAwareRepository(
-      dataSource.getRepository(User),
-      tracker
-    );
+    this.userRepo = new PerformanceAwareRepository(dataSource.getRepository(User), tracker);
   }
 
   async getUser(id: string): Promise<User> {
@@ -326,40 +323,40 @@ export class UserService {
 ### Prisma Integration
 
 ```typescript
-import { PrismaClient } from '@prisma/client';
-import { DatabaseTimed } from '@axon/logger/performance';
+import { PrismaClient } from "@prisma/client";
+import { DatabaseTimed } from "@axon/logger/performance";
 
 class PrismaService {
   private prisma = new PrismaClient();
 
-  @DatabaseTimed({ 
+  @DatabaseTimed({
     threshold: 100,
     trackParameters: true,
     parameterOptions: {
       includeValues: false, // Don't log sensitive data
       includeTypes: true,
-    }
+    },
   })
   async findUser(id: string) {
     return await this.prisma.user.findUnique({
-      where: { id }
+      where: { id },
     });
   }
 
-  @DatabaseTimed({ 
+  @DatabaseTimed({
     threshold: 200,
-    budget: { maxLatencyMs: 400, onExceeded: 'warn' }
+    budget: { maxLatencyMs: 400, onExceeded: "warn" },
   })
   async createUser(data: CreateUserInput) {
     return await this.prisma.user.create({
-      data
+      data,
     });
   }
 
-  @DatabaseTimed({ 
+  @DatabaseTimed({
     threshold: 500,
-    category: 'complex-query',
-    activation: { environments: ['production'] }
+    category: "complex-query",
+    activation: { environments: ["production"] },
   })
   async getUsersWithAnalytics() {
     return await this.prisma.user.findMany({
@@ -367,12 +364,12 @@ class PrismaService {
         posts: {
           include: {
             comments: true,
-            likes: true
-          }
+            likes: true,
+          },
         },
         profile: true,
-        analytics: true
-      }
+        analytics: true,
+      },
     });
   }
 }
@@ -383,8 +380,8 @@ class PrismaService {
 ### Redis Performance Monitoring
 
 ```typescript
-import Redis from 'ioredis';
-import { CacheTimed, EnhancedPerformanceTracker } from '@axon/logger/performance';
+import Redis from "ioredis";
+import { CacheTimed, EnhancedPerformanceTracker } from "@axon/logger/performance";
 
 class CacheService {
   private redis: Redis;
@@ -392,7 +389,7 @@ class CacheService {
 
   constructor() {
     this.redis = new Redis({
-      host: 'localhost',
+      host: "localhost",
       port: 6379,
     });
 
@@ -402,19 +399,19 @@ class CacheService {
     });
   }
 
-  @CacheTimed({ 
+  @CacheTimed({
     threshold: 10,
     trackParameters: true,
-    budget: { maxLatencyMs: 25, onExceeded: 'warn' }
+    budget: { maxLatencyMs: 25, onExceeded: "warn" },
   })
   async get(key: string): Promise<string | null> {
     return await this.redis.get(key);
   }
 
-  @CacheTimed({ 
+  @CacheTimed({
     threshold: 15,
-    category: 'cache-write',
-    trackParameters: true
+    category: "cache-write",
+    trackParameters: true,
   })
   async set(key: string, value: string, ttl?: number): Promise<void> {
     if (ttl) {
@@ -424,10 +421,10 @@ class CacheService {
     }
   }
 
-  @CacheTimed({ 
+  @CacheTimed({
     threshold: 50,
-    category: 'cache-complex',
-    performanceCategory: 'cache'
+    category: "cache-complex",
+    performanceCategory: "cache",
   })
   async mget(keys: string[]): Promise<(string | null)[]> {
     return await this.redis.mget(keys);
@@ -435,9 +432,9 @@ class CacheService {
 
   // Cache performance analytics
   getCacheMetrics() {
-    const cacheMetrics = this.tracker.getCategoryMetrics('cache');
-    const cacheWriteMetrics = this.tracker.getCategoryMetrics('cache-write');
-    
+    const cacheMetrics = this.tracker.getCategoryMetrics("cache");
+    const cacheWriteMetrics = this.tracker.getCategoryMetrics("cache-write");
+
     return {
       reads: {
         avgLatency: cacheMetrics.averageLatency,
@@ -457,9 +454,9 @@ class CacheService {
 
   private calculateHitRate(): number {
     // Custom hit rate calculation based on cache metrics
-    const reads = this.tracker.getCategoryMetrics('cache');
-    const misses = this.tracker.getCategoryMetrics('cache-miss');
-    
+    const reads = this.tracker.getCategoryMetrics("cache");
+    const misses = this.tracker.getCategoryMetrics("cache-miss");
+
     if (reads.count === 0) return 0;
     return ((reads.count - misses.count) / reads.count) * 100;
   }
@@ -471,40 +468,40 @@ class CacheService {
 ### Service-to-Service Communication
 
 ```typescript
-import axios from 'axios';
-import { NetworkTimed, setPerformanceBudget } from '@axon/logger/performance';
+import axios from "axios";
+import { NetworkTimed, setPerformanceBudget } from "@axon/logger/performance";
 
 // Set budgets for different service types
-setPerformanceBudget('user-service', { maxLatencyMs: 200, onExceeded: 'warn' });
-setPerformanceBudget('payment-service', { maxLatencyMs: 1000, onExceeded: 'warn' });
-setPerformanceBudget('notification-service', { maxLatencyMs: 500, onExceeded: 'warn' });
+setPerformanceBudget("user-service", { maxLatencyMs: 200, onExceeded: "warn" });
+setPerformanceBudget("payment-service", { maxLatencyMs: 1000, onExceeded: "warn" });
+setPerformanceBudget("notification-service", { maxLatencyMs: 500, onExceeded: "warn" });
 
 class ApiClient {
-  @NetworkTimed({ 
-    category: 'user-service',
+  @NetworkTimed({
+    category: "user-service",
     threshold: 150,
     trackParameters: true,
-    activation: { environments: ['production', 'staging'] }
+    activation: { environments: ["production", "staging"] },
   })
   async getUser(id: string): Promise<User> {
     const response = await axios.get(`${this.userServiceUrl}/users/${id}`);
     return response.data;
   }
 
-  @NetworkTimed({ 
-    category: 'payment-service',
+  @NetworkTimed({
+    category: "payment-service",
     threshold: 800,
-    budget: { maxLatencyMs: 2000, onExceeded: 'error' }
+    budget: { maxLatencyMs: 2000, onExceeded: "error" },
   })
   async processPayment(paymentData: PaymentRequest): Promise<PaymentResult> {
     const response = await axios.post(`${this.paymentServiceUrl}/payments`, paymentData);
     return response.data;
   }
 
-  @NetworkTimed({ 
-    category: 'notification-service',
+  @NetworkTimed({
+    category: "notification-service",
     threshold: 300,
-    activation: { logLevel: 'info' }
+    activation: { logLevel: "info" },
   })
   async sendNotification(notification: NotificationRequest): Promise<void> {
     await axios.post(`${this.notificationServiceUrl}/notify`, notification);
@@ -515,10 +512,10 @@ class ApiClient {
 class ServiceDiscovery {
   private tracker: EnhancedPerformanceTracker;
 
-  @NetworkTimed({ 
-    category: 'service-discovery',
+  @NetworkTimed({
+    category: "service-discovery",
     threshold: 50,
-    budget: { maxLatencyMs: 100, onExceeded: 'warn' }
+    budget: { maxLatencyMs: 100, onExceeded: "warn" },
   })
   async discoverService(serviceName: string): Promise<ServiceEndpoint> {
     // Service discovery logic with performance tracking
@@ -526,31 +523,31 @@ class ServiceDiscovery {
   }
 
   getServicePerformanceReport(): ServicePerformanceReport {
-    const userServiceMetrics = this.tracker.getCategoryMetrics('user-service');
-    const paymentServiceMetrics = this.tracker.getCategoryMetrics('payment-service');
-    const notificationServiceMetrics = this.tracker.getCategoryMetrics('notification-service');
-    
+    const userServiceMetrics = this.tracker.getCategoryMetrics("user-service");
+    const paymentServiceMetrics = this.tracker.getCategoryMetrics("payment-service");
+    const notificationServiceMetrics = this.tracker.getCategoryMetrics("notification-service");
+
     return {
       services: {
-        'user-service': {
+        "user-service": {
           avgLatency: userServiceMetrics.averageLatency,
           p95Latency: userServiceMetrics.p95Latency,
-          errorRate: this.calculateErrorRate('user-service'),
-          availability: this.calculateAvailability('user-service'),
+          errorRate: this.calculateErrorRate("user-service"),
+          availability: this.calculateAvailability("user-service"),
         },
-        'payment-service': {
+        "payment-service": {
           avgLatency: paymentServiceMetrics.averageLatency,
           p95Latency: paymentServiceMetrics.p95Latency,
-          errorRate: this.calculateErrorRate('payment-service'),
-          availability: this.calculateAvailability('payment-service'),
+          errorRate: this.calculateErrorRate("payment-service"),
+          availability: this.calculateAvailability("payment-service"),
         },
-        'notification-service': {
+        "notification-service": {
           avgLatency: notificationServiceMetrics.averageLatency,
           p95Latency: notificationServiceMetrics.p95Latency,
-          errorRate: this.calculateErrorRate('notification-service'),
-          availability: this.calculateAvailability('notification-service'),
-        }
-      }
+          errorRate: this.calculateErrorRate("notification-service"),
+          availability: this.calculateAvailability("notification-service"),
+        },
+      },
     };
   }
 }
@@ -561,10 +558,10 @@ class ServiceDiscovery {
 ### Performance Testing with Vitest
 
 ```typescript
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { EnhancedPerformanceTracker, Benchmark } from '@axon/logger/performance';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { EnhancedPerformanceTracker, Benchmark } from "@axon/logger/performance";
 
-describe('Performance Integration Tests', () => {
+describe("Performance Integration Tests", () => {
   let tracker: EnhancedPerformanceTracker;
 
   beforeEach(() => {
@@ -580,54 +577,55 @@ describe('Performance Integration Tests', () => {
     tracker.reset();
   });
 
-  it('should maintain performance under load', async () => {
+  it("should maintain performance under load", async () => {
     const iterations = 1000;
     const measurements: number[] = [];
 
     for (let i = 0; i < iterations; i++) {
-      const measurement = tracker.startOperation('load-test');
-      
+      const measurement = tracker.startOperation("load-test");
+
       // Simulate work
       await simulateWork(10);
-      
+
       tracker.finishOperation(measurement);
       tracker.recordSuccess();
-      
+
       if (measurement.endTime && measurement.startTime) {
         measurements.push(measurement.endTime - measurement.startTime);
       }
     }
 
     const metrics = tracker.getMetrics();
-    
+
     // Performance assertions
     expect(metrics.operation.averageLatency).toBeLessThan(50);
     expect(metrics.operation.p95Latency).toBeLessThan(100);
     expect(metrics.operation.p99Latency).toBeLessThan(200);
-    
+
     // Memory health checks
     const memoryAnalysis = tracker.getMemoryAnalysis();
     expect(memoryAnalysis.leakDetected).toBe(false);
-    expect(memoryAnalysis.health).not.toBe('critical');
+    expect(memoryAnalysis.health).not.toBe("critical");
   });
 
-  it('should detect performance regressions', async () => {
+  it("should detect performance regressions", async () => {
     // Baseline performance
     const baselineMetrics = await runPerformanceBaseline();
-    
+
     // Current performance
     const currentMetrics = tracker.getMetrics().operation;
-    
+
     // Regression detection
     const regressionThreshold = 0.2; // 20% performance degradation
-    const latencyRegression = (currentMetrics.averageLatency - baselineMetrics.averageLatency) / baselineMetrics.averageLatency;
-    
+    const latencyRegression =
+      (currentMetrics.averageLatency - baselineMetrics.averageLatency) / baselineMetrics.averageLatency;
+
     expect(latencyRegression).toBeLessThan(regressionThreshold);
   });
 
-  it('should validate cross-environment parity', () => {
+  it("should validate cross-environment parity", () => {
     const parityReport = tracker.validatePerformanceParity();
-    
+
     expect(parityReport.parityMaintained).toBe(true);
     expect(parityReport.variance).toBeLessThan(10); // <10% variance
   });
@@ -637,7 +635,7 @@ describe('Performance Integration Tests', () => {
 class CriticalService {
   @Benchmark({ runs: 100, warmup: 10 })
   criticalMethod(data: any[]): ProcessedData[] {
-    return data.map(item => this.processItem(item));
+    return data.map((item) => this.processItem(item));
   }
 
   // Benchmark results will be automatically logged
@@ -653,8 +651,8 @@ class CriticalService {
 ### Prometheus Integration
 
 ```typescript
-import { createPrometheusExporter, registerPerformanceExporter } from '@axon/logger/performance';
-import { register, Gauge, Histogram, Counter } from 'prom-client';
+import { createPrometheusExporter, registerPerformanceExporter } from "@axon/logger/performance";
+import { register, Gauge, Histogram, Counter } from "prom-client";
 
 class PrometheusMetrics {
   private performanceHistogram: Histogram<string>;
@@ -664,28 +662,28 @@ class PrometheusMetrics {
   constructor(private tracker: EnhancedPerformanceTracker) {
     // Create Prometheus metrics
     this.performanceHistogram = new Histogram({
-      name: 'performance_operation_duration_seconds',
-      help: 'Duration of operations in seconds',
-      labelNames: ['category', 'method', 'status'],
+      name: "performance_operation_duration_seconds",
+      help: "Duration of operations in seconds",
+      labelNames: ["category", "method", "status"],
       buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5],
     });
 
     this.memoryGauge = new Gauge({
-      name: 'memory_usage_bytes',
-      help: 'Memory usage in bytes',
-      labelNames: ['type'],
+      name: "memory_usage_bytes",
+      help: "Memory usage in bytes",
+      labelNames: ["type"],
     });
 
     this.gcCounter = new Counter({
-      name: 'gc_events_total',
-      help: 'Total number of GC events',
-      labelNames: ['type'],
+      name: "gc_events_total",
+      help: "Total number of GC events",
+      labelNames: ["type"],
     });
 
     // Register custom exporter
     registerPerformanceExporter({
-      name: 'prometheus-custom',
-      format: 'custom',
+      name: "prometheus-custom",
+      format: "custom",
       interval: 5000,
       export: this.exportToPrometheus.bind(this),
     });
@@ -695,20 +693,20 @@ class PrometheusMetrics {
     // Export operation metrics
     this.performanceHistogram
       .labels({
-        category: metadata?.category || 'unknown',
-        method: metadata?.methodName || 'unknown',
-        status: 'success',
+        category: metadata?.category || "unknown",
+        method: metadata?.methodName || "unknown",
+        status: "success",
       })
       .observe(metrics.averageLatency / 1000); // Convert to seconds
 
     // Export memory metrics
     const memoryMetrics = this.tracker.getMemoryAnalysis();
-    this.memoryGauge.labels({ type: 'heap_used' }).set(memoryMetrics.growthRate);
-    this.memoryGauge.labels({ type: 'heap_total' }).set(this.tracker.getMetrics().resource.memory.heapTotal);
+    this.memoryGauge.labels({ type: "heap_used" }).set(memoryMetrics.growthRate);
+    this.memoryGauge.labels({ type: "heap_total" }).set(this.tracker.getMetrics().resource.memory.heapTotal);
 
     // Export GC metrics
     const gcEvents = this.tracker.getMetrics().gcEvents;
-    gcEvents.forEach(event => {
+    gcEvents.forEach((event) => {
       this.gcCounter.labels({ type: event.type }).inc();
     });
   }
@@ -728,8 +726,8 @@ const tracker = new EnhancedPerformanceTracker({
 const prometheusMetrics = new PrometheusMetrics(tracker);
 
 // Expose metrics endpoint
-app.get('/metrics', (req, res) => {
-  res.set('Content-Type', register.contentType);
+app.get("/metrics", (req, res) => {
+  res.set("Content-Type", register.contentType);
   res.send(prometheusMetrics.getMetrics());
 });
 ```
@@ -737,12 +735,12 @@ app.get('/metrics', (req, res) => {
 ### Alerting Integration
 
 ```typescript
-import { EnhancedPerformanceTracker } from '@axon/logger/performance';
+import { EnhancedPerformanceTracker } from "@axon/logger/performance";
 
 class AlertingService {
   constructor(
     private tracker: EnhancedPerformanceTracker,
-    private alertManager: AlertManager
+    private alertManager: AlertManager,
   ) {
     this.setupAlerts();
   }
@@ -751,22 +749,22 @@ class AlertingService {
     // Memory leak detection
     setInterval(() => {
       const memoryAnalysis = this.tracker.getMemoryAnalysis();
-      
+
       if (memoryAnalysis.leakDetected) {
         this.alertManager.sendAlert({
-          severity: 'critical',
-          title: 'Memory Leak Detected',
+          severity: "critical",
+          title: "Memory Leak Detected",
           description: `Memory leak detected with growth rate: ${memoryAnalysis.growthRate.toFixed(2)} MB/min`,
           recommendations: memoryAnalysis.recommendations,
         });
       }
 
-      if (memoryAnalysis.pressure === 'critical') {
+      if (memoryAnalysis.pressure === "critical") {
         this.alertManager.sendAlert({
-          severity: 'high',
-          title: 'Critical Memory Pressure',
+          severity: "high",
+          title: "Critical Memory Pressure",
           description: `Memory pressure is critical: ${memoryAnalysis.pressure}`,
-          action: 'Scale up or investigate memory usage',
+          action: "Scale up or investigate memory usage",
         });
       }
     }, 30000);
@@ -774,11 +772,11 @@ class AlertingService {
     // Performance degradation detection
     setInterval(() => {
       const parityReport = this.tracker.validatePerformanceParity();
-      
+
       if (!parityReport.parityMaintained) {
         this.alertManager.sendAlert({
-          severity: 'medium',
-          title: 'Performance Variance Exceeded',
+          severity: "medium",
+          title: "Performance Variance Exceeded",
           description: `Performance variance: ${parityReport.variance.toFixed(1)}%`,
           recommendations: parityReport.recommendations,
         });
@@ -789,15 +787,15 @@ class AlertingService {
     setInterval(() => {
       const metrics = this.tracker.getMetrics();
       const recentGCEvents = metrics.gcEvents.slice(-10);
-      
-      const longGCEvents = recentGCEvents.filter(event => event.duration > 100);
-      
+
+      const longGCEvents = recentGCEvents.filter((event) => event.duration > 100);
+
       if (longGCEvents.length > 5) {
         this.alertManager.sendAlert({
-          severity: 'medium',
-          title: 'Frequent Long GC Events',
+          severity: "medium",
+          title: "Frequent Long GC Events",
           description: `${longGCEvents.length} GC events >100ms in recent history`,
-          action: 'Consider GC tuning or memory optimization',
+          action: "Consider GC tuning or memory optimization",
         });
       }
     }, 60000);
@@ -808,7 +806,7 @@ class AlertingService {
     setInterval(() => {
       const metrics = this.tracker.getMetrics();
       const memoryAnalysis = this.tracker.getMemoryAnalysis();
-      
+
       if (condition({ metrics, memoryAnalysis })) {
         this.alertManager.sendAlert(alertConfig);
       }
@@ -820,15 +818,12 @@ class AlertingService {
 const alerting = new AlertingService(tracker, alertManager);
 
 // Custom alert for high P99 latency
-alerting.setupCustomAlert(
-  ({ metrics }) => metrics.operation.p99Latency > 1000,
-  {
-    severity: 'high',
-    title: 'High P99 Latency',
-    description: 'P99 latency exceeded 1000ms',
-    interval: 30000,
-  }
-);
+alerting.setupCustomAlert(({ metrics }) => metrics.operation.p99Latency > 1000, {
+  severity: "high",
+  title: "High P99 Latency",
+  description: "P99 latency exceeded 1000ms",
+  interval: 30000,
+});
 ```
 
 ## Best Practices
@@ -837,10 +832,10 @@ alerting.setupCustomAlert(
 
 ```typescript
 // Set appropriate budgets per operation category
-setPerformanceBudget('database', { maxLatencyMs: 200, onExceeded: 'warn' });
-setPerformanceBudget('network', { maxLatencyMs: 1000, onExceeded: 'warn' });
-setPerformanceBudget('computation', { maxLatencyMs: 100, onExceeded: 'warn' });
-setPerformanceBudget('cache', { maxLatencyMs: 50, onExceeded: 'error' });
+setPerformanceBudget("database", { maxLatencyMs: 200, onExceeded: "warn" });
+setPerformanceBudget("network", { maxLatencyMs: 1000, onExceeded: "warn" });
+setPerformanceBudget("computation", { maxLatencyMs: 100, onExceeded: "warn" });
+setPerformanceBudget("cache", { maxLatencyMs: 50, onExceeded: "error" });
 ```
 
 ### 2. Sampling Strategy
@@ -848,8 +843,8 @@ setPerformanceBudget('cache', { maxLatencyMs: 50, onExceeded: 'error' });
 ```typescript
 // Use adaptive sampling in production
 const tracker = new EnhancedPerformanceTracker({
-  enabled: process.env.NODE_ENV === 'production',
-  sampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  enabled: process.env.NODE_ENV === "production",
+  sampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
   enableEnvironmentOptimization: true,
 });
 ```
@@ -860,9 +855,9 @@ const tracker = new EnhancedPerformanceTracker({
 // Monitor memory health regularly
 setInterval(() => {
   const analysis = tracker.getMemoryAnalysis();
-  if (analysis.leakDetected || analysis.health === 'critical') {
+  if (analysis.leakDetected || analysis.health === "critical") {
     // Take corrective action
-    logger.error('Memory issue detected', analysis);
+    logger.error("Memory issue detected", analysis);
   }
 }, 60000);
 ```
@@ -870,11 +865,11 @@ setInterval(() => {
 ### 4. Graceful Shutdown
 
 ```typescript
-process.on('SIGTERM', async () => {
+process.on("SIGTERM", async () => {
   // Export final metrics before shutdown
   const finalMetrics = tracker.getMetrics();
   await exportMetrics(finalMetrics);
-  
+
   // Clean up tracker resources
   tracker.reset();
   process.exit(0);

@@ -7,7 +7,7 @@ This guide helps you migrate from basic logging to the enhanced performance trac
 The enhanced performance tracker provides comprehensive monitoring capabilities including:
 
 - Advanced memory leak detection
-- Garbage collection tracking  
+- Garbage collection tracking
 - Cross-environment compatibility
 - Object pool optimization
 - Performance budgets and alerts
@@ -18,20 +18,22 @@ The enhanced performance tracker provides comprehensive monitoring capabilities 
 ### 1. Update Configuration
 
 **Before: Basic Configuration**
+
 ```typescript
-import { Logger } from '@axon/logger';
+import { Logger } from "@axon/logger";
 
 const logger = new Logger({
-  level: 'info',
+  level: "info",
   transport: {
-    type: 'console'
-  }
+    type: "console",
+  },
 });
 ```
 
 **After: Enhanced Performance Configuration**
+
 ```typescript
-import { EnhancedPerformanceTracker, setGlobalPerformanceTracker } from '@axon/logger';
+import { EnhancedPerformanceTracker, setGlobalPerformanceTracker } from "@axon/logger";
 
 // Create enhanced tracker
 const performanceTracker = new EnhancedPerformanceTracker({
@@ -61,16 +63,17 @@ setGlobalPerformanceTracker(performanceTracker);
 ### 2. Migrate Manual Timing
 
 **Before: Manual Timing with console.time**
+
 ```typescript
 class UserService {
   async fetchUser(id: string) {
-    console.time('fetchUser');
+    console.time("fetchUser");
     try {
       const user = await this.database.findById(id);
-      console.timeEnd('fetchUser');
+      console.timeEnd("fetchUser");
       return user;
     } catch (error) {
-      console.timeEnd('fetchUser');
+      console.timeEnd("fetchUser");
       throw error;
     }
   }
@@ -78,14 +81,15 @@ class UserService {
 ```
 
 **After: Enhanced Performance Decorators**
+
 ```typescript
-import { DatabaseTimed } from '@axon/logger';
+import { DatabaseTimed } from "@axon/logger";
 
 class UserService {
-  @DatabaseTimed({ 
-    category: 'user-operations',
+  @DatabaseTimed({
+    category: "user-operations",
     threshold: 100,
-    budget: { maxLatencyMs: 200, onExceeded: 'warn' }
+    budget: { maxLatencyMs: 200, onExceeded: "warn" },
   })
   async fetchUser(id: string) {
     return await this.database.findById(id);
@@ -94,14 +98,15 @@ class UserService {
 ```
 
 **Alternative: Manual Tracking**
+
 ```typescript
 class UserService {
   constructor(private performanceTracker: EnhancedPerformanceTracker) {}
 
   async fetchUser(id: string) {
-    const measurement = this.performanceTracker.startOperation('user-fetch', {
-      operation: 'database',
-      userId: id.substring(0, 8) + '...',
+    const measurement = this.performanceTracker.startOperation("user-fetch", {
+      operation: "database",
+      userId: id.substring(0, 8) + "...",
     });
 
     try {
@@ -123,21 +128,23 @@ class UserService {
 ### Phase 1: Add Enhanced Tracker
 
 1. **Install dependencies** (if not already installed):
+
    ```bash
    pnpm add @axon/logger
    ```
 
 2. **Create performance configuration**:
+
    ```typescript
    // config/performance.ts
-   import { EnhancedPerformanceTracker, IEnhancedPerformanceConfig } from '@axon/logger';
+   import { EnhancedPerformanceTracker, IEnhancedPerformanceConfig } from "@axon/logger";
 
    export const performanceConfig: IEnhancedPerformanceConfig = {
-     enabled: process.env.NODE_ENV !== 'test',
-     sampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+     enabled: process.env.NODE_ENV !== "test",
+     sampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
      thresholdMs: 100,
      enableMemoryTracking: true,
-     enableGCTracking: process.env.NODE_ENV === 'production',
+     enableGCTracking: process.env.NODE_ENV === "production",
      maxLatencyHistory: 1000,
      maxGCEventHistory: 50,
      resourceMetricsInterval: 5000,
@@ -154,10 +161,11 @@ class UserService {
    ```
 
 3. **Initialize tracker at application startup**:
+
    ```typescript
    // app.ts
-   import { EnhancedPerformanceTracker, setGlobalPerformanceTracker } from '@axon/logger';
-   import { performanceConfig } from './config/performance.js';
+   import { EnhancedPerformanceTracker, setGlobalPerformanceTracker } from "@axon/logger";
+   import { performanceConfig } from "./config/performance.js";
 
    const performanceTracker = new EnhancedPerformanceTracker(performanceConfig);
    setGlobalPerformanceTracker(performanceTracker);
@@ -168,6 +176,7 @@ class UserService {
 Start with your most performance-sensitive operations:
 
 1. **Database Operations**:
+
    ```typescript
    // Before
    class UserRepository {
@@ -177,12 +186,12 @@ Start with your most performance-sensitive operations:
    }
 
    // After
-   import { DatabaseTimed } from '@axon/logger';
+   import { DatabaseTimed } from "@axon/logger";
 
    class UserRepository {
-     @DatabaseTimed({ 
+     @DatabaseTimed({
        threshold: 200,
-       budget: { maxLatencyMs: 500, onExceeded: 'warn' }
+       budget: { maxLatencyMs: 500, onExceeded: "warn" },
      })
      async findById(id: string) {
        return await this.db.findOne({ id });
@@ -191,20 +200,21 @@ Start with your most performance-sensitive operations:
    ```
 
 2. **API Endpoints**:
+
    ```typescript
    // Before
-   app.get('/api/users/:id', async (req, res) => {
+   app.get("/api/users/:id", async (req, res) => {
      const user = await userService.fetchUser(req.params.id);
      res.json(user);
    });
 
    // After
-   import { NetworkTimed } from '@axon/logger';
+   import { NetworkTimed } from "@axon/logger";
 
    class UserController {
-     @NetworkTimed({ 
-       category: 'api-endpoints',
-       threshold: 300 
+     @NetworkTimed({
+       category: "api-endpoints",
+       threshold: 300,
      })
      async getUser(id: string) {
        return await this.userService.fetchUser(id);
@@ -213,22 +223,23 @@ Start with your most performance-sensitive operations:
    ```
 
 3. **Heavy Computations**:
+
    ```typescript
    // Before
    function processLargeDataset(data: any[]) {
-     return data.map(item => heavyTransformation(item));
+     return data.map((item) => heavyTransformation(item));
    }
 
    // After
-   import { ComputationTimed } from '@axon/logger';
+   import { ComputationTimed } from "@axon/logger";
 
    class DataProcessor {
-     @ComputationTimed({ 
+     @ComputationTimed({
        threshold: 100,
-       trackParameters: true
+       trackParameters: true,
      })
      processLargeDataset(data: any[]) {
-       return data.map(item => this.heavyTransformation(item));
+       return data.map((item) => this.heavyTransformation(item));
      }
    }
    ```
@@ -236,9 +247,10 @@ Start with your most performance-sensitive operations:
 ### Phase 3: Add Monitoring and Alerting
 
 1. **Set up performance monitoring**:
+
    ```typescript
    // monitoring.ts
-   import { EnhancedPerformanceTracker } from '@axon/logger';
+   import { EnhancedPerformanceTracker } from "@axon/logger";
 
    export function setupPerformanceMonitoring(tracker: EnhancedPerformanceTracker) {
      // Detailed monitoring every 30 seconds
@@ -247,7 +259,7 @@ Start with your most performance-sensitive operations:
        const memoryAnalysis = tracker.getMemoryAnalysis();
 
        // Log performance metrics
-       console.log('Performance Metrics:', {
+       console.log("Performance Metrics:", {
          operations: metrics.operation.count,
          avgLatency: `${metrics.operation.averageLatency.toFixed(2)}ms`,
          p95Latency: `${metrics.operation.p95Latency.toFixed(2)}ms`,
@@ -257,36 +269,37 @@ Start with your most performance-sensitive operations:
 
        // Alert on issues
        if (memoryAnalysis.leakDetected) {
-         console.error('🚨 MEMORY LEAK DETECTED!', memoryAnalysis.recommendations);
+         console.error("🚨 MEMORY LEAK DETECTED!", memoryAnalysis.recommendations);
        }
 
        if (metrics.operation.p95Latency > 1000) {
-         console.warn('⚠️ HIGH LATENCY DETECTED:', metrics.operation.p95Latency);
+         console.warn("⚠️ HIGH LATENCY DETECTED:", metrics.operation.p95Latency);
        }
      }, 30000);
    }
    ```
 
 2. **Configure performance budgets**:
+
    ```typescript
-   import { setPerformanceBudget } from '@axon/logger';
+   import { setPerformanceBudget } from "@axon/logger";
 
    // Set budgets for different operation types
-   setPerformanceBudget('database', {
+   setPerformanceBudget("database", {
      maxLatencyMs: 200,
-     onExceeded: 'warn',
+     onExceeded: "warn",
      warningThreshold: 0.8,
    });
 
-   setPerformanceBudget('network', {
+   setPerformanceBudget("network", {
      maxLatencyMs: 500,
-     onExceeded: 'error',
+     onExceeded: "error",
      warningThreshold: 0.7,
    });
 
-   setPerformanceBudget('computation', {
+   setPerformanceBudget("computation", {
      maxLatencyMs: 100,
-     onExceeded: 'custom',
+     onExceeded: "custom",
      customHandler: (category, latency, budget) => {
        // Custom alert logic
        sendSlackAlert(`High computation latency: ${latency}ms`);
@@ -297,6 +310,7 @@ Start with your most performance-sensitive operations:
 ### Phase 4: Environment-Specific Optimization
 
 1. **Development Environment**:
+
    ```typescript
    const developmentConfig: IEnhancedPerformanceConfig = {
      enabled: true,
@@ -340,9 +354,9 @@ class OrderService {
 }
 
 // After: Comprehensive performance tracking
-import { DatabaseTimed, NetworkTimed, Profile } from '@axon/logger';
+import { DatabaseTimed, NetworkTimed, Profile } from "@axon/logger";
 
-@Profile({ category: 'order-service', threshold: 200 })
+@Profile({ category: "order-service", threshold: 200 })
 class OrderService {
   @DatabaseTimed({ threshold: 100 })
   async processOrder(data: CreateOrderRequest) {
@@ -371,18 +385,18 @@ async function fetchUserData(userId: string) {
 }
 
 // After: Wrapped with performance tracking
-import { withTiming } from '@axon/logger';
+import { withTiming } from "@axon/logger";
 
 const fetchUserData = withTiming(
   async (userId: string) => {
     const user = await db.users.findById(userId);
     return user;
   },
-  { 
-    category: 'user-data-fetch',
+  {
+    category: "user-data-fetch",
     threshold: 100,
-    metadata: { operation: 'database' }
-  }
+    metadata: { operation: "database" },
+  },
 );
 ```
 
@@ -399,20 +413,20 @@ class LegacyService {
       console.log(`Processing took ${duration}ms`);
       return result;
     } catch (error) {
-      console.error('Processing failed:', error);
+      console.error("Processing failed:", error);
       throw error;
     }
   }
 }
 
 // After: Enhanced tracking
-import { ComputationTimed } from '@axon/logger';
+import { ComputationTimed } from "@axon/logger";
 
 class LegacyService {
-  @ComputationTimed({ 
-    category: 'legacy-processing',
+  @ComputationTimed({
+    category: "legacy-processing",
     threshold: 200,
-    trackParameters: true
+    trackParameters: true,
   })
   async processData(data: any[]) {
     return await this.heavyProcessing(data);
@@ -423,18 +437,21 @@ class LegacyService {
 ## Migration Checklist
 
 ### Pre-Migration
+
 - [ ] Review current performance monitoring approach
 - [ ] Identify critical performance bottlenecks
 - [ ] Plan migration phases (critical paths first)
 - [ ] Set up testing environment
 
 ### Configuration
+
 - [ ] Create performance configuration
 - [ ] Set up environment-specific configs
 - [ ] Initialize global performance tracker
 - [ ] Configure performance budgets
 
 ### Code Migration
+
 - [ ] Migrate database operations to `@DatabaseTimed`
 - [ ] Migrate API endpoints to `@NetworkTimed`
 - [ ] Migrate computations to `@ComputationTimed`
@@ -442,18 +459,21 @@ class LegacyService {
 - [ ] Migrate I/O operations to `@IOTimed`
 
 ### Monitoring Setup
+
 - [ ] Set up performance metrics collection
 - [ ] Configure alerting thresholds
 - [ ] Set up memory leak detection
 - [ ] Configure GC monitoring
 
 ### Testing & Validation
+
 - [ ] Test performance tracking in development
 - [ ] Validate metrics collection
 - [ ] Test alert mechanisms
 - [ ] Performance test under load
 
 ### Production Deployment
+
 - [ ] Deploy with conservative sampling rates
 - [ ] Monitor performance impact
 - [ ] Adjust thresholds based on production data
@@ -464,6 +484,7 @@ class LegacyService {
 ### Common Issues
 
 1. **High Memory Usage**:
+
    ```typescript
    // Reduce pool sizes
    const config = {
@@ -475,6 +496,7 @@ class LegacyService {
    ```
 
 2. **Performance Impact**:
+
    ```typescript
    // Reduce sampling rate
    const config = {
@@ -498,6 +520,7 @@ class LegacyService {
 ### Performance Tuning
 
 1. **Production Optimization**:
+
    ```typescript
    const productionConfig: IEnhancedPerformanceConfig = {
      enabled: true,

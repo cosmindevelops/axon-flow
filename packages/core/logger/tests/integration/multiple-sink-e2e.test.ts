@@ -37,7 +37,7 @@ describe("Multiple Sink Configuration E2E", () => {
   beforeEach(async () => {
     mockFetch = vi.mocked(fetch);
     mockFetch.mockClear();
-    
+
     // Reset fs mock to default state
     vi.mocked((await import("fs")).createWriteStream).mockReturnValue({
       write: vi.fn(),
@@ -46,8 +46,8 @@ describe("Multiple Sink Configuration E2E", () => {
       once: vi.fn(),
       emit: vi.fn(),
     } as any);
-    
-    const fsMock = await vi.importMock("fs") as any;
+
+    const fsMock = (await vi.importMock("fs")) as any;
     vi.mocked(fsMock.promises.mkdir).mockResolvedValue(undefined);
     vi.mocked(fsMock.promises.stat).mockResolvedValue({ size: 1024 } as any);
     vi.mocked(fsMock.promises.appendFile).mockResolvedValue(undefined);
@@ -185,7 +185,7 @@ describe("Multiple Sink Configuration E2E", () => {
       end: vi.fn((callback) => callback && callback()),
       on: vi.fn(),
     };
-    const fs = await vi.importMock("fs") as any;
+    const fs = (await vi.importMock("fs")) as any;
     vi.mocked(fs.createWriteStream).mockReturnValue(mockFileStream);
 
     // Mock successful remote response
@@ -281,21 +281,21 @@ describe("Multiple Sink Configuration E2E", () => {
     await expect(manager.write(errorEntry)).resolves.not.toThrow();
     await expect(manager.write(errorEntry)).resolves.not.toThrow();
     await expect(manager.write(errorEntry)).resolves.not.toThrow();
-    
+
     // Force flush to ensure all writes are attempted
     await manager.flush();
-    
+
     // Small delay to allow async operations to complete
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Verify circuit breaker metrics - should have failed messages now
     const remoteMetrics = manager.getTransportMetrics()["remote-centralized"];
     expect(remoteMetrics).toBeDefined();
     expect(remoteMetrics?.circuitBreakerMetrics).toBeDefined();
-    
+
     // Check that fetch was called (indicating attempts were made)
     expect(mockFetch).toHaveBeenCalled();
-    
+
     // The messagesFailed count should be greater than 0 after flush and delay
     expect(remoteMetrics?.messagesFailed).toBeGreaterThan(0);
 
@@ -303,7 +303,7 @@ describe("Multiple Sink Configuration E2E", () => {
     console.log("Testing file rotation");
 
     // Mock large file size to trigger rotation
-    const fsMockForRotation = await vi.importMock("fs") as any;
+    const fsMockForRotation = (await vi.importMock("fs")) as any;
     vi.mocked(fsMockForRotation.promises.stat).mockResolvedValue({ size: 11 * 1024 * 1024 }); // 11MB > 10MB limit
 
     const largeEntry: ILogEntry = {

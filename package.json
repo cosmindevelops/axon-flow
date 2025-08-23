@@ -74,7 +74,6 @@
     "pre-commit": "lint-staged",
     "pre-push": "pnpm verify",
     "// Utilities": "===== Developer Utilities ====",
-    "create:package": "node tools/scripts/axon-tools.cjs utils create-package",
     "info": "pnpm list --recursive --depth 0",
     "outdated": "pnpm outdated --recursive"
   },
@@ -99,7 +98,7 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.40.0",
     "vitest": "^3.2.4",
-    "zod": "4.0.17"
+    "zod": "^4.0.17"
   },
   "pnpm": {
     "peerDependencyRules": {

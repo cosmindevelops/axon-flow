@@ -47,7 +47,7 @@ describe("FileRotationManager", () => {
     supportsStreams: () => true,
     supportsCompression: () => true,
     getDetection: () => ({
-      platform: 'node' as const,
+      platform: "node" as const,
       isNode: true,
       isBrowser: false,
       isDeno: false,
@@ -55,10 +55,10 @@ describe("FileRotationManager", () => {
       supportsStreams: true,
       supportsCompression: true,
       supportsHighResTime: true,
-    })
+    }),
   };
-  
-  vi.spyOn(PlatformDetector, 'getInstance').mockReturnValue(platformMock as any);
+
+  vi.spyOn(PlatformDetector, "getInstance").mockReturnValue(platformMock as any);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -222,7 +222,7 @@ describe("FileRotationManager", () => {
   describe("Error handling", () => {
     it("should handle write errors gracefully", async () => {
       rotationManager = new FileRotationManager(testBasePath, {
-        strategy: "size", 
+        strategy: "size",
         maxSize: 1000,
         maxFiles: 3,
       });

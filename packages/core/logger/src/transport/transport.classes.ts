@@ -539,7 +539,7 @@ export class FileTransportProvider implements ITransportProvider {
       this.buffer.push(logLine);
 
       // Update current file size tracking
-      const lineSize = Buffer.byteLength(`${logLine  }\n`, "utf8");
+      const lineSize = Buffer.byteLength(`${logLine}\n`, "utf8");
       this.currentFileSize += lineSize;
 
       // Auto-flush if buffer gets too large

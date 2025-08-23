@@ -226,7 +226,7 @@ describe("Correlation Schemas", () => {
     it("should reject invalid configuration values", () => {
       const invalidConfigs = [
         { maxEntropyCache: -1 }, // negative value
-        { maxEntropyCache: 0 }, // zero value  
+        { maxEntropyCache: 0 }, // zero value
         { enableCollisionDetection: "yes" }, // non-boolean
         { maxEntropyCache: "invalid" }, // non-number
         "not-an-object",

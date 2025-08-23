@@ -112,7 +112,7 @@ export class ConfigBuilderFactory {
 
     // Default fallback
     if (this.options.strictMode) {
-      throw new ConfigurationError("Unable to detect environment in strict mode", {
+      throw new ConfigurationError("Unable to detect environment in strict mode", "ENVIRONMENT_DETECTION_ERROR", {
         operation: "detectEnvironment",
       });
     }

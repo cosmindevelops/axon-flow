@@ -4,10 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import {
-  PerformancePlatformDetector,
-  EnhancedPerformanceTracker,
-} from "../../src/performance/performance.classes.js";
+import { PerformancePlatformDetector, EnhancedPerformanceTracker } from "../../src/performance/performance.classes.js";
 import type {
   IEnhancedPerformanceConfig,
   IPerformanceParityReport,
@@ -60,13 +57,13 @@ describe("Performance Parity Validation", () => {
       for (let i = 0; i < operations; i++) {
         const measurement = tracker.startOperation("baseline-op");
         // Simulate consistent work
-        await new Promise(resolve => setTimeout(resolve, 1));
+        await new Promise((resolve) => setTimeout(resolve, 1));
         tracker.finishOperation(measurement);
       }
       const endTime = Date.now();
 
       const metrics = tracker.getMetrics();
-      
+
       expect(metrics.operation.count).toBe(operations + 10); // Including warmup
       expect(metrics.operation.averageLatency).toBeGreaterThan(0);
       expect(metrics.operation.averageLatency).toBeLessThan(50); // Should be fast
@@ -83,12 +80,12 @@ describe("Performance Parity Validation", () => {
 
       for (let batch = 0; batch < batches; batch++) {
         const batchStart = Date.now();
-        
+
         for (let i = 0; i < opsPerBatch; i++) {
           const measurement = tracker.startOperation(`batch-${batch}-op`);
           tracker.finishOperation(measurement);
         }
-        
+
         const batchEnd = Date.now();
         const throughput = opsPerBatch / ((batchEnd - batchStart) / 1000);
         throughputMeasurements.push(throughput);
@@ -96,7 +93,8 @@ describe("Performance Parity Validation", () => {
 
       // Calculate coefficient of variation to measure consistency
       const mean = throughputMeasurements.reduce((a, b) => a + b, 0) / throughputMeasurements.length;
-      const variance = throughputMeasurements.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / throughputMeasurements.length;
+      const variance =
+        throughputMeasurements.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / throughputMeasurements.length;
       const standardDeviation = Math.sqrt(variance);
       const coefficientOfVariation = (standardDeviation / mean) * 100;
 
@@ -215,7 +213,7 @@ describe("Performance Parity Validation", () => {
       });
 
       // Variance between configurations should be reasonable
-      const latencies = results.map(r => r.current.averageLatency);
+      const latencies = results.map((r) => r.current.averageLatency);
       const maxLatency = Math.max(...latencies);
       const minLatency = Math.min(...latencies);
       const configVariance = ((maxLatency - minLatency) / minLatency) * 100;
@@ -227,7 +225,7 @@ describe("Performance Parity Validation", () => {
       const samplingRates = [0.1, 0.5, 1.0];
       const results: { rate: number; avgLatency: number; count: number }[] = [];
 
-      samplingRates.forEach(rate => {
+      samplingRates.forEach((rate) => {
         const config = { ...baseConfig, sampleRate: rate };
         const tracker = new EnhancedPerformanceTracker(config);
 
@@ -252,12 +250,12 @@ describe("Performance Parity Validation", () => {
       expect(results[1].count).toBeGreaterThanOrEqual(results[0].count); // 0.5 >= 0.1
 
       // Latency measurements should be consistent regardless of sampling
-      const latencies = results.map(r => r.avgLatency).filter(l => l > 0);
+      const latencies = results.map((r) => r.avgLatency).filter((l) => l > 0);
       if (latencies.length > 1) {
         const maxLat = Math.max(...latencies);
         const minLat = Math.min(...latencies);
         const samplingVariance = ((maxLat - minLat) / minLat) * 100;
-        
+
         expect(samplingVariance).toBeLessThan(100); // Sampling shouldn't dramatically affect latency
       }
     });
@@ -272,7 +270,7 @@ describe("Performance Parity Validation", () => {
 
       // Create memory pressure by generating large metadata
       const largeData = new Array(1000).fill("test-data");
-      
+
       for (let i = 0; i < 30; i++) {
         const measurement = tracker.startOperation("memory-pressure", {
           iteration: i,
@@ -288,7 +286,7 @@ describe("Performance Parity Validation", () => {
       // Should still maintain reasonable performance
       expect(parityReport.current.count).toBe(30);
       expect(memoryAnalysis.health).not.toBe("critical");
-      
+
       // Variance might be higher but should be manageable
       expect(parityReport.variance).toBeLessThan(150);
 
@@ -308,14 +306,14 @@ describe("Performance Parity Validation", () => {
 
       // Perform operations within platform constraints
       const operationCount = Math.min(100, platformInfo.capabilities.recommendedPoolSize * 2);
-      
+
       for (let i = 0; i < operationCount; i++) {
         const measurement = tracker.startOperation("platform-adaptive");
         tracker.finishOperation(measurement);
       }
 
       const parityReport = tracker.validatePerformanceParity();
-      
+
       expect(parityReport.current.count).toBe(operationCount);
       expect(parityReport.variance).toBeLessThan(100);
 
@@ -336,29 +334,29 @@ describe("Performance Parity Validation", () => {
 
       for (let batch = 0; batch < batches; batch++) {
         const batchStart = Date.now();
-        
+
         for (let i = 0; i < opsPerBatch; i++) {
           const measurement = tracker.startOperation(`longrun-${batch}`);
           tracker.finishOperation(measurement);
         }
-        
+
         // Small delay between batches
-        await new Promise(resolve => setTimeout(resolve, 50));
-        
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
         const batchEnd = Date.now();
         results.push(batchEnd - batchStart);
       }
 
       const parityReport = tracker.validatePerformanceParity();
-      
+
       // Performance should remain stable across batches
       expect(parityReport.current.count).toBe(batches * opsPerBatch);
-      
+
       // Calculate stability across batches
       const avgBatchTime = results.reduce((a, b) => a + b, 0) / results.length;
       const batchVariance = results.reduce((acc, val) => acc + Math.pow(val - avgBatchTime, 2), 0) / results.length;
       const batchCV = (Math.sqrt(batchVariance) / avgBatchTime) * 100;
-      
+
       expect(batchCV).toBeLessThan(50); // Batch times should be relatively stable
 
       tracker.reset();
@@ -370,17 +368,17 @@ describe("Performance Parity Validation", () => {
 
       for (let iteration = 0; iteration < iterations; iteration++) {
         const tracker = new EnhancedPerformanceTracker(baseConfig);
-        
+
         const startTime = Date.now();
-        
+
         for (let i = 0; i < 50; i++) {
           const measurement = tracker.startOperation(`lifecycle-${iteration}`);
           tracker.finishOperation(measurement);
         }
-        
+
         const metrics = tracker.getMetrics();
         results.push(metrics.operation.averageLatency);
-        
+
         tracker.reset();
       }
 
@@ -390,7 +388,7 @@ describe("Performance Parity Validation", () => {
       const cv = (Math.sqrt(variance) / avgLatency) * 100;
 
       expect(cv).toBeLessThan(30); // Consistency across instances
-      results.forEach(latency => {
+      results.forEach((latency) => {
         expect(latency).toBeGreaterThan(0);
         expect(latency).toBeLessThan(20); // Should remain fast
       });
@@ -423,7 +421,7 @@ describe("Performance Parity Validation", () => {
       }
 
       const parityReport = tracker.validatePerformanceParity();
-      
+
       expect(parityReport.current.count).toBe(40); // Should count all successful operations
       expect(parityReport.variance).toBeLessThan(100);
 
@@ -453,7 +451,7 @@ describe("Performance Parity Validation", () => {
       }
 
       const parityReport = tracker.validatePerformanceParity();
-      
+
       expect(parityReport.current.count).toBe(50);
       // Configuration changes might increase variance but shouldn't break functionality
       expect(parityReport.variance).toBeLessThan(200);

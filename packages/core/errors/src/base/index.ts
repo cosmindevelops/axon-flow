@@ -2,38 +2,37 @@
  * Base error classes and core error handling
  */
 
-import type { IErrorContext } from "../types/index.js";
+// Types
+export type * from "./base-error.types.js";
 
-/**
- * Base enhanced error class with context preservation
- */
-export class AxonError extends Error {
-  public readonly context: IErrorContext;
-  public readonly code: string;
+// Classes
+export * from "./base-error.classes.js";
 
-  constructor(message: string, code = "UNKNOWN_ERROR", context: Partial<IErrorContext> = {}) {
-    super(message);
-    this.name = this.constructor.name;
-    this.code = code;
-    this.context = {
-      timestamp: new Date().toISOString(),
-      ...context,
-    };
+// Schemas
+export * from "./base-error.schemas.js";
 
-    // Maintains proper stack trace for where our error was thrown
-    Error.captureStackTrace(this, this.constructor);
-  }
-
-  /**
-   * Serialize error for logging and transmission
-   */
-  toJSON(): Record<string, unknown> {
-    return {
-      name: this.name,
-      message: this.message,
-      code: this.code,
-      context: this.context,
-      stack: this.stack,
-    };
-  }
-}
+// Re-export commonly used base types
+export type {
+  ErrorSeverity,
+  ErrorCategory,
+  IEnhancedErrorContext,
+  IErrorCode,
+  ISerializedError,
+  IErrorHandler,
+  IBaseAxonError,
+  IChainableError,
+  IAggregateError,
+  IErrorFactory,
+  IEnhancedErrorFactory,
+  IDomainErrorFactory,
+  IErrorFactoryBuilder,
+  ISystemErrorBuilder,
+  IApplicationErrorBuilder,
+  IValidationErrorBuilder,
+  INetworkErrorBuilder,
+  ISecurityErrorBuilder,
+  IAuthenticationErrorBuilder,
+  IErrorPool,
+  IErrorSystemConfig,
+  IErrorMetrics,
+} from "./base-error.types.js";

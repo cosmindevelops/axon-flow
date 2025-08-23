@@ -9,10 +9,7 @@ import {
   MemoryMonitor,
   EnhancedPerformanceTracker,
 } from "../../../src/performance/performance.classes.js";
-import type {
-  IEnhancedPerformanceConfig,
-  IPlatformInfo,
-} from "../../../src/performance/performance.types.js";
+import type { IEnhancedPerformanceConfig, IPlatformInfo } from "../../../src/performance/performance.types.js";
 
 // Mock browser globals for testing
 const createBrowserMocks = () => {
@@ -20,7 +17,8 @@ const createBrowserMocks = () => {
     location: { href: "https://example.com" },
     document: {},
     navigator: {
-      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
       product: "Gecko",
     },
   };
@@ -136,7 +134,8 @@ describe("Browser Compatibility", () => {
       const { mockWindow, mockPerformance } = createBrowserMocks();
 
       // Test Safari detection
-      mockWindow.navigator.userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Version/14.1.1 Safari/537.36";
+      mockWindow.navigator.userAgent =
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Version/14.1.1 Safari/537.36";
 
       delete (global as any).process;
       (global as any).window = mockWindow;
@@ -412,10 +411,10 @@ describe("Browser Compatibility", () => {
         const measurement = tracker.startOperation(`browser-test-${index}`);
         expect(measurement).toBeDefined();
         expect(measurement.id).toBeDefined();
-        
+
         tracker.finishOperation(measurement);
         const metrics = tracker.getMetrics();
-        
+
         expect(metrics.operation.count).toBe(1);
         tracker.reset();
       });
@@ -457,7 +456,7 @@ describe("Browser Compatibility", () => {
       (global as any).performance = mockPerformance;
 
       const tracker = new EnhancedPerformanceTracker(config);
-      
+
       // Simulate some operations
       for (let i = 0; i < 5; i++) {
         const measurement = tracker.startOperation("browser-validation");
@@ -465,7 +464,7 @@ describe("Browser Compatibility", () => {
       }
 
       const parityReport = tracker.validatePerformanceParity();
-      
+
       expect(parityReport.environment).toMatch(/browser/);
       expect(parityReport.variance).toBeGreaterThanOrEqual(0);
       expect(typeof parityReport.parityMaintained).toBe("boolean");

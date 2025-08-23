@@ -57,7 +57,7 @@ export class MemoryConfigRepository implements IWritableConfigRepository {
       return result as z.infer<T>;
     } catch (error: unknown) {
       if (error instanceof ZodError) {
-        throw new ConfigurationError("Configuration validation failed", {
+        throw new ConfigurationError("Configuration validation failed", "CONFIG_VALIDATION_ERROR", {
           component: "MemoryConfigRepository",
           operation: "load",
           metadata: {
@@ -65,7 +65,7 @@ export class MemoryConfigRepository implements IWritableConfigRepository {
           },
         });
       }
-      throw new ConfigurationError("Configuration loading failed", {
+      throw new ConfigurationError("Configuration loading failed", "CONFIG_LOAD_ERROR", {
         component: "MemoryConfigRepository",
         operation: "load",
         metadata: { error: error instanceof Error ? error.message : String(error) },
@@ -83,7 +83,7 @@ export class MemoryConfigRepository implements IWritableConfigRepository {
       return result as z.infer<T>;
     } catch (error: unknown) {
       if (error instanceof ZodError) {
-        throw new ConfigurationError("Schema validation failed", {
+        throw new ConfigurationError("Schema validation failed", "SCHEMA_VALIDATION_ERROR", {
           component: "MemoryConfigRepository",
           operation: "validate",
           metadata: {
@@ -91,7 +91,7 @@ export class MemoryConfigRepository implements IWritableConfigRepository {
           },
         });
       }
-      throw new ConfigurationError("Validation failed", {
+      throw new ConfigurationError("Validation failed", "VALIDATION_ERROR", {
         component: "MemoryConfigRepository",
         operation: "validate",
         metadata: { error: error instanceof Error ? error.message : String(error) },
@@ -388,7 +388,7 @@ export class CachedConfigRepository implements IConfigRepository {
       return value as z.infer<T>;
     } catch (error) {
       this.updatePerformanceMetrics(performance.now() - startTime);
-      throw new ConfigurationError("Failed to load configuration from cache", {
+      throw new ConfigurationError("Failed to load configuration from cache", "CACHE_LOAD_ERROR", {
         component: "CachedConfigRepository",
         operation: "load",
         metadata: {

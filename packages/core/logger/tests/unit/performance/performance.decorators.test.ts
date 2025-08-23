@@ -32,11 +32,11 @@ import {
   createPrometheusExporter,
 } from "../../../src/performance/performance.decorators.js";
 import { EnhancedPerformanceTracker } from "../../../src/performance/performance.classes.js";
-import type { 
+import type {
   IEnhancedPerformanceConfig,
   IPerformanceBudget,
   IDecoratorActivationConditions,
-  PerformanceCategory
+  PerformanceCategory,
 } from "../../../src/performance/performance.types.js";
 
 // Mock console methods to avoid noise in tests
@@ -619,14 +619,14 @@ describe("Performance Decorators", () => {
     describe("Parameter Tracking", () => {
       it("should track method parameters when enabled", () => {
         class TestService {
-          @Timed({ 
-            category: "param-tracking", 
+          @Timed({
+            category: "param-tracking",
             trackParameters: true,
             parameterOptions: {
               includeValues: true,
               includeTypes: true,
-              maxValueLength: 100
-            }
+              maxValueLength: 100,
+            },
           })
           processData(userId: string, data: { name: string; age: number }): string {
             return `Processed ${userId}: ${data.name}`;
@@ -642,13 +642,13 @@ describe("Performance Decorators", () => {
 
       it("should exclude specified parameters from tracking", () => {
         class TestService {
-          @Timed({ 
-            category: "exclude-params", 
+          @Timed({
+            category: "exclude-params",
             trackParameters: true,
             parameterOptions: {
               includeValues: true,
-              excludeParams: ["param1"]
-            }
+              excludeParams: ["param1"],
+            },
           })
           sensitiveOperation(password: string, userData: any): string {
             return "processed";
@@ -668,13 +668,13 @@ describe("Performance Decorators", () => {
         const budget: IPerformanceBudget = {
           maxLatencyMs: 10,
           warningThreshold: 0.5,
-          onExceeded: "warn"
+          onExceeded: "warn",
         };
 
         class TestService {
-          @Timed({ 
-            category: "budget-test", 
-            budget 
+          @Timed({
+            category: "budget-test",
+            budget,
           })
           slowOperation(): string {
             // Simulate slow operation
@@ -696,13 +696,13 @@ describe("Performance Decorators", () => {
       it("should throw error when budget exceeded and configured to error", () => {
         const budget: IPerformanceBudget = {
           maxLatencyMs: 5,
-          onExceeded: "error"
+          onExceeded: "error",
         };
 
         class TestService {
-          @Timed({ 
-            category: "budget-error-test", 
-            budget 
+          @Timed({
+            category: "budget-error-test",
+            budget,
           })
           slowOperation(): string {
             const start = Date.now();
@@ -714,7 +714,7 @@ describe("Performance Decorators", () => {
         }
 
         const service = new TestService();
-        
+
         // Should throw due to budget exceeded
         expect(() => service.slowOperation()).toThrow(/Performance budget exceeded/);
       });
@@ -732,13 +732,13 @@ describe("Performance Decorators", () => {
         process.env["NODE_ENV"] = "production";
 
         const conditions: IDecoratorActivationConditions = {
-          nodeEnv: ["production", "staging"]
+          nodeEnv: ["production", "staging"],
         };
 
         class TestService {
-          @Timed({ 
-            category: "conditional-active", 
-            activation: conditions 
+          @Timed({
+            category: "conditional-active",
+            activation: conditions,
           })
           testMethod(): string {
             return "active";
@@ -756,13 +756,13 @@ describe("Performance Decorators", () => {
         process.env["NODE_ENV"] = "development";
 
         const conditions: IDecoratorActivationConditions = {
-          nodeEnv: ["production", "staging"]
+          nodeEnv: ["production", "staging"],
         };
 
         class TestService {
-          @Timed({ 
-            category: "conditional-inactive", 
-            activation: conditions 
+          @Timed({
+            category: "conditional-inactive",
+            activation: conditions,
           })
           testMethod(): string {
             return "inactive";
@@ -780,13 +780,13 @@ describe("Performance Decorators", () => {
         process.env["FEATURE_PERF_TRACKING"] = "true";
 
         const conditions: IDecoratorActivationConditions = {
-          featureFlags: ["FEATURE_PERF_TRACKING"]
+          featureFlags: ["FEATURE_PERF_TRACKING"],
         };
 
         class TestService {
-          @Timed({ 
-            category: "feature-flag-test", 
-            activation: conditions 
+          @Timed({
+            category: "feature-flag-test",
+            activation: conditions,
           })
           testMethod(): string {
             return "flagged";
@@ -809,15 +809,15 @@ describe("Performance Decorators", () => {
           @DatabaseTimed({ threshold: 100 })
           async findUser(id: string): Promise<{ id: string; name: string }> {
             // Simulate database operation
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise((resolve) => setTimeout(resolve, 10));
             return { id, name: "User" };
           }
         }
 
         const repo = new UserRepository();
-        return repo.findUser("123").then(result => {
+        return repo.findUser("123").then((result) => {
           expect(result.id).toBe("123");
-          
+
           const metrics = getDecoratorMetrics();
           expect(metrics.operation.count).toBeGreaterThan(0);
         });
@@ -829,13 +829,13 @@ describe("Performance Decorators", () => {
         class ApiService {
           @NetworkTimed({ threshold: 300 })
           async fetchData(endpoint: string): Promise<string> {
-            await new Promise(resolve => setTimeout(resolve, 5));
+            await new Promise((resolve) => setTimeout(resolve, 5));
             return `Data from ${endpoint}`;
           }
         }
 
         const service = new ApiService();
-        return service.fetchData("/api/users").then(result => {
+        return service.fetchData("/api/users").then((result) => {
           expect(result).toContain("/api/users");
         });
       });
@@ -846,7 +846,7 @@ describe("Performance Decorators", () => {
         class DataProcessor {
           @ComputationTimed({ threshold: 50 })
           processArray(data: number[]): number[] {
-            return data.map(x => x * 2);
+            return data.map((x) => x * 2);
           }
         }
 
@@ -854,7 +854,7 @@ describe("Performance Decorators", () => {
         const result = processor.processArray([1, 2, 3, 4, 5]);
 
         expect(result).toEqual([2, 4, 6, 8, 10]);
-        
+
         const metrics = getDecoratorMetrics();
         expect(metrics.operation.count).toBeGreaterThan(0);
       });
@@ -874,7 +874,7 @@ describe("Performance Decorators", () => {
         const result = cache.get("exists");
 
         expect(result).toBe("cached-value");
-        
+
         const metrics = getDecoratorMetrics();
         expect(metrics.operation.count).toBeGreaterThan(0);
       });
@@ -894,7 +894,7 @@ describe("Performance Decorators", () => {
         const result = service.readFile("/path/to/file.txt");
 
         expect(result).toContain("/path/to/file.txt");
-        
+
         const metrics = getDecoratorMetrics();
         expect(metrics.operation.count).toBeGreaterThan(0);
       });
@@ -909,10 +909,7 @@ describe("Performance Decorators", () => {
 
       it("should apply inner decorator when conditions are met", () => {
         class TestService {
-          @ConditionalTiming(
-            { nodeEnv: ["production"] },
-            DatabaseTimed({ threshold: 100 })
-          )
+          @ConditionalTiming({ nodeEnv: ["production"] }, DatabaseTimed({ threshold: 100 }))
           conditionalMethod(): string {
             return "conditional";
           }
@@ -929,10 +926,7 @@ describe("Performance Decorators", () => {
         process.env["NODE_ENV"] = "development";
 
         class TestService {
-          @ConditionalTiming(
-            { nodeEnv: ["production"] },
-            DatabaseTimed({ threshold: 100 })
-          )
+          @ConditionalTiming({ nodeEnv: ["production"] }, DatabaseTimed({ threshold: 100 }))
           conditionalMethod(): string {
             return "conditional";
           }
@@ -951,7 +945,7 @@ describe("Performance Decorators", () => {
         class TestService {
           @ComposeDecorators([
             { decorator: DatabaseTimed(), order: 1 },
-            { decorator: Timed({ category: "business-logic" }), order: 2 }
+            { decorator: Timed({ category: "business-logic" }), order: 2 },
           ])
           composedMethod(): string {
             return "composed";
@@ -972,7 +966,7 @@ describe("Performance Decorators", () => {
           @SampledTiming({
             strategy: "fixed",
             baseRate: 1.0, // Always sample for testing
-            category: "sampled-operation"
+            category: "sampled-operation",
           })
           sampledMethod(): string {
             return "sampled";
@@ -993,12 +987,12 @@ describe("Performance Decorators", () => {
       it("should configure global decorator settings", () => {
         const budget: IPerformanceBudget = {
           maxLatencyMs: 100,
-          onExceeded: "warn"
+          onExceeded: "warn",
         };
 
         configureGlobalDecorators({
           globalSampleRate: 0.8,
-          budgets: new Map([["database", budget]])
+          budgets: new Map([["database", budget]]),
         });
 
         // Should not throw
@@ -1008,11 +1002,11 @@ describe("Performance Decorators", () => {
       it("should set performance budgets by category", () => {
         const budget: IPerformanceBudget = {
           maxLatencyMs: 200,
-          onExceeded: "error"
+          onExceeded: "error",
         };
 
         setPerformanceBudget("network", budget);
-        
+
         const budgets = getPerformanceBudgets();
         expect(budgets.has("network")).toBe(true);
         expect(budgets.get("network")).toEqual(budget);
@@ -1040,15 +1034,15 @@ describe("Performance Decorators", () => {
 
       it("should export metrics in JSON format", () => {
         const exporter = createJSONExporter("json-test");
-        
+
         const mockMetrics = {
           count: 10,
           averageLatency: 150,
-          totalTime: 1500
+          totalTime: 1500,
         };
-        
+
         const output = exporter.export(mockMetrics, { category: "test" });
-        
+
         expect(output).toContain('"count": 10');
         expect(output).toContain('"averageLatency": 150');
         expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Performance Metrics"));
@@ -1056,14 +1050,14 @@ describe("Performance Decorators", () => {
 
       it("should export metrics in Prometheus format", () => {
         const exporter = createPrometheusExporter("prometheus-test");
-        
+
         const mockMetrics = {
           count: 5,
-          totalTime: 750
+          totalTime: 750,
         };
-        
+
         const output = exporter.export(mockMetrics, { category: "test" });
-        
+
         expect(output).toContain("performance_test_count 5");
         expect(output).toContain("performance_test_latency_seconds_sum 0.75");
         expect(mockConsole.log).toHaveBeenCalledWith(expect.stringContaining("Prometheus Metrics"));

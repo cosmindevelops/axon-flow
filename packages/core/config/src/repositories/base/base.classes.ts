@@ -3,9 +3,14 @@
  * Abstract base classes and common repository functionality
  */
 
-import { ConfigurationError } from "@axon/errors";
+import { ConfigurationErrorCategory as ConfigurationError } from "@axon/errors";
 import type { z } from "zod";
-import type { IConfigChangeListener, IConfigRepository, IRepositoryMetadata } from "../../types/index.js";
+import type {
+  IConfigChangeListener,
+  IConfigRepository,
+  IRepositoryMetadata,
+  IConfigChangeEvent,
+} from "../../types/index.js";
 import type { IRepositoryPerformanceMetrics, IRepositoryState } from "./base.types.js";
 
 /**
@@ -111,7 +116,7 @@ export abstract class BaseConfigRepository implements IConfigRepository {
   /**
    * Notify all listeners of configuration changes
    */
-  protected notifyListeners(event: import("../../types/index.js").IConfigChangeEvent): void {
+  protected notifyListeners(event: IConfigChangeEvent): void {
     const listeners = Array.from(this.listeners);
     for (const listener of listeners) {
       try {
@@ -163,7 +168,7 @@ export abstract class BaseConfigRepository implements IConfigRepository {
   protected handleError(operation: string, error: unknown, context?: Record<string, unknown>): never {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
-    throw new ConfigurationError(`Repository ${this.name} ${operation} failed: ${errorMessage}`, {
+    throw new ConfigurationError(`Repository ${this.name} ${operation} failed: ${errorMessage}`, "REPOSITORY_ERROR", {
       component: this.name,
       operation,
       metadata: context ?? {},

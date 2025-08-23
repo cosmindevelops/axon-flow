@@ -5,6 +5,7 @@ High-performance structured logging package for Axon Flow - providing enterprise
 ## Features
 
 ### Core Performance Features
+
 - **High Performance**: 10,000+ logs/second throughput with advanced object pooling
 - **Structured JSON Logging**: Powered by Pino for optimal performance
 - **Circuit Breaker Pattern**: Resilient logging with automatic failure recovery
@@ -12,8 +13,9 @@ High-performance structured logging package for Axon Flow - providing enterprise
 - **Correlation ID Support**: Request tracing across service boundaries
 
 ### Enhanced Performance Tracking ⚡
+
 - **Advanced Memory Monitoring**: Real-time heap tracking with leak detection and pressure analysis
-- **Complete GC Tracking**: Comprehensive garbage collection event monitoring and performance impact analysis  
+- **Complete GC Tracking**: Comprehensive garbage collection event monitoring and performance impact analysis
 - **Cross-Environment Support**: Automatic optimization for Node.js (18-22), browsers, and Web Workers
 - **Object Pool Optimization**: >80% efficiency with dynamic scaling and measurement reuse
 - **Performance Decorators**: Automatic timing with `@Timed`, `@Profile`, `@Benchmark` decorators
@@ -23,6 +25,7 @@ High-performance structured logging package for Axon Flow - providing enterprise
 - **Platform Adaptation**: Automatic profile selection with <10% performance variance across environments
 
 ### Advanced Analytics
+
 - **Statistical Metrics**: P50/P95/P99 latencies, standard deviation, throughput analysis
 - **Resource Monitoring**: CPU usage, event loop delay, system load tracking
 - **Performance Budgets**: Category-based thresholds with custom violation handlers
@@ -75,10 +78,10 @@ class UserService {
     return await this.db.findById(id);
   }
 
-  @Timed({ 
-    category: 'business-logic',
-    performanceCategory: 'computation',
-    budget: { maxLatencyMs: 200, onExceeded: 'warn' }
+  @Timed({
+    category: "business-logic",
+    performanceCategory: "computation",
+    budget: { maxLatencyMs: 200, onExceeded: "warn" },
   })
   processUserData(userData: any): ProcessedUser {
     // Method is automatically profiled
@@ -93,7 +96,7 @@ console.log({
   avgLatency: `${metrics.operation.averageLatency}ms`,
   memoryHealth: performanceTracker.getMemoryAnalysis().health,
   gcEvents: metrics.gcEvents.length,
-  poolEfficiency: `${metrics.measurementPoolUtilization}%`
+  poolEfficiency: `${metrics.measurementPoolUtilization}%`,
 });
 ```
 
@@ -133,7 +136,7 @@ console.log({
 - `@Profile` - Class-level automatic profiling for all methods
 - `@Benchmark` - Performance benchmarking with statistical analysis
 - `@DatabaseTimed` - Optimized timing for database operations
-- `@NetworkTimed` - Network call timing with timeout awareness  
+- `@NetworkTimed` - Network call timing with timeout awareness
 - `@ComputationTimed` - CPU-intensive task monitoring
 - `@CacheTimed` - Cache operation performance tracking
 - `@IOTimed` - File system operation timing
@@ -167,7 +170,7 @@ console.log({
 **Cross-Environment Optimization:**
 
 - Automatic platform detection (Node.js 18-22, browsers, Web Workers)
-- Environment-specific performance profiles with optimized configurations  
+- Environment-specific performance profiles with optimized configurations
 - <10% performance variance validation across environments
 - Adaptive sampling rates and pool sizes per platform
 - Runtime capability detection and feature enablement
@@ -198,15 +201,15 @@ console.log({
 ### Performance Decorators
 
 ```typescript
-import { 
-  Timed, 
-  DatabaseTimed, 
-  NetworkTimed, 
+import {
+  Timed,
+  DatabaseTimed,
+  NetworkTimed,
   ComputationTimed,
   Profile,
   Benchmark,
   setPerformanceBudget,
-  setGlobalPerformanceTracker
+  setGlobalPerformanceTracker,
 } from "@axon/logger/performance";
 
 // Set global performance tracker
@@ -219,42 +222,42 @@ const tracker = new EnhancedPerformanceTracker({
 setGlobalPerformanceTracker(tracker);
 
 // Set performance budgets
-setPerformanceBudget('database', { 
-  maxLatencyMs: 200, 
-  onExceeded: 'warn',
-  warningThreshold: 0.7 
+setPerformanceBudget("database", {
+  maxLatencyMs: 200,
+  onExceeded: "warn",
+  warningThreshold: 0.7,
 });
 
 class UserService {
-  @DatabaseTimed({ 
+  @DatabaseTimed({
     threshold: 100,
     trackParameters: true,
     parameterOptions: {
       includeValues: true,
       includeTypes: true,
-      maxValueLength: 100
-    }
+      maxValueLength: 100,
+    },
   })
   async findUser(id: string): Promise<User> {
     return await this.repository.findById(id);
   }
 
-  @NetworkTimed({ 
+  @NetworkTimed({
     threshold: 500,
-    activation: { environments: ['production', 'staging'] },
-    budget: { maxLatencyMs: 2000, onExceeded: 'error' }
+    activation: { environments: ["production", "staging"] },
+    budget: { maxLatencyMs: 2000, onExceeded: "error" },
   })
   async fetchUserProfile(userId: string): Promise<UserProfile> {
     const response = await fetch(`/api/users/${userId}/profile`);
     return response.json();
   }
 
-  @ComputationTimed({ 
-    category: 'data-processing',
-    trackParameters: true 
+  @ComputationTimed({
+    category: "data-processing",
+    trackParameters: true,
   })
   processLargeDataset(data: any[]): ProcessedData[] {
-    return data.map(item => this.complexTransformation(item));
+    return data.map((item) => this.complexTransformation(item));
   }
 
   @Benchmark({ runs: 100, warmup: 10 })
@@ -265,16 +268,22 @@ class UserService {
 }
 
 // Profile entire class automatically
-@Profile({ 
-  category: 'payment-service',
+@Profile({
+  category: "payment-service",
   threshold: 50,
-  activation: { nodeEnv: ['production'] }
+  activation: { nodeEnv: ["production"] },
 })
 class PaymentService {
   // All methods automatically timed
-  processPayment(amount: number): PaymentResult { /*...*/ }
-  validateCard(card: CreditCard): ValidationResult { /*...*/ }
-  sendReceipt(email: string): void { /*...*/ }
+  processPayment(amount: number): PaymentResult {
+    /*...*/
+  }
+  validateCard(card: CreditCard): ValidationResult {
+    /*...*/
+  }
+  sendReceipt(email: string): void {
+    /*...*/
+  }
 }
 ```
 
@@ -294,70 +303,63 @@ const tracker = new EnhancedPerformanceTracker({
 // Monitor memory health
 setInterval(() => {
   const memoryAnalysis = tracker.getMemoryAnalysis();
-  
-  console.log('Memory Health Report:', {
+
+  console.log("Memory Health Report:", {
     health: memoryAnalysis.health,
     pressure: memoryAnalysis.pressure,
     trend: memoryAnalysis.trend,
     growthRate: `${memoryAnalysis.growthRate.toFixed(2)} MB/min`,
-    leakDetected: memoryAnalysis.leakDetected
+    leakDetected: memoryAnalysis.leakDetected,
   });
 
   if (memoryAnalysis.leakDetected) {
-    console.error('🚨 Memory leak detected!');
-    console.log('Recommendations:', memoryAnalysis.recommendations);
+    console.error("🚨 Memory leak detected!");
+    console.log("Recommendations:", memoryAnalysis.recommendations);
   }
 
-  if (memoryAnalysis.pressure === 'critical') {
-    console.error('🚨 Critical memory pressure!');
+  if (memoryAnalysis.pressure === "critical") {
+    console.error("🚨 Critical memory pressure!");
     // Trigger memory cleanup or scaling actions
   }
 }, 30000);
 
 // Get platform-specific optimizations
 const platformInfo = tracker.getPlatformInfo();
-console.log('Platform Capabilities:', {
-  environment: platformInfo.isNode ? 'Node.js' : 'Browser',
+console.log("Platform Capabilities:", {
+  environment: platformInfo.isNode ? "Node.js" : "Browser",
   nodeVersion: platformInfo.nodeVersion,
   hasGCSupport: platformInfo.hasGCSupport,
   hasMemoryAPI: platformInfo.hasMemoryAPI,
-  recommendedPoolSize: platformInfo.capabilities.recommendedPoolSize
+  recommendedPoolSize: platformInfo.capabilities.recommendedPoolSize,
 });
 
 // Validate performance parity across environments
 const parityReport = tracker.validatePerformanceParity();
 if (!parityReport.parityMaintained) {
   console.warn(`Performance variance: ${parityReport.variance.toFixed(1)}%`);
-  console.log('Recommendations:', parityReport.recommendations);
+  console.log("Recommendations:", parityReport.recommendations);
 }
 ```
 
 ### Conditional and Sampling Decorators
 
 ```typescript
-import { 
-  ConditionalTiming, 
-  SampledTiming, 
-  ComposeDecorators 
-} from "@axon/logger/performance";
+import { ConditionalTiming, SampledTiming, ComposeDecorators } from "@axon/logger/performance";
 
 class ApiService {
   // Only profile in production environments
-  @ConditionalTiming(
-    { environments: ['production'] },
-    DatabaseTimed({ threshold: 100 })
-  )
+  @ConditionalTiming({ environments: ["production"] }, DatabaseTimed({ threshold: 100 }))
   async heavyDatabaseQuery(): Promise<Data[]> {
     return await this.db.complexQuery();
   }
 
   // Adaptive sampling - more sampling when performance degrades
   @SampledTiming({
-    strategy: 'adaptive',
+    strategy: "adaptive",
     baseRate: 0.1,
     maxRate: 1.0,
     adaptiveThreshold: 200,
-    errorSampleRate: 1.0
+    errorSampleRate: 1.0,
   })
   async frequentApiCall(): Promise<ApiResponse> {
     return await this.callExternalApi();
@@ -366,7 +368,7 @@ class ApiService {
   // Compose multiple decorators with execution order
   @ComposeDecorators([
     { decorator: NetworkTimed(), order: 1 },
-    { decorator: Timed({ category: 'business-logic' }), order: 2 }
+    { decorator: Timed({ category: "business-logic" }), order: 2 },
   ])
   async complexOperation(): Promise<Result> {
     const data = await this.fetchData();
@@ -378,57 +380,57 @@ class ApiService {
 ### Performance Budget Management
 
 ```typescript
-import { 
+import {
   setPerformanceBudget,
   createJSONExporter,
   createPrometheusExporter,
-  registerPerformanceExporter 
+  registerPerformanceExporter,
 } from "@axon/logger/performance";
 
 // Set category-specific budgets
-setPerformanceBudget('database', {
+setPerformanceBudget("database", {
   maxLatencyMs: 200,
   warningThreshold: 0.7,
-  onExceeded: 'warn'
+  onExceeded: "warn",
 });
 
-setPerformanceBudget('network', {
+setPerformanceBudget("network", {
   maxLatencyMs: 1000,
   warningThreshold: 0.8,
-  onExceeded: 'error'
+  onExceeded: "error",
 });
 
-setPerformanceBudget('computation', {
+setPerformanceBudget("computation", {
   maxLatencyMs: 100,
   warningThreshold: 0.9,
-  onExceeded: 'custom',
+  onExceeded: "custom",
   customHandler: (category, actualMs, budgetMs) => {
     logger.warn(`Performance budget exceeded`, {
       category,
       actualMs,
       budgetMs,
-      overagePercent: ((actualMs - budgetMs) / budgetMs) * 100
+      overagePercent: ((actualMs - budgetMs) / budgetMs) * 100,
     });
     // Send alert to monitoring system
-    monitoring.sendAlert('performance_budget_exceeded', { category, actualMs });
-  }
+    monitoring.sendAlert("performance_budget_exceeded", { category, actualMs });
+  },
 });
 
 // Set up metrics export
-registerPerformanceExporter(createJSONExporter('console-json', 60000));
-registerPerformanceExporter(createPrometheusExporter('prometheus-metrics', 30000));
+registerPerformanceExporter(createJSONExporter("console-json", 60000));
+registerPerformanceExporter(createPrometheusExporter("prometheus-metrics", 30000));
 
 // Custom exporter for sending metrics to monitoring system
 registerPerformanceExporter({
-  name: 'datadog-exporter',
-  format: 'custom',
+  name: "datadog-exporter",
+  format: "custom",
   interval: 10000,
   export: (metrics, metadata) => {
-    dogstatsd.histogram('performance.latency', metrics.averageLatency, {
-      category: metadata?.category || 'unknown'
+    dogstatsd.histogram("performance.latency", metrics.averageLatency, {
+      category: metadata?.category || "unknown",
     });
-    dogstatsd.gauge('performance.throughput', metrics.throughput);
-  }
+    dogstatsd.gauge("performance.throughput", metrics.throughput);
+  },
 });
 ```
 
@@ -467,7 +469,7 @@ const logger = LoggerFactory.create({
       options: { colorize: false }, // Faster console output
     },
     {
-      type: "file", 
+      type: "file",
       enabled: true,
       level: "warn",
       destination: "/var/log/axon.log",
@@ -501,31 +503,31 @@ const logger = LoggerFactory.create({
 setInterval(() => {
   const metrics = performanceTracker.getMetrics();
   const memoryAnalysis = performanceTracker.getMemoryAnalysis();
-  
-  console.log('Performance Dashboard:', {
+
+  console.log("Performance Dashboard:", {
     // Operation metrics
     throughput: `${metrics.operation.throughput} ops/sec`,
     avgLatency: `${metrics.operation.averageLatency.toFixed(2)}ms`,
     p95Latency: `${metrics.operation.p95Latency.toFixed(2)}ms`,
     p99Latency: `${metrics.operation.p99Latency.toFixed(2)}ms`,
-    
+
     // Memory health
     memoryHealth: memoryAnalysis.health,
     memoryPressure: memoryAnalysis.pressure,
     memoryTrend: memoryAnalysis.trend,
     leakDetected: memoryAnalysis.leakDetected,
-    
+
     // Pool efficiency
     poolUtilization: `${metrics.measurementPoolUtilization.toFixed(1)}%`,
-    
+
     // GC impact
     recentGCEvents: metrics.gcEvents.length,
-    uptime: `${metrics.uptimeSeconds}s`
+    uptime: `${metrics.uptimeSeconds}s`,
   });
 
   // Alert on performance degradation
-  if (memoryAnalysis.health === 'critical' || memoryAnalysis.leakDetected) {
-    console.error('🚨 Performance Alert:', memoryAnalysis.recommendations);
+  if (memoryAnalysis.health === "critical" || memoryAnalysis.leakDetected) {
+    console.error("🚨 Performance Alert:", memoryAnalysis.recommendations);
   }
 }, 60000); // Every minute
 ```
@@ -560,7 +562,7 @@ const performanceTracker = new EnhancedPerformanceTracker({
 
 // Get comprehensive performance metrics
 const metrics = performanceTracker.getMetrics();
-console.log('Enhanced Performance Metrics:', {
+console.log("Enhanced Performance Metrics:", {
   // Core operation metrics
   operations: {
     count: metrics.operation.count,
@@ -571,7 +573,7 @@ console.log('Enhanced Performance Metrics:', {
     p99Latency: `${metrics.operation.p99Latency.toFixed(2)}ms`,
     stdDev: metrics.operation.standardDeviation.toFixed(2),
   },
-  
+
   // Memory analysis
   memory: {
     heapUsed: `${(metrics.resource.memory.heapUsed / 1024 / 1024).toFixed(1)} MB`,
@@ -579,90 +581,88 @@ console.log('Enhanced Performance Metrics:', {
     utilization: `${metrics.resource.memory.utilization.toFixed(1)}%`,
     rss: `${(metrics.resource.memory.rss / 1024 / 1024).toFixed(1)} MB`,
   },
-  
+
   // GC tracking
   gc: {
     recentEvents: metrics.gcEvents.length,
-    lastGCType: metrics.gcEvents[metrics.gcEvents.length - 1]?.type || 'none',
-    avgGCDuration: metrics.gcEvents.length > 0 
-      ? (metrics.gcEvents.reduce((sum, gc) => sum + gc.duration, 0) / metrics.gcEvents.length).toFixed(2) + 'ms'
-      : 'N/A',
+    lastGCType: metrics.gcEvents[metrics.gcEvents.length - 1]?.type || "none",
+    avgGCDuration:
+      metrics.gcEvents.length > 0
+        ? (metrics.gcEvents.reduce((sum, gc) => sum + gc.duration, 0) / metrics.gcEvents.length).toFixed(2) + "ms"
+        : "N/A",
   },
-  
+
   // Pool efficiency
   pool: {
     utilization: `${metrics.measurementPoolUtilization.toFixed(1)}%`,
     efficiency: `${performanceTracker.getPoolEfficiency().toFixed(1)}%`,
   },
-  
+
   // System resources
   system: {
     cpuUsage: `${metrics.resource.cpuUsage.toFixed(1)}%`,
     uptime: `${metrics.resource.uptime.toFixed(0)}s`,
-    eventLoopDelay: metrics.resource.eventLoopDelay ? 
-      `${metrics.resource.eventLoopDelay.toFixed(2)}ms` : 'N/A',
-  }
+    eventLoopDelay: metrics.resource.eventLoopDelay ? `${metrics.resource.eventLoopDelay.toFixed(2)}ms` : "N/A",
+  },
 });
 
 // Memory health analysis
 const memoryAnalysis = performanceTracker.getMemoryAnalysis();
-console.log('Memory Health Analysis:', {
+console.log("Memory Health Analysis:", {
   health: memoryAnalysis.health,
   pressure: memoryAnalysis.pressure,
   trend: memoryAnalysis.trend,
   growthRate: `${memoryAnalysis.growthRate.toFixed(2)} MB/min`,
   leakDetected: memoryAnalysis.leakDetected,
-  recommendations: memoryAnalysis.recommendations
+  recommendations: memoryAnalysis.recommendations,
 });
 
 // Platform information
 const platformInfo = performanceTracker.getPlatformInfo();
-console.log('Platform Capabilities:', {
-  environment: platformInfo.isNode ? 'Node.js' : 'Browser',
+console.log("Platform Capabilities:", {
+  environment: platformInfo.isNode ? "Node.js" : "Browser",
   nodeVersion: platformInfo.nodeVersion,
   hasGCSupport: platformInfo.hasGCSupport,
   hasMemoryAPI: platformInfo.hasMemoryAPI,
   recommendedPoolSize: platformInfo.capabilities.recommendedPoolSize,
-  optimalSampleRate: platformInfo.capabilities.optimalSampleRate
+  optimalSampleRate: platformInfo.capabilities.optimalSampleRate,
 });
 
 // Performance parity validation
 const parityReport = performanceTracker.validatePerformanceParity();
-console.log('Performance Parity Report:', {
+console.log("Performance Parity Report:", {
   environment: parityReport.environment,
   variance: `${parityReport.variance.toFixed(1)}%`,
   parityMaintained: parityReport.parityMaintained,
-  recommendations: parityReport.recommendations
+  recommendations: parityReport.recommendations,
 });
 
 // Category-specific metrics
-const dbMetrics = performanceTracker.getCategoryMetrics('database');
-const networkMetrics = performanceTracker.getCategoryMetrics('network');
+const dbMetrics = performanceTracker.getCategoryMetrics("database");
+const networkMetrics = performanceTracker.getCategoryMetrics("network");
 
-console.log('Category Performance:', {
+console.log("Category Performance:", {
   database: {
     avgLatency: `${dbMetrics.averageLatency.toFixed(2)}ms`,
     p95: `${dbMetrics.p95Latency.toFixed(2)}ms`,
-    count: dbMetrics.count
+    count: dbMetrics.count,
   },
   network: {
     avgLatency: `${networkMetrics.averageLatency.toFixed(2)}ms`,
     p95: `${networkMetrics.p95Latency.toFixed(2)}ms`,
-    count: networkMetrics.count
-  }
+    count: networkMetrics.count,
+  },
 });
 
 // Health monitoring with enhanced checks
-const isHealthy = !memoryAnalysis.leakDetected && 
-                  memoryAnalysis.health !== 'critical' &&
-                  parityReport.parityMaintained;
+const isHealthy = !memoryAnalysis.leakDetected && memoryAnalysis.health !== "critical" && parityReport.parityMaintained;
 
 if (!isHealthy) {
   console.warn("⚠️ Performance health check failed:");
   if (memoryAnalysis.leakDetected) {
     console.warn("- Memory leak detected");
   }
-  if (memoryAnalysis.health === 'critical') {
+  if (memoryAnalysis.health === "critical") {
     console.warn("- Critical memory pressure");
   }
   if (!parityReport.parityMaintained) {
@@ -789,18 +789,21 @@ interface ILoggerConfig {
 ### Platform-Specific Performance
 
 **Node.js 20+ LTS:**
+
 - Pool size: 100-500 objects (dynamically scaled)
 - Sample rate: 100% (full monitoring capable)
 - Memory tracking: Full heap and GC monitoring
 - Performance variance: <5% across versions
 
 **Browser (Chrome/Firefox/Safari):**
+
 - Pool size: 25-100 objects (memory constrained)
-- Sample rate: 10% (reduced for efficiency) 
+- Sample rate: 10% (reduced for efficiency)
 - Memory tracking: Limited to performance.memory API
 - Performance variance: <15% across browsers
 
 **Web Workers:**
+
 - Pool size: 15-50 objects (minimal overhead)
 - Sample rate: 5% (minimal impact on worker performance)
 - Memory tracking: Disabled (not available)

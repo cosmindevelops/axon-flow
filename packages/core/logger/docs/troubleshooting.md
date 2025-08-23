@@ -17,25 +17,28 @@ This guide helps you diagnose and resolve common issues with the enhanced perfor
 ### Problem: Performance Tracking Not Working
 
 **Symptoms:**
+
 - No performance metrics being collected
 - Decorators appear to have no effect
 - Manual tracking returns empty results
 
 **Diagnosis:**
+
 ```typescript
 // Check if tracking is enabled
 const tracker = new EnhancedPerformanceTracker(config);
-console.log('Tracker enabled:', tracker.isEnabled());
+console.log("Tracker enabled:", tracker.isEnabled());
 
 // Check global tracker setup
-import { getDecoratorMetrics } from '@axon/logger';
+import { getDecoratorMetrics } from "@axon/logger";
 const metrics = getDecoratorMetrics();
-console.log('Decorator metrics:', metrics);
+console.log("Decorator metrics:", metrics);
 ```
 
 **Solutions:**
 
 1. **Ensure tracking is enabled:**
+
    ```typescript
    const config: IEnhancedPerformanceConfig = {
      enabled: true, // Make sure this is true
@@ -45,9 +48,10 @@ console.log('Decorator metrics:', metrics);
    ```
 
 2. **Set global tracker for decorators:**
+
    ```typescript
-   import { setGlobalPerformanceTracker } from '@axon/logger';
-   
+   import { setGlobalPerformanceTracker } from "@axon/logger";
+
    const tracker = new EnhancedPerformanceTracker(config);
    setGlobalPerformanceTracker(tracker); // Required for decorators
    ```
@@ -65,27 +69,30 @@ console.log('Decorator metrics:', metrics);
 ### Problem: Configuration Validation Errors
 
 **Symptoms:**
+
 - `Invalid configuration` errors on startup
 - TypeScript compilation errors for config
 
 **Diagnosis:**
+
 ```typescript
-import { PerformanceConfigSchema } from '@axon/logger';
+import { PerformanceConfigSchema } from "@axon/logger";
 
 try {
   PerformanceConfigSchema.parse(yourConfig);
-  console.log('Configuration is valid');
+  console.log("Configuration is valid");
 } catch (error) {
-  console.error('Configuration errors:', error.errors);
+  console.error("Configuration errors:", error.errors);
 }
 ```
 
 **Solutions:**
 
 1. **Use complete configuration:**
+
    ```typescript
-   import { createDefaultPerformanceConfig } from '@axon/logger';
-   
+   import { createDefaultPerformanceConfig } from "@axon/logger";
+
    const config = createDefaultPerformanceConfig({
      // Override only what you need
      enabled: true,
@@ -121,10 +128,12 @@ try {
 ### Problem: High CPU Usage
 
 **Symptoms:**
+
 - Application CPU usage increased significantly
 - Slower response times after adding performance tracking
 
 **Diagnosis:**
+
 ```typescript
 // Monitor tracker overhead
 const tracker = new EnhancedPerformanceTracker(config);
@@ -132,15 +141,16 @@ const tracker = new EnhancedPerformanceTracker(config);
 setInterval(() => {
   const metrics = tracker.getMetrics();
   const poolUtilization = metrics.measurementPoolUtilization;
-  
-  console.log('Pool utilization:', poolUtilization);
-  console.log('Operations per second:', metrics.operation.throughput);
+
+  console.log("Pool utilization:", poolUtilization);
+  console.log("Operations per second:", metrics.operation.throughput);
 }, 5000);
 ```
 
 **Solutions:**
 
 1. **Reduce sampling rate:**
+
    ```typescript
    const optimizedConfig = {
      ...config,
@@ -150,6 +160,7 @@ setInterval(() => {
    ```
 
 2. **Optimize pool settings:**
+
    ```typescript
    const optimizedConfig = {
      ...config,
@@ -172,23 +183,25 @@ setInterval(() => {
 ### Problem: High Memory Usage
 
 **Symptoms:**
+
 - Memory usage grows continuously
 - Out of memory errors
 - GC pressure warnings
 
 **Diagnosis:**
+
 ```typescript
 const tracker = new EnhancedPerformanceTracker(config);
 
 setInterval(() => {
   const memoryAnalysis = tracker.getMemoryAnalysis();
-  
-  console.log('Memory health:', memoryAnalysis.health);
-  console.log('Memory pressure:', memoryAnalysis.pressure);
-  console.log('Leak detected:', memoryAnalysis.leakDetected);
-  
+
+  console.log("Memory health:", memoryAnalysis.health);
+  console.log("Memory pressure:", memoryAnalysis.pressure);
+  console.log("Leak detected:", memoryAnalysis.leakDetected);
+
   if (memoryAnalysis.leakDetected) {
-    console.log('Recommendations:', memoryAnalysis.recommendations);
+    console.log("Recommendations:", memoryAnalysis.recommendations);
   }
 }, 10000);
 ```
@@ -196,6 +209,7 @@ setInterval(() => {
 **Solutions:**
 
 1. **Reduce history limits:**
+
    ```typescript
    const memoryOptimizedConfig = {
      ...config,
@@ -206,6 +220,7 @@ setInterval(() => {
    ```
 
 2. **Clear metrics periodically:**
+
    ```typescript
    // Reset metrics every hour
    setInterval(() => {
@@ -214,13 +229,14 @@ setInterval(() => {
    ```
 
 3. **Use streaming metrics:**
+
    ```typescript
-   import { registerPerformanceExporter } from '@axon/logger';
-   
+   import { registerPerformanceExporter } from "@axon/logger";
+
    // Export metrics instead of accumulating
    registerPerformanceExporter({
-     name: 'streaming-exporter',
-     format: 'json',
+     name: "streaming-exporter",
+     format: "json",
      interval: 30000,
      export: (metrics) => {
        // Send to external system
@@ -235,11 +251,13 @@ setInterval(() => {
 ### Problem: Memory Leaks Detected
 
 **Symptoms:**
+
 - `memoryAnalysis.leakDetected = true`
 - Continuous memory growth
 - Performance degradation over time
 
 **Diagnosis:**
+
 ```typescript
 const tracker = new EnhancedPerformanceTracker(config);
 
@@ -258,12 +276,13 @@ const debugTracker = new EnhancedPerformanceTracker(debugConfig);
 **Solutions:**
 
 1. **Check for unclosed measurements:**
+
    ```typescript
    // Make sure all measurements are properly finished
    class SafeService {
      async processData(data: any[]) {
-       const measurement = tracker.startOperation('data-processing');
-       
+       const measurement = tracker.startOperation("data-processing");
+
        try {
          const result = await this.process(data);
          tracker.finishOperation(measurement); // Always finish
@@ -279,6 +298,7 @@ const debugTracker = new EnhancedPerformanceTracker(debugConfig);
    ```
 
 2. **Use try-finally blocks:**
+
    ```typescript
    async function withSafeTracking(operation: string, fn: () => Promise<any>) {
      const measurement = tracker.startOperation(operation);
@@ -307,11 +327,13 @@ const debugTracker = new EnhancedPerformanceTracker(debugConfig);
 ### Problem: GC Pressure
 
 **Symptoms:**
+
 - Frequent garbage collection events
 - High GC duration times
 - Application pauses
 
 **Diagnosis:**
+
 ```typescript
 const tracker = new EnhancedPerformanceTracker({
   ...config,
@@ -321,17 +343,18 @@ const tracker = new EnhancedPerformanceTracker({
 setInterval(() => {
   const metrics = tracker.getMetrics();
   const gcEvents = metrics.gcEvents.slice(-10); // Last 10 events
-  
+
   const avgGCTime = gcEvents.reduce((sum, gc) => sum + gc.duration, 0) / gcEvents.length;
-  
-  console.log('Average GC time:', avgGCTime);
-  console.log('GC frequency:', gcEvents.length);
+
+  console.log("Average GC time:", avgGCTime);
+  console.log("GC frequency:", gcEvents.length);
 }, 30000);
 ```
 
 **Solutions:**
 
 1. **Optimize object creation:**
+
    ```typescript
    const config = {
      ...baseConfig,
@@ -355,11 +378,13 @@ setInterval(() => {
 ### Problem: TypeScript Decorator Errors
 
 **Symptoms:**
+
 - `TS1241: Unable to resolve signature` errors
 - Decorator compilation errors
 - Runtime decorator failures
 
 **Diagnosis:**
+
 ```bash
 # Check TypeScript configuration
 cat tsconfig.json | grep -A5 -B5 "experimentalDecorators"
@@ -368,6 +393,7 @@ cat tsconfig.json | grep -A5 -B5 "experimentalDecorators"
 **Solutions:**
 
 1. **Update tsconfig.json:**
+
    ```json
    {
      "compilerOptions": {
@@ -381,14 +407,15 @@ cat tsconfig.json | grep -A5 -B5 "experimentalDecorators"
    ```
 
 2. **Use explicit decorator types:**
+
    ```typescript
    import type { IPerformanceDecoratorOptions } from '@axon/logger';
-   
+
    const decoratorOptions: IPerformanceDecoratorOptions = {
      category: 'user-service',
      threshold: 100,
    };
-   
+
    @Timed(decoratorOptions)
    async fetchUser(id: string) {
      // Implementation
@@ -396,19 +423,18 @@ cat tsconfig.json | grep -A5 -B5 "experimentalDecorators"
    ```
 
 3. **Fallback to manual tracking:**
+
    ```typescript
    // If decorators don't work, use manual tracking
-   import { withTiming } from '@axon/logger';
-   
-   const timedFetchUser = withTiming(
-     this.fetchUser.bind(this),
-     { category: 'user-service', threshold: 100 }
-   );
+   import { withTiming } from "@axon/logger";
+
+   const timedFetchUser = withTiming(this.fetchUser.bind(this), { category: "user-service", threshold: 100 });
    ```
 
 ### Problem: Import/Export Issues
 
 **Symptoms:**
+
 - Module not found errors
 - Import type errors
 - Runtime import failures
@@ -416,17 +442,13 @@ cat tsconfig.json | grep -A5 -B5 "experimentalDecorators"
 **Solutions:**
 
 1. **Use correct import paths:**
+
    ```typescript
    // Correct imports
-   import { 
-     EnhancedPerformanceTracker,
-     Timed,
-     DatabaseTimed,
-     type IEnhancedPerformanceConfig 
-   } from '@axon/logger';
-   
+   import { EnhancedPerformanceTracker, Timed, DatabaseTimed, type IEnhancedPerformanceConfig } from "@axon/logger";
+
    // Or specific imports
-   import { EnhancedPerformanceTracker } from '@axon/logger/performance';
+   import { EnhancedPerformanceTracker } from "@axon/logger/performance";
    ```
 
 2. **Check module resolution:**
@@ -446,6 +468,7 @@ cat tsconfig.json | grep -A5 -B5 "experimentalDecorators"
 ### Problem: Browser Compatibility
 
 **Symptoms:**
+
 - Performance tracking not working in browsers
 - Undefined PerformanceObserver errors
 - Missing Node.js APIs
@@ -453,6 +476,7 @@ cat tsconfig.json | grep -A5 -B5 "experimentalDecorators"
 **Solutions:**
 
 1. **Enable browser fallbacks:**
+
    ```typescript
    const browserConfig: IEnhancedPerformanceConfig = {
      ...baseConfig,
@@ -463,54 +487,59 @@ cat tsconfig.json | grep -A5 -B5 "experimentalDecorators"
    ```
 
 2. **Check platform capabilities:**
+
    ```typescript
    const tracker = new EnhancedPerformanceTracker(config);
    const platformInfo = tracker.getPlatformInfo();
-   
-   console.log('Platform:', platformInfo);
-   console.log('Capabilities:', platformInfo.capabilities);
+
+   console.log("Platform:", platformInfo);
+   console.log("Capabilities:", platformInfo.capabilities);
    ```
 
 3. **Use conditional features:**
    ```typescript
    const config: IEnhancedPerformanceConfig = {
      ...baseConfig,
-     enableGCTracking: typeof process !== 'undefined' && process.version,
-     enableMemoryTracking: typeof performance !== 'undefined',
+     enableGCTracking: typeof process !== "undefined" && process.version,
+     enableMemoryTracking: typeof performance !== "undefined",
    };
    ```
 
 ### Problem: Node.js Version Compatibility
 
 **Symptoms:**
+
 - Performance APIs not available
 - Version-specific errors
 - Missing performance features
 
 **Diagnosis:**
+
 ```typescript
-console.log('Node.js version:', process.version);
-console.log('Performance API available:', typeof performance !== 'undefined');
-console.log('PerformanceObserver available:', typeof PerformanceObserver !== 'undefined');
+console.log("Node.js version:", process.version);
+console.log("Performance API available:", typeof performance !== "undefined");
+console.log("PerformanceObserver available:", typeof PerformanceObserver !== "undefined");
 ```
 
 **Solutions:**
 
 1. **Check Node.js version requirements:**
+
    ```typescript
    // Ensure Node.js 18+ for full feature support
    const nodeVersion = process.version;
-   const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
-   
+   const majorVersion = parseInt(nodeVersion.slice(1).split(".")[0]);
+
    if (majorVersion < 18) {
-     console.warn('Performance tracking requires Node.js 18+ for full features');
+     console.warn("Performance tracking requires Node.js 18+ for full features");
    }
    ```
 
 2. **Use version-specific configs:**
+
    ```typescript
-   const nodeVersion = parseInt(process.version.slice(1).split('.')[0]);
-   
+   const nodeVersion = parseInt(process.version.slice(1).split(".")[0]);
+
    const config: IEnhancedPerformanceConfig = {
      ...baseConfig,
      enableGCTracking: nodeVersion >= 18,
@@ -523,28 +552,31 @@ console.log('PerformanceObserver available:', typeof PerformanceObserver !== 'un
 ### Problem: Missing or Incorrect Metrics
 
 **Symptoms:**
+
 - Empty metrics objects
 - Incorrect performance measurements
 - Missing category data
 
 **Diagnosis:**
+
 ```typescript
 const tracker = new EnhancedPerformanceTracker(config);
 
 // Test basic functionality
-const measurement = tracker.startOperation('test-operation');
+const measurement = tracker.startOperation("test-operation");
 setTimeout(() => {
   tracker.finishOperation(measurement);
   tracker.recordSuccess();
-  
+
   const metrics = tracker.getMetrics();
-  console.log('Test metrics:', metrics);
+  console.log("Test metrics:", metrics);
 }, 100);
 ```
 
 **Solutions:**
 
 1. **Ensure proper measurement lifecycle:**
+
    ```typescript
    // Always follow this pattern
    const measurement = tracker.startOperation(category, metadata);
@@ -554,13 +586,14 @@ setTimeout(() => {
    ```
 
 2. **Check category filtering:**
+
    ```typescript
    // Get metrics for specific category
-   const categoryMetrics = tracker.getCategoryMetrics('database');
+   const categoryMetrics = tracker.getCategoryMetrics("database");
    const allMetrics = tracker.getMetrics();
-   
-   console.log('Category metrics:', categoryMetrics);
-   console.log('All metrics:', allMetrics);
+
+   console.log("Category metrics:", categoryMetrics);
+   console.log("All metrics:", allMetrics);
    ```
 
 3. **Verify sampling settings:**
@@ -575,11 +608,13 @@ setTimeout(() => {
 ### Problem: Performance Budget Violations Not Triggering
 
 **Symptoms:**
+
 - No warnings for slow operations
 - Budget handlers not called
 - Threshold violations ignored
 
 **Diagnosis:**
+
 ```typescript
 import { setPerformanceBudget } from '@axon/logger';
 
@@ -591,7 +626,7 @@ setPerformanceBudget('test-category', {
 });
 
 // Create a slow operation
-@Timed({ 
+@Timed({
   category: 'test-category',
   budget: { maxLatencyMs: 50, onExceeded: 'warn' }
 })
@@ -603,18 +638,19 @@ async testSlowOperation() {
 **Solutions:**
 
 1. **Check budget configuration:**
+
    ```typescript
-   import { getPerformanceBudgets } from '@axon/logger';
-   
+   import { getPerformanceBudgets } from "@axon/logger";
+
    const budgets = getPerformanceBudgets();
-   console.log('Configured budgets:', budgets);
+   console.log("Configured budgets:", budgets);
    ```
 
 2. **Use custom handlers:**
    ```typescript
-   setPerformanceBudget('critical-ops', {
+   setPerformanceBudget("critical-ops", {
      maxLatencyMs: 100,
-     onExceeded: 'custom',
+     onExceeded: "custom",
      customHandler: (category, latency, budget) => {
        console.error(`BUDGET VIOLATION: ${category} took ${latency}ms (budget: ${budget}ms)`);
        // Add custom alerting logic
@@ -629,8 +665,9 @@ async testSlowOperation() {
 **Cause:** Global performance tracker not set for decorators.
 
 **Solution:**
+
 ```typescript
-import { setGlobalPerformanceTracker } from '@axon/logger';
+import { setGlobalPerformanceTracker } from "@axon/logger";
 
 const tracker = new EnhancedPerformanceTracker(config);
 setGlobalPerformanceTracker(tracker);
@@ -641,8 +678,9 @@ setGlobalPerformanceTracker(tracker);
 **Cause:** Incomplete configuration object.
 
 **Solution:**
+
 ```typescript
-import { createDefaultPerformanceConfig } from '@axon/logger';
+import { createDefaultPerformanceConfig } from "@axon/logger";
 
 const config = createDefaultPerformanceConfig({
   // Your overrides here
@@ -654,6 +692,7 @@ const config = createDefaultPerformanceConfig({
 **Cause:** Environment doesn't support PerformanceObserver API.
 
 **Solution:**
+
 ```typescript
 const config: IEnhancedPerformanceConfig = {
   ...baseConfig,
@@ -667,9 +706,10 @@ const config: IEnhancedPerformanceConfig = {
 **Cause:** Measurement object is not properly initialized.
 
 **Solution:**
+
 ```typescript
 // Always check measurement before using
-const measurement = tracker.startOperation('operation');
+const measurement = tracker.startOperation("operation");
 if (measurement && measurement.startTime) {
   // Safe to use measurement
   tracker.finishOperation(measurement);
@@ -681,6 +721,7 @@ if (measurement && measurement.startTime) {
 **Cause:** Unclosed measurements or excessive metric accumulation.
 
 **Solution:**
+
 ```typescript
 // Implement periodic cleanup
 setInterval(() => {
@@ -689,7 +730,7 @@ setInterval(() => {
 
 // Or use streaming exporters
 registerPerformanceExporter({
-  name: 'cleanup-exporter',
+  name: "cleanup-exporter",
   interval: 300000, // 5 minutes
   export: (metrics) => {
     // Export and clear
@@ -717,7 +758,7 @@ const tracker = new EnhancedPerformanceTracker(debugConfig);
 // Monitor all operations
 setInterval(() => {
   const metrics = tracker.getMetrics();
-  console.log('Debug metrics:', {
+  console.log("Debug metrics:", {
     operationCount: metrics.operation.count,
     avgLatency: metrics.operation.averageLatency,
     memoryHealth: tracker.getMemoryAnalysis().health,
@@ -733,34 +774,34 @@ function performHealthCheck(tracker: EnhancedPerformanceTracker) {
   const metrics = tracker.getMetrics();
   const memoryAnalysis = tracker.getMemoryAnalysis();
   const platformInfo = tracker.getPlatformInfo();
-  
+
   const health = {
-    status: 'healthy',
+    status: "healthy",
     issues: [] as string[],
     recommendations: [] as string[],
   };
-  
+
   // Check memory
   if (memoryAnalysis.leakDetected) {
-    health.status = 'critical';
-    health.issues.push('Memory leak detected');
+    health.status = "critical";
+    health.issues.push("Memory leak detected");
     health.recommendations.push(...memoryAnalysis.recommendations);
   }
-  
+
   // Check performance
   if (metrics.operation.p95Latency > 1000) {
-    health.status = 'warning';
-    health.issues.push('High P95 latency');
-    health.recommendations.push('Consider optimizing slow operations');
+    health.status = "warning";
+    health.issues.push("High P95 latency");
+    health.recommendations.push("Consider optimizing slow operations");
   }
-  
+
   // Check pool utilization
   if (metrics.measurementPoolUtilization > 90) {
-    health.status = 'warning';
-    health.issues.push('High pool utilization');
-    health.recommendations.push('Increase measurement pool size');
+    health.status = "warning";
+    health.issues.push("High pool utilization");
+    health.recommendations.push("Increase measurement pool size");
   }
-  
+
   return health;
 }
 ```

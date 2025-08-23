@@ -6,8 +6,8 @@
  * │                        🚀 AXON FLOW UNIFIED DEVELOPMENT TOOLS 🚀                        │
  * ├─────────────────────────────────────────────────────────────────────────────────────────┤
  * │                   🎯 ONE SCRIPT TO RULE THEM ALL 🎯                                    │
- * │  Consolidated all 23 individual scripts into a single powerful CLI interface           │
- * │  Modular architecture with 6 specialized tool categories for development tasks        │
+ * │  Comprehensive development environment validation and analysis toolkit                  │
+ * │  Modular architecture with 7 specialized tool categories for development tasks         │
  * └──────────────────────────────────────────────────────────────────────────────────────┘
  *
  * ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -23,7 +23,7 @@
  * ┌── 🔧 Tool Categories ──────────────────────────────────────────────────────────────────┐
  * │                                                                                        │
  * │ 🌍 ENVIRONMENT TOOLS (EnvironmentTool)                                                 │
- * │   • Development environment setup and validation                                       │
+ * │   • Development environment validation                                                 │
  * │   • Node.js, pnpm, Git configuration checks                                            │
  * │   • System resource analysis and Docker availability                                   │
  * │                                                                                        │
@@ -43,12 +43,12 @@
  * │   • Project structure validation                                                       │
  * │                                                                                        │
  * │ 🔧 UTILITY TOOLS (UtilityTool)                                                         │
- * │   • Package creation and workspace management                                          │
  * │   • Platform detection and configuration                                               │
- * │   • Environment debugging and dependency synchronization                               │
+ * │   • Environment debugging and workspace management                                     │
+ * │   • Dependency synchronization and analysis                                            │
  * │                                                                                        │
  * │ 🏎️ PERFORMANCE TOOLS (PerformanceTool)                                                 │
- * │   • Install performance benchmarking                                                   │
+ * │   • Build performance benchmarking                                                     │
  * │   • Startup performance profiling                                                      │
  * │   • Performance optimization recommendations                                           │
  * │                                                                                        │
@@ -65,7 +65,6 @@
  * 🚀 USAGE: node tools/scripts/axon-tools.cjs <command> <subcommand> [options]
  *
  * ┌── 🌍 ENVIRONMENT COMMANDS ────────────────────────────────────────────────────────────┐
- * │ node axon-tools.cjs env setup      → Set up development environment                   │
  * │ node axon-tools.cjs env validate   → Validate environment configuration               │
  * └───────────────────────────────────────────────────────────────────────────────────────┘
  *
@@ -93,7 +92,6 @@
  * └──────────────────────────────────────────────────────────────────────────────────────┘
  *
  * ┌── 🔧 UTILITY COMMANDS ────────────────────────────────────────────────────────────────┐
- * │ node axon-tools.cjs utils create-package @axon/name "desc" → Create new package       │
  * │ node axon-tools.cjs utils detect-platform              → Detect platform config       │
  * │ node axon-tools.cjs utils debug-env                    → Environment debug report     │
  * │ node axon-tools.cjs utils sync-deps                    → Sync workspace dependencies  │
@@ -119,42 +117,42 @@
  *    • Global utility functions (log, logSection, logSuccess, etc.)
  *    • AxonTool base class with common functionality
  *
- * 🌍 Lines 273-880:   ENVIRONMENT COMMANDS
- *    • EnvironmentTool class with setup and validation methods
+ * 🌍 Lines 282-723:   ENVIRONMENT COMMANDS
+ *    • EnvironmentTool class with validation methods
  *    • Node.js, pnpm, Git, Docker, and system resource checks
  *    • Development environment configuration and recommendations
  *
- * ⚡ Lines 884-2200:  TURBO COMMANDS
+ * ⚡ Lines 729-2056:  TURBO COMMANDS
  *    • TurboTool class with performance optimization methods
  *    • Cache analysis, parallel execution monitoring
  *    • Configuration validation and integrity checks
  *
- * 🛡️ Lines 2202-2465: SECURITY COMMANDS
+ * 🛡️ Lines 2062-2322: SECURITY COMMANDS
  *    • SecurityTool class with vulnerability analysis
  *    • Audit data processing and security report generation
  *    • Risk assessment and remediation recommendations
  *
- * ✅ Lines 2468-3485: VALIDATION COMMANDS
+ * ✅ Lines 2328-3341: VALIDATION COMMANDS
  *    • ValidationTool class with quality gate validation
  *    • ESLint, Prettier, Husky, TypeScript, and test validation
  *    • Documentation and project structure validation
  *
- * 🔧 Lines 3487-4018: UTILITY COMMANDS
+ * 🔧 Lines 3347-3872: UTILITY COMMANDS
  *    • UtilityTool class with package creation and workspace management
  *    • Platform detection, environment debugging, dependency sync
  *    • Package generation with consistent structure
  *
- * 🏎️ Lines 4020-4444: PERFORMANCE COMMANDS
+ * 🏎️ Lines 3878-4298: PERFORMANCE COMMANDS
  *    • PerformanceTool class with benchmarking and profiling
- *    • Install performance measurement and startup profiling
+ *    • Build performance measurement and startup profiling
  *    • Performance optimization recommendations
  *
- * 🔍 Lines 4446-5126: QUALITY COMMANDS
+ * 🔍 Lines 4304-4984: QUALITY COMMANDS
  *    • QualityTool class with dependency and health analysis
  *    • Phantom dependency detection and monorepo health checks
  *    • Staged file testing for efficient CI/CD workflows
  *
- * 🎮 Lines 5128-5400: MAIN CLI INTERFACE
+ * 🎮 Lines 4986-5186: MAIN CLI INTERFACE
  *    • AxonToolsCLI class with command routing
  *    • Help system and error handling
  *    • Command execution and argument processing
@@ -163,8 +161,8 @@
  * 💡 QUICK START GUIDE
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  *
- * 1️⃣ First Time Setup:
- *    node axon-tools.cjs env setup          # Set up development environment
+ * 1️⃣ Environment Validation:
+ *    node axon-tools.cjs env validate       # Validate development environment
  *
  * 2️⃣ Daily Development:
  *    node axon-tools.cjs env validate       # Check environment health
@@ -340,99 +338,6 @@ class EnvironmentTool extends AxonTool {
     }
 
     return this.results.checks.pnpm.valid;
-  }
-
-  /**
-   * Check git configuration
-   */
-  checkGitSetup() {
-    log("🐙 Checking Git configuration...", colors.cyan);
-
-    try {
-      const gitUser = execSync("git config user.name", { encoding: "utf8" }).trim();
-      const gitEmail = execSync("git config user.email", { encoding: "utf8" }).trim();
-
-      this.results.checks = this.results.checks || {};
-      this.results.checks.git = {
-        user: gitUser,
-        email: gitEmail,
-        valid: !!(gitUser && gitEmail),
-      };
-
-      if (this.results.checks.git.valid) {
-        logSuccess(`Git configured (${gitUser} <${gitEmail}>)`);
-      } else {
-        logWarning("Git user not configured");
-        logInfo("Run: git config --global user.name 'Your Name'");
-        logInfo("Run: git config --global user.email 'your.email@example.com'");
-      }
-    } catch (error) {
-      logError("Git not found or not configured");
-      this.results.checks.git = { valid: false, error: error.message };
-    }
-
-    return this.results.checks.git.valid;
-  }
-
-  /**
-   * Install dependencies
-   */
-  async installDependencies() {
-    log("📦 Installing dependencies...", colors.cyan);
-
-    try {
-      const installOutput = execSync("pnpm install", {
-        encoding: "utf8",
-        stdio: "pipe",
-      });
-
-      this.results.setup = this.results.setup || {};
-      this.results.setup.install = {
-        success: true,
-        output: installOutput,
-        timestamp: new Date().toISOString(),
-      };
-
-      logSuccess("Dependencies installed successfully");
-      return true;
-    } catch (error) {
-      logError("Failed to install dependencies");
-      this.results.setup.install = {
-        success: false,
-        error: error.message,
-        stderr: error.stderr?.toString(),
-      };
-      return false;
-    }
-  }
-
-  /**
-   * Setup development environment
-   */
-  async setupDev() {
-    logSection("🚀 DEVELOPMENT ENVIRONMENT SETUP");
-
-    // System checks
-    this.checkNodeVersion();
-    this.checkPnpmVersion();
-    this.checkGitSetup();
-
-    // Setup steps
-    if (this.results.checks?.pnpm?.valid) {
-      await this.installDependencies();
-    }
-
-    // Generate .env template if not exists
-    this.generateEnvTemplate();
-
-    // Save and display results
-    this.displaySetupResults();
-    this.saveResults("dev-environment-setup.json");
-
-    const success =
-      this.results.checks?.node?.valid && this.results.checks?.pnpm?.valid && this.results.setup?.install?.success;
-
-    process.exit(success ? 0 : 1);
   }
 
   /**
@@ -809,81 +714,10 @@ class EnvironmentTool extends AxonTool {
     if (!isValid) {
       log(`\n📚 For more help, check:`, colors.cyan);
       log(`   • docs/TROUBLESHOOTING.md`);
-      log(`   • Project setup guide in README.md`);
+      log(`   • Project development guide in README.md`);
     }
 
     return isValid;
-  }
-
-  generateEnvTemplate() {
-    log("⚙️  Checking environment configuration...", colors.cyan);
-
-    const envPath = path.join(this.projectRoot, ".env");
-    const envTemplatePath = path.join(this.projectRoot, ".env.example");
-
-    if (!fs.existsSync(envPath)) {
-      const envTemplate = `# Axon Flow Environment Configuration
-# Generated: ${new Date().toISOString()}
-
-# Development Environment
-NODE_ENV=development
-LOG_LEVEL=debug
-
-# Database Configuration (when implemented)
-# DATABASE_URL=postgresql://username:password@localhost:5432/axonflow
-
-# Redis Configuration (when implemented)
-# REDIS_URL=redis://localhost:6379
-
-# RabbitMQ Configuration (when implemented)
-# RABBITMQ_URL=amqp://localhost:5672
-
-# API Keys (when implemented)
-# JWT_SECRET=your-secret-key-here
-
-# Development Tools
-TURBO_TOKEN=
-TURBO_TEAM=
-`;
-
-      fs.writeFileSync(envPath, envTemplate);
-      fs.writeFileSync(envTemplatePath, envTemplate);
-
-      logSuccess("Created .env and .env.example files");
-    } else {
-      logSuccess("Environment files already exist");
-    }
-  }
-
-  displaySetupResults() {
-    logSection("DEVELOPMENT ENVIRONMENT SETUP REPORT");
-
-    // System Requirements
-    log(`${colors.bold}🔧 SYSTEM REQUIREMENTS${colors.reset}`);
-    log("─────────────────────────────────────────────────────────────");
-
-    if (this.results.checks?.node) {
-      const status = this.results.checks.node.valid ? "✅ PASSED" : "❌ FAILED";
-      log(`Node.js: ${status} (${this.results.checks.node.current})`);
-    }
-
-    if (this.results.checks?.pnpm) {
-      const status = this.results.checks.pnpm.valid ? "✅ PASSED" : "❌ FAILED";
-      log(`pnpm: ${status} (${this.results.checks.pnpm.current})`);
-    }
-
-    if (this.results.checks?.git) {
-      const status = this.results.checks.git.valid ? "✅ CONFIGURED" : "⚠️  NOT CONFIGURED";
-      log(`Git: ${status}`);
-    }
-
-    // Platform Info
-    log(`\n${colors.bold}💻 PLATFORM INFO${colors.reset}`);
-    log("─────────────────────────────────────────────────────────────");
-    log(`OS: ${os.platform()} ${os.release()}`);
-    log(`Arch: ${os.arch()}`);
-    log(`CPUs: ${os.cpus().length}`);
-    log(`Memory: ${Math.round(os.totalmem() / 1024 / 1024 / 1024)}GB`);
   }
 }
 
@@ -3154,7 +2988,7 @@ class ValidationTool extends AxonTool {
   }
 
   /**
-   * Validate PNPM configuration and setup
+   * Validate PNPM configuration
    */
   async validatePnpm() {
     logSection("📦 PNPM CONFIGURATION VALIDATION");
@@ -3515,176 +3349,6 @@ class UtilityTool extends AxonTool {
     this.results = {
       timestamp: new Date().toISOString(),
     };
-  }
-
-  /**
-   * Create a new package with proper structure
-   */
-  async createPackage(packageName, description) {
-    logSection("📦 PACKAGE CREATION");
-
-    if (!packageName || !description) {
-      logError("Both package name and description are required");
-      log('Usage: node axon-tools.cjs utility create-package @axon/package-name "Package description"', colors.yellow);
-      return false;
-    }
-
-    // Initialize package creation results
-    this.results.packageCreation = { passed: false, details: [] };
-
-    try {
-      // Validate package name format
-      const validNamePattern = /^@axon\/[a-z][a-z0-9-]*$/;
-      if (!validNamePattern.test(packageName)) {
-        this.results.packageCreation.details.push(`Invalid package name format: ${packageName}`);
-        this.results.packageCreation.passed = false;
-        return false;
-      }
-
-      // Get package directory
-      const packagePath = packageName.replace("@axon/", "");
-      const packageDir = path.join(this.projectRoot, "packages/core", packagePath);
-
-      // Check if package already exists
-      if (fs.existsSync(packageDir)) {
-        this.results.packageCreation.details.push(`Package already exists at: ${packageDir}`);
-        this.results.packageCreation.passed = false;
-        return false;
-      }
-
-      log(`📁 Creating package structure at ${packageDir}`, colors.cyan);
-
-      // Create directories
-      fs.mkdirSync(packageDir, { recursive: true });
-      fs.mkdirSync(path.join(packageDir, "src"), { recursive: true });
-      this.results.packageCreation.details.push("Created package directories");
-
-      // Create package.json
-      const packageJson = {
-        name: packageName,
-        version: "0.1.0",
-        description,
-        type: "module",
-        main: "./dist/index.js",
-        types: "./dist/index.d.ts",
-        exports: {
-          ".": {
-            types: "./dist/index.d.ts",
-            import: "./dist/index.js",
-          },
-        },
-        files: ["dist"],
-        scripts: {
-          build: "tsup",
-          dev: "tsup --watch",
-          test: "vitest",
-          "test:watch": "vitest --watch",
-          lint: "eslint src/",
-          "lint:fix": "eslint src/ --fix",
-          "type-check": "tsc --noEmit",
-          format: "prettier --write src/",
-          clean: "rm -rf dist",
-        },
-      };
-
-      fs.writeFileSync(path.join(packageDir, "package.json"), JSON.stringify(packageJson, null, 2));
-      this.results.packageCreation.details.push("Created package.json");
-
-      // Create tsup.config.ts
-      const tsupConfig = `import { defineConfig } from "tsup";
-
-export default defineConfig({
-  entry: ["src/index.ts"],
-  format: ['cjs', 'esm'],
-  dts: true,
-  sourcemap: true,
-  clean: true,
-  splitting: false,
-  treeshake: true,
-});
-`;
-      fs.writeFileSync(path.join(packageDir, "tsup.config.ts"), tsupConfig);
-      this.results.packageCreation.details.push("Created tsup.config.ts");
-
-      // Create tsconfig.json
-      const tsConfig = `{
-  "extends": "../../../tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src"
-  },
-  "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules"]
-}
-`;
-      fs.writeFileSync(path.join(packageDir, "tsconfig.json"), tsConfig);
-      this.results.packageCreation.details.push("Created tsconfig.json");
-
-      // Create src/index.ts
-      const packageSimpleName = packageName.replace("@axon/", "");
-      const indexContent = `/**
- * ${packageName}
- *
- * ${description}
- */
-
-export const ${packageSimpleName.replace(/-/g, "")}Version = "0.1.0";
-
-export function placeholder() {
-  return "${packageName} is ready for implementation";
-}
-`;
-      fs.writeFileSync(path.join(packageDir, "src", "index.ts"), indexContent);
-      this.results.packageCreation.details.push("Created src/index.ts");
-
-      // Create README.md
-      const readmeContent = `# ${packageName}
-
-${description}
-
-## Installation
-
-\`\`\`bash
-pnpm add ${packageName}
-\`\`\`
-
-## Usage
-
-\`\`\`typescript
-import { placeholder } from "${packageName}";
-
-console.log(placeholder());
-\`\`\`
-
-## Development
-
-\`\`\`bash
-pnpm dev      # Start development
-pnpm build    # Build for production
-pnpm test     # Run tests
-pnpm lint     # Lint code
-\`\`\`
-`;
-      fs.writeFileSync(path.join(packageDir, "README.md"), readmeContent);
-      this.results.packageCreation.details.push("Created README.md");
-
-      this.results.packageCreation.passed = true;
-      this.results.packageCreation.details.push(`Package ${packageName} created successfully`);
-
-      logSuccess(`Package ${packageName} created successfully`);
-      log(`📍 Location: ${packageDir}`, colors.blue);
-      log("📋 Next steps:", colors.yellow);
-      log(`  1. cd packages/core/${packageSimpleName}`);
-      log(`  2. Update src/index.ts with your implementation`);
-      log(`  3. Run pnpm dev to start development`);
-
-      return true;
-    } catch (error) {
-      this.results.packageCreation.details.push(`Error creating package: ${error.message}`);
-      this.results.packageCreation.passed = false;
-      logError(`Package creation failed: ${error.message}`);
-      return false;
-    }
   }
 
   /**
@@ -4177,7 +3841,7 @@ class PerformanceTool extends AxonTool {
 
       log(`${colors.cyan}${colors.bold}Axon Flow - pnpm Install Performance Benchmark${colors.reset}`);
       log("=".repeat(60));
-      log(`${colors.yellow}Target: < 60 seconds for initial workspace setup${colors.reset}`);
+      log(`${colors.yellow}Target: < 60 seconds for workspace builds${colors.reset}`);
       log(`${"=".repeat(60)}\n`);
 
       // Backup current state
@@ -4879,7 +4543,7 @@ class QualityTool extends AxonTool {
       return { success: true, details: "Workspace configuration is valid" };
     };
 
-    const checkEnvironmentSetup = async () => {
+    const checkEnvironmentValidation = async () => {
       const warnings = [];
 
       const nodeVersion = process.version;
@@ -4901,7 +4565,7 @@ class QualityTool extends AxonTool {
 
       return {
         success: true,
-        details: "Environment setup is valid",
+        details: "Environment validation is valid",
         warnings: warnings.length > 0 ? warnings : undefined,
       };
     };
@@ -4947,7 +4611,7 @@ class QualityTool extends AxonTool {
       log("Starting comprehensive health validation...", colors.cyan);
 
       await executeCheck("workspace_config", "Workspace Configuration", checkWorkspaceConfiguration);
-      await executeCheck("environment_setup", "Environment Setup", checkEnvironmentSetup);
+      await executeCheck("environment_validation", "Environment Validation", checkEnvironmentValidation);
       await executeCheck("performance_benchmarks", "Performance Benchmarks", runPerformanceBenchmarks);
 
       // Generate report
@@ -5156,12 +4820,8 @@ class AxonToolsCLI {
   constructor() {
     this.commands = {
       env: {
-        description: "Environment setup and validation commands",
+        description: "Environment validation commands",
         subcommands: {
-          setup: {
-            description: "Setup development environment",
-            handler: () => new EnvironmentTool().setupDev(),
-          },
           validate: {
             description: "Validate development environment",
             handler: () => new EnvironmentTool().validateDev(),
@@ -5222,7 +4882,7 @@ class AxonToolsCLI {
             handler: () => new ValidationTool().validateStructure(),
           },
           pnpm: {
-            description: "Validate PNPM configuration and setup",
+            description: "Validate PNPM configuration",
             handler: () => new ValidationTool().validatePnpm(),
           },
           "package-changes": {
@@ -5236,16 +4896,8 @@ class AxonToolsCLI {
         },
       },
       utils: {
-        description: "Utility commands for package creation, platform detection, and workspace management",
+        description: "Utility commands for platform detection, environment debugging, and workspace management",
         subcommands: {
-          "create-package": {
-            description: "Create a new package with consistent structure",
-            handler: (args) => {
-              const [packageName, ...descriptionParts] = args;
-              const description = descriptionParts.join(" ");
-              return new UtilityTool().createPackage(packageName, description);
-            },
-          },
           "detect-platform": {
             description: "Detect platform and generate optimized configuration",
             handler: () => new UtilityTool().detectPlatform(),
@@ -5312,9 +4964,8 @@ class AxonToolsCLI {
     });
 
     log("Examples:", colors.bold);
-    log("  node axon-tools.cjs env setup                                    # Setup development environment");
-    log("  node axon-tools.cjs env validate                                 # Validate environment setup");
-    log("  node axon-tools.cjs utils create-package @axon/storage 'desc'    # Create new package");
+    log("  node axon-tools.cjs env validate                                 # Validate environment configuration");
+
     log("  node axon-tools.cjs utils detect-platform                       # Detect platform configuration");
     log("  node axon-tools.cjs utils debug-env                             # Generate environment debug report");
     log("  node axon-tools.cjs utils sync-deps                             # Sync workspace dependencies");
@@ -5345,7 +4996,7 @@ class AxonToolsCLI {
     }
 
     try {
-      // Pass remaining args to handler for commands that need them (like create-package)
+      // Pass remaining args to handler for commands that need them
       const additionalArgs = args.slice(2);
       await this.commands[command].subcommands[subcommand].handler(additionalArgs);
     } catch (error) {

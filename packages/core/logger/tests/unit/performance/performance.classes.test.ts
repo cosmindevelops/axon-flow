@@ -96,10 +96,10 @@ describe("Performance Classes", () => {
     describe("startMonitoring", () => {
       it("should start memory monitoring and begin collecting snapshots", async () => {
         expect(() => memoryMonitor.startMonitoring()).not.toThrow();
-        
+
         // Wait for initial snapshot to be recorded
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         const trend = memoryMonitor.getMemoryTrend();
         expect(["increasing", "decreasing", "stable"]).toContain(trend);
       });
@@ -107,7 +107,7 @@ describe("Performance Classes", () => {
       it("should set memory baseline on first monitoring start", () => {
         memoryMonitor.startMonitoring();
         const metrics = memoryMonitor.getMemoryMetrics();
-        
+
         // Verify baseline is established (can't directly access private field)
         expect(metrics).toBeDefined();
         expect(metrics.heapUsed).toBeGreaterThan(0);
@@ -158,7 +158,7 @@ describe("Performance Classes", () => {
       describe("getMemoryAnalysis", () => {
         it("should return comprehensive memory analysis", () => {
           const analysis = memoryMonitor.getMemoryAnalysis();
-          
+
           expect(analysis).toBeDefined();
           expect(["healthy", "warning", "critical"]).toContain(analysis.health);
           expect(["increasing", "decreasing", "stable"]).toContain(analysis.trend);
@@ -170,9 +170,9 @@ describe("Performance Classes", () => {
 
         it("should provide relevant recommendations", () => {
           const analysis = memoryMonitor.getMemoryAnalysis();
-          
+
           // Recommendations should be strings
-          analysis.recommendations.forEach(rec => {
+          analysis.recommendations.forEach((rec) => {
             expect(typeof rec).toBe("string");
             expect(rec.length).toBeGreaterThan(0);
           });
@@ -188,9 +188,9 @@ describe("Performance Classes", () => {
 
       it("should calculate trend correctly with sufficient history", async () => {
         memoryMonitor.startMonitoring();
-        
+
         // Wait for some snapshots to be collected
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
         const trend = memoryMonitor.getMemoryTrend();
         expect(["increasing", "decreasing", "stable"]).toContain(trend);
@@ -198,11 +198,11 @@ describe("Performance Classes", () => {
 
       it("should use linear regression for trend analysis", async () => {
         memoryMonitor.startMonitoring();
-        
+
         // Simulate collecting multiple memory snapshots
         for (let i = 0; i < 15; i++) {
           memoryMonitor.getMemoryMetrics();
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise((resolve) => setTimeout(resolve, 10));
         }
 
         const trend = memoryMonitor.getMemoryTrend();
@@ -274,7 +274,7 @@ describe("Performance Classes", () => {
         expect(pool.getActiveCount()).toBe(initialSize + 5);
 
         // Clean up
-        measurements.forEach(m => pool.release(m));
+        measurements.forEach((m) => pool.release(m));
       });
     });
 
@@ -282,12 +282,12 @@ describe("Performance Classes", () => {
       it("should track acquisition and reuse metrics", () => {
         const measurement1 = pool.acquire();
         const measurement2 = pool.acquire();
-        
+
         pool.release(measurement1);
         pool.release(measurement2);
 
         const reusedMeasurement = pool.acquire();
-        
+
         const efficiency = pool.getEfficiencyMetrics();
         expect(efficiency.totalAcquisitions).toBe(3);
         expect(efficiency.reuseRate).toBeGreaterThan(0);
@@ -310,7 +310,7 @@ describe("Performance Classes", () => {
         const expectedHitRate = (initialSize / (initialSize + 1)) * 100;
         expect(efficiency.hitRate).toBeCloseTo(expectedHitRate, 1);
 
-        measurements.forEach(m => pool.release(m));
+        measurements.forEach((m) => pool.release(m));
       });
     });
 
@@ -327,7 +327,7 @@ describe("Performance Classes", () => {
         const sizeAfter = pool.getSize();
         expect(sizeAfter).toBeGreaterThanOrEqual(sizeBefore);
 
-        measurements.forEach(m => pool.release(m));
+        measurements.forEach((m) => pool.release(m));
       });
 
       it("should not exceed max size", () => {
@@ -340,21 +340,21 @@ describe("Performance Classes", () => {
         // The key behaviors we want to verify:
         // 1. All acquisitions should succeed
         expect(measurements.length).toBe(maxSize * 2);
-        measurements.forEach(m => {
+        measurements.forEach((m) => {
           expect(m).toBeDefined();
           expect(m.inUse).toBe(true);
         });
-        
+
         // 2. Pool should be tracking active measurements correctly
         expect(pool.getActiveCount()).toBe(maxSize * 2);
-        
+
         // 3. Pool efficiency metrics should be available
         const efficiency = pool.getEfficiencyMetrics();
         expect(efficiency.totalAcquisitions).toBe(maxSize * 2);
         expect(efficiency.reuseRate).toBeGreaterThanOrEqual(0);
 
-        measurements.forEach(m => pool.release(m));
-        
+        measurements.forEach((m) => pool.release(m));
+
         // After releasing, active count should be 0
         expect(pool.getActiveCount()).toBe(0);
       });
@@ -378,23 +378,23 @@ describe("Performance Classes", () => {
       it("should reduce pool size when efficiency is low", async () => {
         // Simulate low efficiency scenario
         const measurements = [];
-        
+
         // Create many objects to simulate low reuse
         for (let i = 0; i < initialSize * 3; i++) {
           measurements.push(pool.acquire());
         }
-        
+
         // Release only some to create inefficiency
-        measurements.slice(0, initialSize).forEach(m => pool.release(m));
-        
+        measurements.slice(0, initialSize).forEach((m) => pool.release(m));
+
         const sizeBefore = pool.getSize();
         pool.compact();
-        
+
         // Size should be reduced or stay the same
         expect(pool.getSize()).toBeLessThanOrEqual(sizeBefore);
 
         // Clean up remaining measurements
-        measurements.slice(initialSize).forEach(m => pool.release(m));
+        measurements.slice(initialSize).forEach((m) => pool.release(m));
       });
     });
 
@@ -418,7 +418,7 @@ describe("Performance Classes", () => {
 
         expect(pool.getActiveCount()).toBe(activeCount); // Should remain unchanged
 
-        measurements.forEach(m => pool.release(m));
+        measurements.forEach((m) => pool.release(m));
       });
     });
 
@@ -431,7 +431,7 @@ describe("Performance Classes", () => {
 
         expect(pool.getActiveCount()).toBe(0);
         expect(pool.getSize()).toBe(initialSize);
-        
+
         const efficiency = pool.getEfficiencyMetrics();
         expect(efficiency.totalAcquisitions).toBe(0);
         expect(efficiency.totalCreations).toBe(0);
@@ -556,7 +556,7 @@ describe("Performance Classes", () => {
       it("should start resource metrics collection when interval is configured", () => {
         const configWithInterval = { ...config, resourceMetricsInterval: 100 };
         const trackerWithInterval = new EnhancedPerformanceTracker(configWithInterval);
-        
+
         expect(() => trackerWithInterval.getMetrics()).not.toThrow();
         trackerWithInterval.reset();
       });
@@ -565,7 +565,7 @@ describe("Performance Classes", () => {
     describe("memory analysis integration", () => {
       it("should provide memory analysis", () => {
         const analysis = tracker.getMemoryAnalysis();
-        
+
         expect(analysis).toBeDefined();
         expect(["healthy", "warning", "critical"]).toContain(analysis.health);
         expect(["increasing", "decreasing", "stable"]).toContain(analysis.trend);
@@ -580,7 +580,7 @@ describe("Performance Classes", () => {
       it("should track pool efficiency", () => {
         const measurement1 = tracker.startOperation("test");
         tracker.finishOperation(measurement1);
-        
+
         const measurement2 = tracker.startOperation("test");
         tracker.finishOperation(measurement2);
 
@@ -630,8 +630,8 @@ describe("Performance Classes", () => {
 
       it("should track event loop delay in Node.js", () => {
         const metrics = tracker.getMetrics();
-        
-        if (typeof process !== 'undefined') {
+
+        if (typeof process !== "undefined") {
           // In Node.js environment, eventLoopDelay should be defined
           expect(metrics.resource.eventLoopDelay).toBeDefined();
           expect(typeof metrics.resource.eventLoopDelay).toBe("number");
@@ -648,7 +648,7 @@ describe("Performance Classes", () => {
 
       it("should update memory tracking configuration", () => {
         tracker.updateConfig({ enableMemoryTracking: false });
-        
+
         const metrics = tracker.getMetrics();
         expect(metrics.resource.memory).toBeDefined(); // Should still provide metrics
       });
@@ -682,14 +682,14 @@ describe("Performance Classes", () => {
         const measurements: any[] = [];
 
         const startTime = Date.now();
-        
+
         // Start many operations
         for (let i = 0; i < operations; i++) {
           measurements.push(tracker.startOperation(`batch-${i % 10}`));
         }
 
         // Finish all operations
-        measurements.forEach(m => tracker.finishOperation(m));
+        measurements.forEach((m) => tracker.finishOperation(m));
 
         const endTime = Date.now();
         const metrics = tracker.getMetrics();

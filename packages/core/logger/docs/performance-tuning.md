@@ -19,7 +19,7 @@ This guide provides environment-specific optimization recommendations for the en
 **Goals**: Maximum visibility, easy debugging, comprehensive monitoring
 
 ```typescript
-import { EnhancedPerformanceTracker } from '@axon/logger/performance';
+import { EnhancedPerformanceTracker } from "@axon/logger/performance";
 
 const developmentConfig = {
   enabled: true,
@@ -44,9 +44,9 @@ const devTracker = new EnhancedPerformanceTracker(developmentConfig);
 setInterval(() => {
   const metrics = devTracker.getMetrics();
   const memoryAnalysis = devTracker.getMemoryAnalysis();
-  
+
   // Log detailed performance info in development
-  console.log('🔧 Dev Performance Metrics:', {
+  console.log("🔧 Dev Performance Metrics:", {
     avgLatency: metrics.operation.averageLatency.toFixed(2),
     p95Latency: metrics.operation.p95Latency.toFixed(2),
     memoryHealth: memoryAnalysis.health,
@@ -82,10 +82,10 @@ const stagingTracker = new EnhancedPerformanceTracker(stagingConfig);
 // Staging-specific performance validation
 setInterval(() => {
   const parityReport = stagingTracker.validatePerformanceParity();
-  
+
   if (!parityReport.parityMaintained) {
     console.warn(`⚠️ Staging Performance Variance: ${parityReport.variance.toFixed(1)}%`);
-    console.log('Recommendations:', parityReport.recommendations);
+    console.log("Recommendations:", parityReport.recommendations);
   }
 }, 120000); // Every 2 minutes
 ```
@@ -117,18 +117,18 @@ const productionTracker = new EnhancedPerformanceTracker(productionConfig);
 // Production monitoring with alerting
 setInterval(() => {
   const memoryAnalysis = productionTracker.getMemoryAnalysis();
-  
+
   if (memoryAnalysis.leakDetected) {
     // Send alert to monitoring system
-    alertingSystem.sendCriticalAlert('Memory leak detected in production', {
+    alertingSystem.sendCriticalAlert("Memory leak detected in production", {
       recommendations: memoryAnalysis.recommendations,
       growthRate: memoryAnalysis.growthRate,
     });
   }
 
-  if (memoryAnalysis.pressure === 'critical') {
+  if (memoryAnalysis.pressure === "critical") {
     // Trigger auto-scaling or remediation
-    scalingService.triggerAutoScale('memory-pressure');
+    scalingService.triggerAutoScale("memory-pressure");
   }
 }, 60000); // Every minute
 ```
@@ -160,8 +160,8 @@ const lowMemoryTracker = new EnhancedPerformanceTracker(lowMemoryConfig);
 // Periodic memory cleanup
 setInterval(() => {
   // Force pool compaction
-  const pool = lowMemoryTracker['measurementPool']; // Access private field carefully
-  if (pool && typeof pool.compact === 'function') {
+  const pool = lowMemoryTracker["measurementPool"]; // Access private field carefully
+  if (pool && typeof pool.compact === "function") {
     pool.compact();
   }
 }, 300000); // Every 5 minutes
@@ -195,16 +195,18 @@ const highMemoryTracker = new EnhancedPerformanceTracker(highMemoryConfig);
 setInterval(() => {
   const metrics = highMemoryTracker.getMetrics();
   const memoryAnalysis = highMemoryTracker.getMemoryAnalysis();
-  
+
   // Detailed memory reporting
-  console.log('🧠 Advanced Memory Analysis:', {
-    heapUtilization: metrics.resource.memory.utilization.toFixed(1) + '%',
-    growthRate: memoryAnalysis.growthRate.toFixed(2) + ' MB/min',
+  console.log("🧠 Advanced Memory Analysis:", {
+    heapUtilization: metrics.resource.memory.utilization.toFixed(1) + "%",
+    growthRate: memoryAnalysis.growthRate.toFixed(2) + " MB/min",
     trend: memoryAnalysis.trend,
     gcEventCount: metrics.gcEvents.length,
-    avgGCDuration: metrics.gcEvents.length > 0 ? 
-      (metrics.gcEvents.reduce((sum, gc) => sum + gc.duration, 0) / metrics.gcEvents.length).toFixed(2) + 'ms' : 'N/A',
-    poolEfficiency: highMemoryTracker.getPoolEfficiency().toFixed(1) + '%'
+    avgGCDuration:
+      metrics.gcEvents.length > 0
+        ? (metrics.gcEvents.reduce((sum, gc) => sum + gc.duration, 0) / metrics.gcEvents.length).toFixed(2) + "ms"
+        : "N/A",
+    poolEfficiency: highMemoryTracker.getPoolEfficiency().toFixed(1) + "%",
   });
 }, 30000);
 ```
@@ -229,24 +231,24 @@ const fixedSamplingConfig = {
 **Best for**: Variable load, performance-sensitive applications
 
 ```typescript
-import { SampledTiming } from '@axon/logger/performance';
+import { SampledTiming } from "@axon/logger/performance";
 
 class AdaptiveSamplingService {
   @SampledTiming({
-    strategy: 'adaptive',
+    strategy: "adaptive",
     baseRate: 0.05, // 5% base sampling
-    maxRate: 1.0,   // Up to 100% when performance degrades
+    maxRate: 1.0, // Up to 100% when performance degrades
     adaptiveThreshold: 200, // Switch to higher sampling when latency > 200ms
-    errorSampleRate: 1.0,   // Always sample errors
+    errorSampleRate: 1.0, // Always sample errors
   })
   async criticalOperation(): Promise<void> {
     // Operation with adaptive sampling
   }
 
   @SampledTiming({
-    strategy: 'burst',
-    baseRate: 0.02,     // 2% normal sampling
-    maxRate: 0.5,       // 50% during burst periods
+    strategy: "burst",
+    baseRate: 0.02, // 2% normal sampling
+    maxRate: 0.5, // 50% during burst periods
     burstInterval: 300000, // 5-minute burst intervals
   })
   async batchOperation(): Promise<void> {
@@ -277,7 +279,7 @@ class PerformanceBasedSampling {
   private adjustSamplingBasedOnPerformance() {
     setInterval(() => {
       const metrics = this.tracker.getMetrics();
-      
+
       // Adjust sampling based on system performance
       if (metrics.operation.p95Latency > 500) {
         // High latency - increase sampling for better visibility
@@ -289,7 +291,7 @@ class PerformanceBasedSampling {
 
       // Update tracker configuration
       this.tracker.updateConfig({ sampleRate: this.currentSampleRate });
-      
+
       console.log(`📊 Adjusted sampling rate to ${(this.currentSampleRate * 100).toFixed(1)}%`);
     }, 120000); // Every 2 minutes
   }
@@ -317,11 +319,11 @@ const highThroughputTracker = new EnhancedPerformanceTracker(highThroughputConfi
 
 // Monitor pool efficiency under high load
 setInterval(() => {
-  const poolMetrics = highThroughputTracker['measurementPool'].getEfficiencyMetrics();
-  
-  console.log('🏊 Pool Efficiency Metrics:', {
-    reuseRate: poolMetrics.reuseRate.toFixed(1) + '%',
-    hitRate: poolMetrics.hitRate.toFixed(1) + '%',
+  const poolMetrics = highThroughputTracker["measurementPool"].getEfficiencyMetrics();
+
+  console.log("🏊 Pool Efficiency Metrics:", {
+    reuseRate: poolMetrics.reuseRate.toFixed(1) + "%",
+    hitRate: poolMetrics.hitRate.toFixed(1) + "%",
     poolSize: poolMetrics.poolSize,
     activeCount: poolMetrics.activeCount,
     availableCount: poolMetrics.availableCount,
@@ -329,7 +331,7 @@ setInterval(() => {
 
   // Alert if pool efficiency drops
   if (poolMetrics.hitRate < 70) {
-    console.warn('⚠️ Low pool hit rate detected, consider increasing pool size');
+    console.warn("⚠️ Low pool hit rate detected, consider increasing pool size");
   }
 }, 60000);
 ```
@@ -352,8 +354,8 @@ const lowThroughputTracker = new EnhancedPerformanceTracker(lowThroughputConfig)
 
 // Periodic pool optimization for low-throughput scenarios
 setInterval(() => {
-  const pool = lowThroughputTracker['measurementPool'];
-  if (pool && typeof pool.compact === 'function') {
+  const pool = lowThroughputTracker["measurementPool"];
+  if (pool && typeof pool.compact === "function") {
     pool.compact(); // Remove unused pooled objects
   }
 }, 600000); // Every 10 minutes
@@ -364,6 +366,7 @@ setInterval(() => {
 ### Node.js Optimization
 
 #### Node.js 18 LTS
+
 ```typescript
 const node18Config = {
   enabled: true,
@@ -377,6 +380,7 @@ const node18Config = {
 ```
 
 #### Node.js 20+ LTS (Recommended)
+
 ```typescript
 const node20Config = {
   enabled: true,
@@ -396,14 +400,14 @@ const node20Tracker = new EnhancedPerformanceTracker(node20Config);
 setInterval(() => {
   const gcEvents = node20Tracker.getMetrics().gcEvents;
   const recentEvents = gcEvents.slice(-10);
-  
+
   if (recentEvents.length > 0) {
     const avgGCTime = recentEvents.reduce((sum, event) => sum + event.duration, 0) / recentEvents.length;
-    
-    console.log('🗑️ Node.js 20+ GC Performance:', {
+
+    console.log("🗑️ Node.js 20+ GC Performance:", {
       recentEventCount: recentEvents.length,
-      avgGCTime: avgGCTime.toFixed(2) + 'ms',
-      gcTypes: [...new Set(recentEvents.map(e => e.type))],
+      avgGCTime: avgGCTime.toFixed(2) + "ms",
+      gcTypes: [...new Set(recentEvents.map((e) => e.type))],
     });
   }
 }, 30000);
@@ -412,6 +416,7 @@ setInterval(() => {
 ### Browser Optimization
 
 #### Modern Browsers (Chrome 100+, Firefox 100+, Safari 15+)
+
 ```typescript
 const modernBrowserConfig = {
   enabled: true,
@@ -436,30 +441,30 @@ class BrowserPerformanceMonitor {
 
   private setupBrowserSpecificMonitoring() {
     // Use Performance Observer API if available
-    if (typeof PerformanceObserver !== 'undefined') {
+    if (typeof PerformanceObserver !== "undefined") {
       const observer = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         entries.forEach((entry) => {
-          if (entry.entryType === 'navigation') {
-            console.log('🌐 Navigation Performance:', {
+          if (entry.entryType === "navigation") {
+            console.log("🌐 Navigation Performance:", {
               domContentLoaded: entry.domContentLoadedEventEnd - entry.domContentLoadedEventStart,
               loadComplete: entry.loadEventEnd - entry.loadEventStart,
             });
           }
         });
       });
-      
-      observer.observe({ entryTypes: ['navigation', 'resource'] });
+
+      observer.observe({ entryTypes: ["navigation", "resource"] });
     }
 
     // Monitor browser-specific memory if available
-    if (typeof (performance as any).memory !== 'undefined') {
+    if (typeof (performance as any).memory !== "undefined") {
       setInterval(() => {
         const memory = (performance as any).memory;
-        console.log('🧠 Browser Memory:', {
-          used: Math.round(memory.usedJSHeapSize / 1024 / 1024) + ' MB',
-          total: Math.round(memory.totalJSHeapSize / 1024 / 1024) + ' MB',
-          utilization: ((memory.usedJSHeapSize / memory.totalJSHeapSize) * 100).toFixed(1) + '%',
+        console.log("🧠 Browser Memory:", {
+          used: Math.round(memory.usedJSHeapSize / 1024 / 1024) + " MB",
+          total: Math.round(memory.totalJSHeapSize / 1024 / 1024) + " MB",
+          utilization: ((memory.usedJSHeapSize / memory.totalJSHeapSize) * 100).toFixed(1) + "%",
         });
       }, 30000);
     }
@@ -494,16 +499,16 @@ class WebWorkerPerformanceTracker {
     // Minimal overhead monitoring for web workers
     setInterval(() => {
       const metrics = this.tracker.getMetrics();
-      
+
       // Post performance data to main thread
-      if (typeof self !== 'undefined' && self.postMessage) {
+      if (typeof self !== "undefined" && self.postMessage) {
         self.postMessage({
-          type: 'performance-metrics',
+          type: "performance-metrics",
           data: {
             avgLatency: metrics.operation.averageLatency,
             throughput: metrics.operation.throughput,
             poolUtilization: metrics.measurementPoolUtilization,
-          }
+          },
         });
       }
     }, 120000); // Every 2 minutes
@@ -544,11 +549,11 @@ class AutoTuningPerformanceTracker {
     if (metrics.operation.p95Latency > 1000) {
       // High latency - reduce sampling to decrease overhead
       newConfig.sampleRate = Math.max(newConfig.sampleRate * 0.8, 0.01);
-      console.log('🔧 Reduced sampling rate due to high latency');
+      console.log("🔧 Reduced sampling rate due to high latency");
     } else if (metrics.operation.p95Latency < 100) {
       // Low latency - can afford higher sampling
       newConfig.sampleRate = Math.min(newConfig.sampleRate * 1.2, 1.0);
-      console.log('🔧 Increased sampling rate due to low latency');
+      console.log("🔧 Increased sampling rate due to low latency");
     }
 
     // Adjust pool size based on utilization
@@ -557,31 +562,25 @@ class AutoTuningPerformanceTracker {
       // High utilization - increase pool size
       newConfig.measurementPoolMaxSize = Math.min(
         newConfig.measurementPoolMaxSize * 1.5,
-        platformInfo.capabilities.recommendedPoolSize * 2
+        platformInfo.capabilities.recommendedPoolSize * 2,
       );
-      console.log('🏊 Increased pool size due to high utilization');
+      console.log("🏊 Increased pool size due to high utilization");
     } else if (poolUtilization < 30) {
       // Low utilization - decrease pool size
       newConfig.measurementPoolMaxSize = Math.max(
         newConfig.measurementPoolMaxSize * 0.8,
-        newConfig.measurementPoolInitialSize * 2
+        newConfig.measurementPoolInitialSize * 2,
       );
-      console.log('🏊 Decreased pool size due to low utilization');
+      console.log("🏊 Decreased pool size due to low utilization");
     }
 
     // Adjust resource metrics interval based on memory pressure
-    if (memoryAnalysis.pressure === 'high' || memoryAnalysis.pressure === 'critical') {
+    if (memoryAnalysis.pressure === "high" || memoryAnalysis.pressure === "critical") {
       // Increase monitoring frequency during memory pressure
-      newConfig.resourceMetricsInterval = Math.max(
-        newConfig.resourceMetricsInterval * 0.5,
-        1000
-      );
-    } else if (memoryAnalysis.pressure === 'low') {
+      newConfig.resourceMetricsInterval = Math.max(newConfig.resourceMetricsInterval * 0.5, 1000);
+    } else if (memoryAnalysis.pressure === "low") {
       // Decrease monitoring frequency when memory is stable
-      newConfig.resourceMetricsInterval = Math.min(
-        newConfig.resourceMetricsInterval * 1.2,
-        30000
-      );
+      newConfig.resourceMetricsInterval = Math.min(newConfig.resourceMetricsInterval * 1.2, 30000);
     }
 
     // Apply new configuration
@@ -620,33 +619,33 @@ function diagnoseMemoryIssues(tracker: EnhancedPerformanceTracker) {
   const memoryAnalysis = tracker.getMemoryAnalysis();
   const metrics = tracker.getMetrics();
 
-  console.log('🔍 Memory Diagnostic Report:');
-  
+  console.log("🔍 Memory Diagnostic Report:");
+
   if (memoryAnalysis.leakDetected) {
-    console.error('❌ Memory leak detected:');
-    console.log('- Growth rate:', memoryAnalysis.growthRate.toFixed(2), 'MB/min');
-    console.log('- Trend:', memoryAnalysis.trend);
-    console.log('- Recommendations:');
-    memoryAnalysis.recommendations.forEach(rec => console.log('  •', rec));
+    console.error("❌ Memory leak detected:");
+    console.log("- Growth rate:", memoryAnalysis.growthRate.toFixed(2), "MB/min");
+    console.log("- Trend:", memoryAnalysis.trend);
+    console.log("- Recommendations:");
+    memoryAnalysis.recommendations.forEach((rec) => console.log("  •", rec));
   }
 
-  if (memoryAnalysis.pressure === 'high' || memoryAnalysis.pressure === 'critical') {
-    console.warn('⚠️ High memory pressure:');
-    console.log('- Heap utilization:', metrics.resource.memory.utilization.toFixed(1) + '%');
-    console.log('- RSS:', Math.round(metrics.resource.memory.rss / 1024 / 1024), 'MB');
-    
+  if (memoryAnalysis.pressure === "high" || memoryAnalysis.pressure === "critical") {
+    console.warn("⚠️ High memory pressure:");
+    console.log("- Heap utilization:", metrics.resource.memory.utilization.toFixed(1) + "%");
+    console.log("- RSS:", Math.round(metrics.resource.memory.rss / 1024 / 1024), "MB");
+
     // Suggest remediation
-    console.log('💡 Suggested actions:');
-    console.log('- Reduce pool sizes');
-    console.log('- Decrease sampling rate');
-    console.log('- Enable pool compaction');
+    console.log("💡 Suggested actions:");
+    console.log("- Reduce pool sizes");
+    console.log("- Decrease sampling rate");
+    console.log("- Enable pool compaction");
   }
 
   // Pool efficiency check
   const poolEfficiency = tracker.getPoolEfficiency();
   if (poolEfficiency < 60) {
-    console.warn('⚠️ Low pool efficiency:', poolEfficiency.toFixed(1) + '%');
-    console.log('💡 Consider increasing pool initial size');
+    console.warn("⚠️ Low pool efficiency:", poolEfficiency.toFixed(1) + "%");
+    console.log("💡 Consider increasing pool initial size");
   }
 }
 ```
@@ -657,34 +656,34 @@ function diagnoseMemoryIssues(tracker: EnhancedPerformanceTracker) {
 // Diagnostic code for latency issues
 function diagnoseLatencyIssues(tracker: EnhancedPerformanceTracker) {
   const metrics = tracker.getMetrics();
-  
-  console.log('🔍 Latency Diagnostic Report:');
-  
+
+  console.log("🔍 Latency Diagnostic Report:");
+
   if (metrics.operation.p99Latency > 1000) {
-    console.error('❌ High P99 latency:', metrics.operation.p99Latency.toFixed(2) + 'ms');
-    
+    console.error("❌ High P99 latency:", metrics.operation.p99Latency.toFixed(2) + "ms");
+
     // Check GC impact
     const recentGCEvents = metrics.gcEvents.slice(-10);
-    const longGCEvents = recentGCEvents.filter(event => event.duration > 50);
-    
+    const longGCEvents = recentGCEvents.filter((event) => event.duration > 50);
+
     if (longGCEvents.length > 3) {
-      console.warn('⚠️ Frequent long GC events detected:');
-      longGCEvents.forEach(event => {
+      console.warn("⚠️ Frequent long GC events detected:");
+      longGCEvents.forEach((event) => {
         console.log(`- ${event.type}: ${event.duration.toFixed(2)}ms`);
       });
-      console.log('💡 Consider GC tuning or reducing memory allocation');
+      console.log("💡 Consider GC tuning or reducing memory allocation");
     }
 
     // Check resource utilization
     if (metrics.resource.cpuUsage > 80) {
-      console.warn('⚠️ High CPU usage:', metrics.resource.cpuUsage.toFixed(1) + '%');
-      console.log('💡 Consider reducing sampling rate or performance monitoring overhead');
+      console.warn("⚠️ High CPU usage:", metrics.resource.cpuUsage.toFixed(1) + "%");
+      console.log("💡 Consider reducing sampling rate or performance monitoring overhead");
     }
 
     // Check event loop delay (Node.js)
     if (metrics.resource.eventLoopDelay && metrics.resource.eventLoopDelay > 10) {
-      console.warn('⚠️ High event loop delay:', metrics.resource.eventLoopDelay.toFixed(2) + 'ms');
-      console.log('💡 Consider reducing synchronous operations or increasing concurrency');
+      console.warn("⚠️ High event loop delay:", metrics.resource.eventLoopDelay.toFixed(2) + "ms");
+      console.log("💡 Consider reducing synchronous operations or increasing concurrency");
     }
   }
 }
@@ -696,26 +695,26 @@ function diagnoseLatencyIssues(tracker: EnhancedPerformanceTracker) {
 // Diagnostic code for performance variance
 function diagnosePerformanceVariance(tracker: EnhancedPerformanceTracker) {
   const parityReport = tracker.validatePerformanceParity();
-  
-  console.log('🔍 Performance Variance Diagnostic:');
-  
+
+  console.log("🔍 Performance Variance Diagnostic:");
+
   if (!parityReport.parityMaintained) {
-    console.error('❌ Performance parity not maintained:');
-    console.log('- Variance:', parityReport.variance.toFixed(1) + '%');
-    console.log('- Environment:', parityReport.environment);
-    console.log('- Recommendations:');
-    parityReport.recommendations.forEach(rec => console.log('  •', rec));
+    console.error("❌ Performance parity not maintained:");
+    console.log("- Variance:", parityReport.variance.toFixed(1) + "%");
+    console.log("- Environment:", parityReport.environment);
+    console.log("- Recommendations:");
+    parityReport.recommendations.forEach((rec) => console.log("  •", rec));
 
     // Platform-specific diagnostics
     const platformInfo = tracker.getPlatformInfo();
-    console.log('🔧 Platform Information:');
-    console.log('- Environment:', platformInfo.isNode ? 'Node.js' : 'Browser');
-    console.log('- Node version:', platformInfo.nodeVersion || 'N/A');
-    console.log('- Browser:', platformInfo.browserName || 'N/A');
-    console.log('- GC support:', platformInfo.hasGCSupport);
-    console.log('- Memory API:', platformInfo.hasMemoryAPI);
-    console.log('- Recommended pool size:', platformInfo.capabilities.recommendedPoolSize);
-    console.log('- Optimal sample rate:', platformInfo.capabilities.optimalSampleRate);
+    console.log("🔧 Platform Information:");
+    console.log("- Environment:", platformInfo.isNode ? "Node.js" : "Browser");
+    console.log("- Node version:", platformInfo.nodeVersion || "N/A");
+    console.log("- Browser:", platformInfo.browserName || "N/A");
+    console.log("- GC support:", platformInfo.hasGCSupport);
+    console.log("- Memory API:", platformInfo.hasMemoryAPI);
+    console.log("- Recommended pool size:", platformInfo.capabilities.recommendedPoolSize);
+    console.log("- Optimal sample rate:", platformInfo.capabilities.optimalSampleRate);
   }
 }
 ```
@@ -736,35 +735,35 @@ function performHealthCheck(tracker: EnhancedPerformanceTracker): HealthCheckRes
   // Check latency
   if (metrics.operation.p95Latency > 500) {
     issues.push(`High P95 latency: ${metrics.operation.p95Latency.toFixed(2)}ms`);
-    recommendations.push('Consider optimizing slow operations or reducing sampling');
+    recommendations.push("Consider optimizing slow operations or reducing sampling");
   }
 
   // Check memory
   if (memoryAnalysis.leakDetected) {
-    issues.push('Memory leak detected');
-    recommendations.push('Investigate object retention and memory usage patterns');
+    issues.push("Memory leak detected");
+    recommendations.push("Investigate object retention and memory usage patterns");
   }
 
-  if (memoryAnalysis.pressure === 'critical') {
-    issues.push('Critical memory pressure');
-    recommendations.push('Reduce memory usage or increase available memory');
+  if (memoryAnalysis.pressure === "critical") {
+    issues.push("Critical memory pressure");
+    recommendations.push("Reduce memory usage or increase available memory");
   }
 
   // Check performance parity
   if (!parityReport.parityMaintained) {
     issues.push(`Performance variance too high: ${parityReport.variance.toFixed(1)}%`);
-    recommendations.push('Consider environment-specific optimization');
+    recommendations.push("Consider environment-specific optimization");
   }
 
   // Check pool efficiency
   const poolEfficiency = tracker.getPoolEfficiency();
   if (poolEfficiency < 70) {
     issues.push(`Low pool efficiency: ${poolEfficiency.toFixed(1)}%`);
-    recommendations.push('Consider increasing pool size or adjusting configuration');
+    recommendations.push("Consider increasing pool size or adjusting configuration");
   }
 
-  const healthScore = Math.max(0, 100 - (issues.length * 20));
-  
+  const healthScore = Math.max(0, 100 - issues.length * 20);
+
   return {
     healthy: issues.length === 0,
     healthScore,
@@ -776,7 +775,7 @@ function performHealthCheck(tracker: EnhancedPerformanceTracker): HealthCheckRes
       memoryHealth: memoryAnalysis.health,
       poolEfficiency,
       parityMaintained: parityReport.parityMaintained,
-    }
+    },
   };
 }
 

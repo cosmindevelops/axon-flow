@@ -53,7 +53,7 @@ export class CompositeConfigRepository implements IConfigRepository {
 
   load<T extends z.ZodType>(schema: T): z.infer<T> {
     if (this.disposed) {
-      throw new ConfigurationError("Repository has been disposed", {
+      throw new ConfigurationError("Repository has been disposed", "REPOSITORY_DISPOSED", {
         component: "CompositeConfigRepository",
         operation: "load",
       });
@@ -65,7 +65,7 @@ export class CompositeConfigRepository implements IConfigRepository {
       return schema.parse(config) as z.infer<T>;
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new ConfigurationError("Configuration validation failed", {
+        throw new ConfigurationError("Configuration validation failed", "CONFIG_VALIDATION_FAILED", {
           component: "CompositeConfigRepository",
           operation: "load",
           metadata: {
@@ -74,7 +74,7 @@ export class CompositeConfigRepository implements IConfigRepository {
           },
         });
       }
-      throw new ConfigurationError("Configuration loading failed", {
+      throw new ConfigurationError("Configuration loading failed", "CONFIG_LOAD_FAILED", {
         component: "CompositeConfigRepository",
         operation: "load",
         metadata: { error: error instanceof Error ? error.message : String(error) },
@@ -99,7 +99,7 @@ export class CompositeConfigRepository implements IConfigRepository {
       return schema.parse(data) as z.infer<T>;
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new ConfigurationError("Schema validation failed", {
+        throw new ConfigurationError("Schema validation failed", "SCHEMA_VALIDATION_FAILED", {
           component: "CompositeConfigRepository",
           operation: "validate",
           metadata: {
@@ -107,7 +107,7 @@ export class CompositeConfigRepository implements IConfigRepository {
           },
         });
       }
-      throw new ConfigurationError("Validation failed", {
+      throw new ConfigurationError("Validation failed", "VALIDATION_FAILED", {
         component: "CompositeConfigRepository",
         operation: "validate",
         metadata: { error: error instanceof Error ? error.message : String(error) },
@@ -196,7 +196,7 @@ export class CompositeConfigRepository implements IConfigRepository {
     const sourceId = this.generateSourceId(source);
 
     if (this.sources.has(sourceId)) {
-      throw new ConfigurationError(`Source already exists: ${sourceId}`, {
+      throw new ConfigurationError(`Source already exists: ${sourceId}`, "SOURCE_ALREADY_EXISTS", {
         component: "CompositeConfigRepository",
         operation: "addSource",
       });

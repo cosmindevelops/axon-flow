@@ -93,6 +93,7 @@ export class FileConfigRepository implements IConfigRepository {
     this.debounceMs = options.debounceMs ?? 100;
 
     // Initial load
+    // eslint-disable-next-line no-sync
     this.loadConfigSync();
 
     // Setup file watching if requested and in Node.js environment
@@ -106,7 +107,7 @@ export class FileConfigRepository implements IConfigRepository {
       return schema.parse(this.config) as z.infer<T>;
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new ConfigurationError("Configuration validation failed", {
+        throw new ConfigurationError("Configuration validation failed", "CONFIG_VALIDATION_FAILED", {
           component: "FileConfigRepository",
           operation: "load",
           metadata: {
@@ -116,7 +117,7 @@ export class FileConfigRepository implements IConfigRepository {
           },
         });
       }
-      throw new ConfigurationError("Configuration loading failed", {
+      throw new ConfigurationError("Configuration loading failed", "CONFIG_LOAD_FAILED", {
         component: "FileConfigRepository",
         operation: "load",
         metadata: { error: error instanceof Error ? error.message : String(error) },
@@ -137,7 +138,7 @@ export class FileConfigRepository implements IConfigRepository {
       return schema.parse(data) as z.infer<T>;
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new ConfigurationError("Schema validation failed", {
+        throw new ConfigurationError("Schema validation failed", "SCHEMA_VALIDATION_FAILED", {
           component: "FileConfigRepository",
           operation: "validate",
           metadata: {
@@ -145,7 +146,7 @@ export class FileConfigRepository implements IConfigRepository {
           },
         });
       }
-      throw new ConfigurationError("Validation failed", {
+      throw new ConfigurationError("Validation failed", "VALIDATION_FAILED", {
         component: "FileConfigRepository",
         operation: "validate",
         metadata: { error: error instanceof Error ? error.message : String(error) },
@@ -265,7 +266,7 @@ export class FileConfigRepository implements IConfigRepository {
   private loadConfigSync(): void {
     try {
       if (!existsSync(this.filePath)) {
-        throw new ConfigurationError(`Configuration file not found: ${this.filePath}`, {
+        throw new ConfigurationError(`Configuration file not found: ${this.filePath}`, "CONFIG_FILE_NOT_FOUND", {
           component: "FileConfigRepository",
           operation: "loadConfigSync",
           metadata: { filePath: this.filePath },
@@ -277,7 +278,7 @@ export class FileConfigRepository implements IConfigRepository {
 
       // For now, just handle JSON files - other formats can be added later
       if (this.format !== "json") {
-        throw new ConfigurationError(`Unsupported file format: ${this.format}`, {
+        throw new ConfigurationError(`Unsupported file format: ${this.format}`, "UNSUPPORTED_FILE_FORMAT", {
           component: "FileConfigRepository",
           operation: "loadConfigSync",
           metadata: { format: this.format, filePath: this.filePath },
@@ -290,7 +291,7 @@ export class FileConfigRepository implements IConfigRepository {
       if (error instanceof ConfigurationError) {
         throw error;
       }
-      throw new ConfigurationError("Failed to load configuration file", {
+      throw new ConfigurationError("Failed to load configuration file", "CONFIG_FILE_LOAD_FAILED", {
         component: "FileConfigRepository",
         operation: "loadConfigSync",
         metadata: {
@@ -514,7 +515,7 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
 
   load<T extends z.ZodType>(schema: T): z.infer<T> {
     if (!this.isSupported) {
-      throw new ConfigurationError("LocalStorage is not supported in this environment", {
+      throw new ConfigurationError("LocalStorage is not supported in this environment", "LOCALSTORAGE_NOT_SUPPORTED", {
         component: "LocalStorageConfigRepository",
         operation: "load",
       });
@@ -526,7 +527,7 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
       return schema.parse(config) as z.infer<T>;
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new ConfigurationError("Configuration validation failed", {
+        throw new ConfigurationError("Configuration validation failed", "CONFIG_VALIDATION_FAILED", {
           component: "LocalStorageConfigRepository",
           operation: "load",
           metadata: {
@@ -535,7 +536,7 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
           },
         });
       }
-      throw new ConfigurationError("Configuration loading failed", {
+      throw new ConfigurationError("Configuration loading failed", "CONFIG_LOAD_FAILED", {
         component: "LocalStorageConfigRepository",
         operation: "load",
         metadata: { error: error instanceof Error ? error.message : String(error) },
@@ -560,7 +561,7 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
       return schema.parse(data) as z.infer<T>;
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new ConfigurationError("Schema validation failed", {
+        throw new ConfigurationError("Schema validation failed", "SCHEMA_VALIDATION_FAILED", {
           component: "LocalStorageConfigRepository",
           operation: "validate",
           metadata: {
@@ -568,7 +569,7 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
           },
         });
       }
-      throw new ConfigurationError("Validation failed", {
+      throw new ConfigurationError("Validation failed", "VALIDATION_FAILED", {
         component: "LocalStorageConfigRepository",
         operation: "validate",
         metadata: { error: error instanceof Error ? error.message : String(error) },
@@ -578,7 +579,7 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
 
   async set(key: string, value: unknown): Promise<void> {
     if (!this.isSupported) {
-      throw new ConfigurationError("LocalStorage is not supported in this environment", {
+      throw new ConfigurationError("LocalStorage is not supported in this environment", "LOCALSTORAGE_NOT_SUPPORTED", {
         component: "LocalStorageConfigRepository",
         operation: "set",
       });
@@ -696,7 +697,7 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
    */
   async setAll(config: Record<string, unknown>): Promise<void> {
     if (!this.isSupported) {
-      throw new ConfigurationError("LocalStorage is not supported in this environment", {
+      throw new ConfigurationError("LocalStorage is not supported in this environment", "LOCALSTORAGE_NOT_SUPPORTED", {
         component: "LocalStorageConfigRepository",
         operation: "setAll",
       });
@@ -762,7 +763,7 @@ export class LocalStorageConfigRepository implements IPlatformConfigRepository, 
         localStorage.setItem(this.storageKey, JSON.stringify(config));
       }
     } catch (error) {
-      throw new ConfigurationError("Failed to store configuration in localStorage", {
+      throw new ConfigurationError("Failed to store configuration in localStorage", "LOCALSTORAGE_STORE_FAILED", {
         component: "LocalStorageConfigRepository",
         operation: "storeConfig",
         metadata: {

@@ -10,5 +10,5 @@ export default defineConfig({
   clean: true,
   treeshake: true,
   sourcemap: true,
-  external: ["@axon/types"],
+  external: ["@axon/types", "zod"],
 });

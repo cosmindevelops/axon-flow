@@ -256,7 +256,7 @@ export class EnvironmentConfigRepository implements IConfigRepository {
     } catch (error) {
       if (error instanceof ZodError) {
         const errorMessages = this.formatZodErrors(error);
-        throw new ConfigurationError("Configuration validation failed", {
+        throw new ConfigurationError("Configuration validation failed", "CONFIG_VALIDATION_FAILED", {
           component: "EnvironmentConfigRepository",
           operation: "load",
           metadata: {
@@ -265,7 +265,7 @@ export class EnvironmentConfigRepository implements IConfigRepository {
           },
         });
       }
-      throw new ConfigurationError("Configuration validation failed", {
+      throw new ConfigurationError("Configuration validation failed", "CONFIG_VALIDATION_FAILED", {
         component: "EnvironmentConfigRepository",
         operation: "load",
         metadata: { error: error instanceof Error ? error.message : String(error) },
@@ -302,7 +302,7 @@ export class EnvironmentConfigRepository implements IConfigRepository {
     } catch (error) {
       if (error instanceof ZodError) {
         const errorMessages = this.formatZodErrors(error);
-        throw new ConfigurationError("Schema validation failed", {
+        throw new ConfigurationError("Schema validation failed", "SCHEMA_VALIDATION_FAILED", {
           component: "EnvironmentConfigRepository",
           operation: "validate",
           metadata: {
@@ -311,7 +311,7 @@ export class EnvironmentConfigRepository implements IConfigRepository {
           },
         });
       }
-      throw new ConfigurationError("Schema validation failed", {
+      throw new ConfigurationError("Schema validation failed", "SCHEMA_VALIDATION_FAILED", {
         component: "EnvironmentConfigRepository",
         operation: "validate",
         metadata: { error: error instanceof Error ? error.message : String(error) },

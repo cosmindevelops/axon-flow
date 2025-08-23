@@ -115,7 +115,7 @@ describe("Transport Circuit Breaker Integration", () => {
         vi.advanceTimersByTime(1500);
 
         // Give time for async operations to complete
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
 
         // Mock successful response
         mockFetch.mockResolvedValueOnce({
@@ -155,26 +155,26 @@ describe("Transport Circuit Breaker Integration", () => {
           } as IRemoteTransportOptions,
         };
 
-      const transport = new RemoteTransportProvider(config);
+        const transport = new RemoteTransportProvider(config);
 
-      // Mock transient failures followed by success
-      mockFetch
-        .mockRejectedValueOnce(new Error("Temporary failure"))
-        .mockRejectedValueOnce(new Error("Temporary failure"))
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          statusText: "OK",
-        });
+        // Mock transient failures followed by success
+        mockFetch
+          .mockRejectedValueOnce(new Error("Temporary failure"))
+          .mockRejectedValueOnce(new Error("Temporary failure"))
+          .mockResolvedValueOnce({
+            ok: true,
+            status: 200,
+            statusText: "OK",
+          });
 
-      await transport.write(mockLogEntry);
+        await transport.write(mockLogEntry);
 
-      // Advance timers to trigger retries
-      vi.advanceTimersByTime(100); // First retry
-      vi.advanceTimersByTime(200); // Second retry with exponential backoff
+        // Advance timers to trigger retries
+        vi.advanceTimersByTime(100); // First retry
+        vi.advanceTimersByTime(200); // Second retry with exponential backoff
 
         // Give time for async operations to complete
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
 
         await transport.flush();
 

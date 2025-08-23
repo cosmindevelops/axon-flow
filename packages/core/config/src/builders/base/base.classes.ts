@@ -108,9 +108,13 @@ export class ConfigBuilder implements IFluentConfigBuilder {
    */
   fromLocalStorage(options: ILocalStorageBuilderOptions = {}): IFluentConfigBuilder {
     if (this.state.platform === "node") {
-      throw new ConfigurationError("LocalStorage is not available in Node.js environment", {
-        operation: "fromLocalStorage",
-      });
+      throw new ConfigurationError(
+        "LocalStorage is not available in Node.js environment",
+        "CONFIG_LOCALSTORAGE_UNAVAILABLE",
+        {
+          operation: "fromLocalStorage",
+        },
+      );
     }
 
     const repository = new LocalStorageConfigRepository({
@@ -131,7 +135,7 @@ export class ConfigBuilder implements IFluentConfigBuilder {
    */
   withCache(options: ICacheBuilderOptions = {}): IFluentConfigBuilder {
     if (this.state.sources.length === 0) {
-      throw new ConfigurationError("Cannot add cache without any configuration sources", {
+      throw new ConfigurationError("Cannot add cache without any configuration sources", "CONFIG_CACHE_NO_SOURCES", {
         operation: "withCache",
       });
     }
@@ -139,7 +143,7 @@ export class ConfigBuilder implements IFluentConfigBuilder {
     // Wrap the last added source with caching
     const lastSource = this.state.sources[this.state.sources.length - 1];
     if (!lastSource) {
-      throw new ConfigurationError("No source available to wrap with cache", {
+      throw new ConfigurationError("No source available to wrap with cache", "CONFIG_CACHE_NO_SOURCE", {
         operation: "withCache",
       });
     }
@@ -197,7 +201,7 @@ export class ConfigBuilder implements IFluentConfigBuilder {
    */
   build<T extends z.ZodType>(schema: T): IConfigRepository {
     if (this.state.sources.length === 0) {
-      throw new ConfigurationError("Cannot build configuration without any sources", {
+      throw new ConfigurationError("Cannot build configuration without any sources", "CONFIG_NO_SOURCES", {
         operation: "build",
       });
     }
@@ -223,9 +227,13 @@ export class ConfigBuilder implements IFluentConfigBuilder {
    */
   buildComposite(): IConfigRepository {
     if (this.state.sources.length === 0) {
-      throw new ConfigurationError("Cannot build composite configuration without any sources", {
-        operation: "buildComposite",
-      });
+      throw new ConfigurationError(
+        "Cannot build composite configuration without any sources",
+        "CONFIG_COMPOSITE_NO_SOURCES",
+        {
+          operation: "buildComposite",
+        },
+      );
     }
 
     const repository = new CompositeConfigRepository({
@@ -261,7 +269,7 @@ export class ConfigBuilder implements IFluentConfigBuilder {
       globalValidationCache.set(cacheKey, "validated", schemaHash);
     } catch (_error) {
       if (this.state.validationOptions.errorOnInvalidSchema) {
-        throw new ConfigurationError("Configuration validation failed", {
+        throw new ConfigurationError("Configuration validation failed", "CONFIG_VALIDATION_FAILED", {
           operation: "validateWithCache",
         });
       }
