@@ -26,11 +26,11 @@ describe("Performance Benchmarks", () => {
       enableMemoryTracking: false, // Disable memory tracking in tests to prevent loops
       enableGCTracking: false,
       maxLatencyHistory: 100, // Reduced from 1000 to 100
-      maxGCEventHistory: 10,  // Reduced from 100 to 10
+      maxGCEventHistory: 10, // Reduced from 100 to 10
       resourceMetricsInterval: 0, // Disable resource metrics collection
       enableMeasurementPooling: true,
       measurementPoolInitialSize: 10, // Reduced from 50 to 10
-      measurementPoolMaxSize: 50,     // Reduced from 200 to 50
+      measurementPoolMaxSize: 50, // Reduced from 200 to 50
     };
 
     tracker = new EnhancedPerformanceTracker(config);
@@ -41,14 +41,14 @@ describe("Performance Benchmarks", () => {
     // Comprehensive cleanup to prevent memory leaks
     tracker.reset();
     tracker.setEnabled(false);
-    
+
     // Force garbage collection if available
     if (typeof (global as any).gc === "function") {
       (global as any).gc();
     }
-    
+
     // Small delay to allow cleanup
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
   });
 
   describe("Tracking Overhead Benchmarks", () => {
@@ -138,7 +138,7 @@ describe("Performance Benchmarks", () => {
         const expectedCount = Math.min(iterations, 100); // Limited by reduced maxLatencyHistory
         expect(metrics.operation.count).toBe(expectedCount);
         expect(timePerOperation).toBeLessThan(2); // Less than 2ms per operation is acceptable for pooled tracking
-        
+
         // Clean up tracker to prevent memory accumulation
         pooledTracker.reset();
         pooledTracker.setEnabled(false);
@@ -325,7 +325,7 @@ describe("Performance Benchmarks", () => {
 
         // Lower sample rates should be faster
         expect(timePerOperation).toBeLessThan(2); // Less than 2ms per operation is reasonable
-        
+
         // Clean up tracker for next iteration
         sampledTracker.reset();
         sampledTracker.setEnabled(false);

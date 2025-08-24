@@ -98,7 +98,13 @@ export const ENVIRONMENT_DATABASE_SCHEMA = z.discriminatedUnion("environment", [
       pool: CONNECTION_POOL_SCHEMA.extend({
         min: z.coerce.number().default(1),
         max: z.coerce.number().default(5),
-      }),
+      }).default(() => ({
+        min: 1,
+        max: 5,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+        acquireTimeoutMillis: 30000,
+      })),
       ssl: z.object({ enabled: z.boolean().default(false) }).optional(),
     }),
   }),
@@ -108,7 +114,13 @@ export const ENVIRONMENT_DATABASE_SCHEMA = z.discriminatedUnion("environment", [
       pool: CONNECTION_POOL_SCHEMA.extend({
         min: z.coerce.number().default(2),
         max: z.coerce.number().default(10),
-      }),
+      }).default(() => ({
+        min: 2,
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+        acquireTimeoutMillis: 30000,
+      })),
       ssl: z.object({ enabled: z.boolean().default(true) }).optional(),
     }),
   }),
@@ -118,7 +130,13 @@ export const ENVIRONMENT_DATABASE_SCHEMA = z.discriminatedUnion("environment", [
       pool: CONNECTION_POOL_SCHEMA.extend({
         min: z.coerce.number().default(5),
         max: z.coerce.number().default(20),
-      }),
+      }).default(() => ({
+        min: 5,
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+        acquireTimeoutMillis: 30000,
+      })),
       ssl: z
         .object({
           enabled: z.boolean().default(true),
@@ -231,13 +249,41 @@ export const RABBITMQ_CONFIG_SCHEMA = z.object({
   password: z.string().min(1).default("guest").describe("RabbitMQ password"),
   vhost: z.string().default("/").describe("Virtual host"),
   connectionName: z.string().default("axon-flow").describe("Connection name for management UI"),
-  connection: RABBITMQ_CONNECTION_CONFIG_SCHEMA,
+  connection: RABBITMQ_CONNECTION_CONFIG_SCHEMA.default(() => ({
+    heartbeat: 60,
+    connectionTimeout: 30000,
+    channelMax: 0,
+    frameMax: 0,
+    locale: "en_US",
+  })),
   exchanges: z.array(EXCHANGE_CONFIG_SCHEMA).default([]).describe("Exchange configurations"),
   queues: z.array(QUEUE_CONFIG_SCHEMA).default([]).describe("Queue configurations"),
-  deadLetter: DEAD_LETTER_CONFIG_SCHEMA,
-  retryPolicy: RETRY_POLICY_SCHEMA,
-  publisher: PUBLISHER_CONFIG_SCHEMA,
-  consumer: CONSUMER_CONFIG_SCHEMA,
+  deadLetter: DEAD_LETTER_CONFIG_SCHEMA.default(() => ({
+    enabled: true,
+    exchange: "dlx",
+    ttl: 86400000,
+    maxRetries: 3,
+  })),
+  retryPolicy: RETRY_POLICY_SCHEMA.default(() => ({
+    enabled: true,
+    maxRetries: 3,
+    initialDelay: 1000,
+    maxDelay: 30000,
+    multiplier: 2,
+    retryOnRequeue: true,
+  })),
+  publisher: PUBLISHER_CONFIG_SCHEMA.default(() => ({
+    confirmChannel: true,
+    maxUnconfirmed: 100,
+    persistent: true,
+    mandatory: true,
+    immediate: false,
+  })),
+  consumer: CONSUMER_CONFIG_SCHEMA.default(() => ({
+    prefetch: 10,
+    noAck: false,
+    exclusive: false,
+  })),
   socketOptions: z
     .object({
       noDelay: z.boolean().default(true).describe("Disable Nagle's algorithm"),
@@ -246,11 +292,17 @@ export const RABBITMQ_CONFIG_SCHEMA = z.object({
       timeout: z.coerce.number().min(0).default(0).describe("Socket timeout (0 = no timeout)"),
     })
     .optional(),
-  reconnect: z.object({
-    enabled: z.boolean().default(true).describe("Enable automatic reconnection"),
-    maxAttempts: z.coerce.number().int().min(0).default(0).describe("Max reconnection attempts (0 = unlimited)"),
-    interval: z.coerce.number().min(0).default(5000).describe("Reconnection interval in milliseconds"),
-  }),
+  reconnect: z
+    .object({
+      enabled: z.boolean().default(true).describe("Enable automatic reconnection"),
+      maxAttempts: z.coerce.number().int().min(0).default(0).describe("Max reconnection attempts (0 = unlimited)"),
+      interval: z.coerce.number().min(0).default(5000).describe("Reconnection interval in milliseconds"),
+    })
+    .default(() => ({
+      enabled: true,
+      maxAttempts: 0,
+      interval: 5000,
+    })),
 });
 
 /**
@@ -362,15 +414,25 @@ const REDIS_CLUSTER_SCHEMA = z.object({
  */
 const REDIS_PUBSUB_SCHEMA = z.object({
   enabled: z.boolean().default(true),
-  subscriber: z.object({
-    retryStrategy: z.any().optional(),
-    enableOfflineQueue: z.boolean().default(true).describe("Enable offline queue"),
-    maxRetriesPerRequest: z.coerce.number().int().min(0).default(3).describe("Max retries per request"),
-  }),
-  publisher: z.object({
-    enableOfflineQueue: z.boolean().default(true).describe("Enable offline queue"),
-    maxRetriesPerRequest: z.coerce.number().int().min(0).default(3).describe("Max retries per request"),
-  }),
+  subscriber: z
+    .object({
+      retryStrategy: z.any().optional(),
+      enableOfflineQueue: z.boolean().default(true).describe("Enable offline queue"),
+      maxRetriesPerRequest: z.coerce.number().int().min(0).default(3).describe("Max retries per request"),
+    })
+    .default(() => ({
+      enableOfflineQueue: true,
+      maxRetriesPerRequest: 3,
+    })),
+  publisher: z
+    .object({
+      enableOfflineQueue: z.boolean().default(true).describe("Enable offline queue"),
+      maxRetriesPerRequest: z.coerce.number().int().min(0).default(3).describe("Max retries per request"),
+    })
+    .default(() => ({
+      enableOfflineQueue: true,
+      maxRetriesPerRequest: 3,
+    })),
 });
 
 /**
@@ -394,8 +456,21 @@ export const REDIS_CONFIG_SCHEMA = z.object({
     .optional()
     .describe("Redis Sentinel nodes"),
   name: z.string().optional().describe("Sentinel master name"),
-  pool: REDIS_POOL_SCHEMA,
-  cacheTTL: CACHE_TTL_SCHEMA,
+  pool: REDIS_POOL_SCHEMA.default(() => ({
+    min: 2,
+    max: 10,
+    acquireTimeoutMillis: 3000,
+    destroyTimeoutMillis: 5000,
+    idleTimeoutMillis: 30000,
+    evictionRunIntervalMillis: 10000,
+  })),
+  cacheTTL: CACHE_TTL_SCHEMA.default(() => ({
+    default: 3600,
+    session: 86400,
+    query: 300,
+    metadata: 7200,
+    temporary: 60,
+  })),
   cluster: REDIS_CLUSTER_SCHEMA.optional(),
   pubsub: REDIS_PUBSUB_SCHEMA.default({
     enabled: true,

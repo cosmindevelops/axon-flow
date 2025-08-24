@@ -1268,7 +1268,7 @@ export class RecoveryManager implements IRecoveryManager {
       } catch (error) {
         // The retry handler has already attempted retries, so now we can try other recovery strategies
         const axonError = error instanceof BaseAxonError ? error : this.errorFactory.createFromError(error as Error);
-        
+
         // Update metrics for failed retry operation
         this.updateMetrics({
           totalAttempts: 3, // maxAttempts from retry handler
@@ -1276,7 +1276,7 @@ export class RecoveryManager implements IRecoveryManager {
           failedAttempts: 1,
           duration: PerformanceUtils.now() - startTime,
         });
-        
+
         // Attempt recovery using other handlers (excluding retry since that already failed)
         const otherHandlers = Array.from(this.handlers.values())
           .filter((handler) => handler.strategy !== RecoveryStrategy.RETRY)

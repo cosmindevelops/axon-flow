@@ -1137,9 +1137,7 @@ describe("ScopeManager - Race Condition Prevention", () => {
     const token = Symbol("test-token");
     await scopeManager.setInstance(token, "test-value", { async: true });
 
-    const getInstancePromises = Array.from({ length: 5 }, () =>
-      Promise.resolve(scopeManager.getInstance(token))
-    );
+    const getInstancePromises = Array.from({ length: 5 }, () => Promise.resolve(scopeManager.getInstance(token)));
 
     // Start disposal using async version while getInstance calls are happening
     const disposePromise = scopeManager.dispose({ async: true });
@@ -1155,14 +1153,18 @@ describe("ScopeManager - Race Condition Prevention", () => {
 
   it("should prevent operations on disposed scope", async () => {
     const token = Symbol("test-token");
-    
+
     // Dispose the scope using async version
     await scopeManager.dispose({ async: true });
 
     // Operations on disposed scope should throw
     expect(() => scopeManager.getInstance(token)).toThrow("Operation not allowed: scope is disposed");
-    await expect(scopeManager.setInstance(token, "value", { async: true })).rejects.toThrow("Operation not allowed: scope is disposed");
-    await expect(scopeManager.removeInstance(token, { async: true })).rejects.toThrow("Operation not allowed: scope is disposed");
+    await expect(scopeManager.setInstance(token, "value", { async: true })).rejects.toThrow(
+      "Operation not allowed: scope is disposed",
+    );
+    await expect(scopeManager.removeInstance(token, { async: true })).rejects.toThrow(
+      "Operation not allowed: scope is disposed",
+    );
   });
 
   it("should coordinate parent-child disposal properly", async () => {
@@ -1184,9 +1186,7 @@ describe("ScopeManager - Race Condition Prevention", () => {
   });
 
   it("should handle concurrent child scope creation", async () => {
-    const promises = Array.from({ length: 5 }, (_, i) =>
-      scopeManager.createChildScope(`child-${i}`, { async: true })
-    );
+    const promises = Array.from({ length: 5 }, (_, i) => scopeManager.createChildScope(`child-${i}`, { async: true }));
 
     const childScopes = await Promise.all(promises);
 
@@ -1198,7 +1198,7 @@ describe("ScopeManager - Race Condition Prevention", () => {
     });
 
     // Clean up child scopes using async disposal
-    await Promise.all(childScopes.map(child => (child as ScopeManager).dispose({ async: true })));
+    await Promise.all(childScopes.map((child) => (child as ScopeManager).dispose({ async: true })));
   });
 
   it("should prevent concurrent disposal of same scope", async () => {
@@ -1219,20 +1219,20 @@ describe("ScopeManager - Race Condition Prevention", () => {
 
   it("should maintain backward compatibility with sync methods", () => {
     const token = Symbol("test-token");
-    
+
     // Sync methods should still work for backward compatibility
     scopeManager.setInstance(token, "sync-value");
     expect(scopeManager.getInstance(token)).toBe("sync-value");
     expect(scopeManager.hasInstance(token)).toBe(true);
-    
+
     const removed = scopeManager.removeInstance(token);
     expect(removed).toBe(true);
     expect(scopeManager.hasInstance(token)).toBe(false);
-    
+
     // Child scope creation
     const childScope = scopeManager.createChildScope("sync-child");
     expect(childScope.scopeId).toBe("sync-child");
-    
+
     // Cleanup
     childScope.dispose();
     scopeManager.clear();
@@ -1254,7 +1254,7 @@ describe("ScopeManager - Performance under concurrent load", () => {
 
     // Run operations concurrently
     const startTime = performance.now();
-    await Promise.all(operations.map(op => op()));
+    await Promise.all(operations.map((op) => op()));
     const endTime = performance.now();
 
     const totalTime = endTime - startTime;

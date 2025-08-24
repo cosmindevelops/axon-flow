@@ -527,9 +527,9 @@ describe("DI Container Performance Benchmarks", () => {
       }
 
       // Performance baselines (these can be adjusted based on environment)
-      expect(benchmarkResults.simple_transient).toBeLessThan(0.01);
-      expect(benchmarkResults.complex_singleton_first).toBeLessThan(5); // First creation is expensive
-      expect(benchmarkResults.complex_singleton_cached).toBeLessThan(0.001); // Cached should be very fast
+      expect(benchmarkResults['simple_transient']).toBeLessThan(0.01);
+      expect(benchmarkResults['complex_singleton_first']).toBeLessThan(5); // First creation is expensive
+      expect(benchmarkResults['complex_singleton_cached']).toBeLessThan(0.001); // Cached should be very fast
 
       // Log final metrics for analysis
       const finalMetrics = container.getMetrics();

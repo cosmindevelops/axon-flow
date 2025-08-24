@@ -9,12 +9,12 @@ import {
   MeasurementPool,
   MetricsAggregator,
   EnhancedPerformanceTracker,
-} from "../../../src/performance/tracker/tracker.classes.js";
+} from "../../../src/performance/core/core.classes.js";
 import type {
   IEnhancedPerformanceConfig,
   IPerformanceMeasurement,
   IMemoryMetrics,
-} from "../../../src/performance/tracker/tracker.types.js";
+} from "../../../src/performance/core/core.types.js";
 
 describe("Performance Classes", () => {
   describe("PerformancePlatformDetector", () => {

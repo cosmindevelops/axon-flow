@@ -101,7 +101,7 @@ describe("MetadataManager", () => {
       expect(metadata).toBeDefined();
       expect(metadata!.options.lifecycle).toBe("singleton");
       expect(metadata!.options.token).toBe("CustomToken");
-      expect(metadata!.options.metadata?.version).toBe("1.0");
+      expect(metadata!.options.metadata?.['version']).toBe("1.0");
     });
 
     it("should return undefined for non-injectable classes", () => {

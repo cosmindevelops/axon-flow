@@ -25,6 +25,23 @@ export const taskStatusSchema = z.enum([
 
 export const taskPrioritySchema = z.enum(["low", "normal", "high", "critical"]) satisfies z.ZodType<TaskPriority>;
 
+// Task error schema
+export const taskErrorSchema = z.object({
+  code: z.string(),
+  message: z.string(),
+  stack: z.string().optional(),
+  retryable: z.boolean(),
+  context: z.record(z.string(), z.unknown()).optional(),
+});
+
+// Task metrics schema
+export const taskMetricsSchema = z.object({
+  duration: z.number(),
+  queueTime: z.number(),
+  cpuTime: z.number().optional(),
+  memoryUsed: z.number().optional(),
+});
+
 // Retry policy schema
 export const retryPolicySchema = z.object({
   maxAttempts: z.number().positive(),
@@ -67,12 +84,12 @@ export const taskExecutionSchema = z.object({
   task: taskDefinitionSchema,
   status: taskStatusSchema,
   correlationId: z.string(),
+  startedAt: z.string().optional(),
+  completedAt: z.string().optional(),
+  result: z.unknown().optional(),
+  error: taskErrorSchema.optional(),
   retryCount: z.number().nonnegative(),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
-  result: taskResultSchema.optional(),
-  error: z.string().optional(),
-  compensationRequired: z.boolean().optional(),
+  metrics: taskMetricsSchema.optional(),
 });
 
 // Workflow definition schema

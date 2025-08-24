@@ -101,7 +101,9 @@ export const isAgentMetadata = (value: unknown): value is IAgentMetadata => {
     isArray(value["capabilities"]) &&
     "status" in value &&
     "registeredAt" in value &&
-    "lastHeartbeat" in value
+    "lastHeartbeat" in value &&
+    "metadata" in value &&
+    isObject(value["metadata"])
   );
 };
 

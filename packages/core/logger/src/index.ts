@@ -27,7 +27,7 @@
  * ```typescript
  * import { createProductionLogger, createDevelopmentLogger } from '@axon/logger';
  *
- * const logger = process.env.NODE_ENV === 'production'
+ * const logger = process.env['NODE_ENV'] === 'production'
  *   ? createProductionLogger()
  *   : createDevelopmentLogger();
  * ```

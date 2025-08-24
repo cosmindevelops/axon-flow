@@ -165,7 +165,7 @@ describe("Error Recovery Integration", () => {
       container.register(NETWORK_TOKEN, NetworkService, { lifecycle: "singleton" });
       container.register(DATABASE_TOKEN, DatabaseService, {
         dependencies: [RELIABLE_TOKEN, NETWORK_TOKEN],
-        lifecycle: "singleton"
+        lifecycle: "singleton",
       });
 
       const networkService = container.resolve(NETWORK_TOKEN);
@@ -173,14 +173,14 @@ describe("Error Recovery Integration", () => {
 
       // Make network service unhealthy
       networkService.setHealth(false);
-      
+
       let thrownError: any;
       try {
         await databaseService.query("SELECT 1");
       } catch (error: any) {
         thrownError = error;
       }
-      
+
       expect(thrownError).toBeDefined();
       expect(thrownError).toBeInstanceOf(ApplicationError);
       expect(thrownError.code).toBe("NETWORK_UNHEALTHY");
@@ -338,9 +338,7 @@ describe("Error Recovery Integration", () => {
       const result = await recoveryManager.executeWithRecovery(operation);
 
       expect(result).toBeDefined();
-      expect(result.db).toEqual(expect.arrayContaining([
-        expect.objectContaining({ id: 1, connections: 3 })
-      ]));
+      expect(result.db).toEqual(expect.arrayContaining([expect.objectContaining({ id: 1, connections: 3 })]));
       expect(result.unreliable).toBe("success after retries");
     });
 
@@ -374,7 +372,7 @@ describe("Error Recovery Integration", () => {
       container.register(NETWORK_TOKEN, NetworkService, { lifecycle: "singleton" });
       container.register(DATABASE_TOKEN, DatabaseService, {
         dependencies: [RELIABLE_TOKEN, NETWORK_TOKEN],
-        lifecycle: "singleton"
+        lifecycle: "singleton",
       });
       container.register(RELIABLE_TOKEN, ReliableService, { lifecycle: "singleton" });
 

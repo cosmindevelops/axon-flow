@@ -239,10 +239,52 @@ export class FileConfigRepository implements IConfigRepository {
   }
 
   /**
+   * Parse .env file content into key-value pairs
+   */
+  private parseEnvContent(content: string): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    const lines = content.split("\n");
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+
+      // Skip empty lines and comments
+      if (!trimmed || trimmed.startsWith("#")) {
+        continue;
+      }
+
+      // Find the first = to split key and value
+      const equalIndex = trimmed.indexOf("=");
+      if (equalIndex === -1) {
+        continue;
+      }
+
+      const key = trimmed.substring(0, equalIndex).trim();
+      let value = trimmed.substring(equalIndex + 1).trim();
+
+      // Remove quotes if present
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+
+      result[key] = value;
+    }
+
+    return result;
+  }
+
+  /**
    * Detect file format from file extension
    */
   private detectFormat(filePath: string): FileFormat {
-    const extension = filePath.toLowerCase().split(".").pop();
+    const fileName = filePath.toLowerCase();
+    const extension = fileName.split(".").pop();
+
+    // Handle .env files (including .env.local, .env.development, etc.)
+    if (fileName.includes(".env")) {
+      return "env";
+    }
+
     switch (extension) {
       case "json":
         return "json";
@@ -276,17 +318,20 @@ export class FileConfigRepository implements IConfigRepository {
       const stats = statSync(this.filePath);
       this.lastModified = stats.mtime.getTime();
 
-      // For now, just handle JSON files - other formats can be added later
-      if (this.format !== "json") {
+      const content = readFileSync(this.filePath, this.encoding);
+
+      // Parse content based on format
+      if (this.format === "json") {
+        this.config = JSON.parse(content as string) as Record<string, unknown>;
+      } else if (this.format === "env") {
+        this.config = this.parseEnvContent(content as string);
+      } else {
         throw new ConfigurationError(`Unsupported file format: ${this.format}`, "UNSUPPORTED_FILE_FORMAT", {
           component: "FileConfigRepository",
           operation: "loadConfigSync",
           metadata: { format: this.format, filePath: this.filePath },
         });
       }
-
-      const content = readFileSync(this.filePath, this.encoding);
-      this.config = JSON.parse(content as string) as Record<string, unknown>;
     } catch (error) {
       if (error instanceof ConfigurationError) {
         throw error;
@@ -325,7 +370,20 @@ export class FileConfigRepository implements IConfigRepository {
       }
 
       const content = await readFile(this.filePath, this.encoding);
-      const newConfig = JSON.parse(content) as Record<string, unknown>;
+
+      // Parse content based on format
+      let newConfig: Record<string, unknown>;
+      if (this.format === "json") {
+        newConfig = JSON.parse(content) as Record<string, unknown>;
+      } else if (this.format === "env") {
+        newConfig = this.parseEnvContent(content);
+      } else {
+        throw new ConfigurationError(`Unsupported file format: ${this.format}`, "UNSUPPORTED_FILE_FORMAT", {
+          component: "FileConfigRepository",
+          operation: "reloadConfig",
+          metadata: { format: this.format, filePath: this.filePath },
+        });
+      }
 
       // Compare configurations to determine affected keys
       const affectedKeys = this.getChangedKeys(this.config, newConfig);

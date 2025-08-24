@@ -419,7 +419,7 @@ describe("DIContainer", () => {
         expect(error.metadata).toHaveProperty("token", "Failing");
         expect(error.metadata).toHaveProperty("containerName");
         expect(error.cause?.message).toBe("Constructor failure");
-        
+
         // Check that it's an ApplicationError (or at least behaves like one)
         expect(error instanceof ApplicationError || error.category === "application").toBe(true);
       }

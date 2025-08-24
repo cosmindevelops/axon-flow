@@ -22,10 +22,12 @@ export const SERVICE_CONFIG_SCHEMA = z.object({
       credentials: z.boolean().default(true),
     })
     .optional(),
-  logging: z.object({
-    level: z.enum(["error", "warn", "info", "debug"]).default("info"),
-    pretty: z.boolean().default(false),
-  }),
+  logging: z
+    .object({
+      level: z.enum(["error", "warn", "info", "debug"]).default("info"),
+      pretty: z.boolean().default(false),
+    })
+    .default({ level: "info", pretty: false }),
 });
 
 /**

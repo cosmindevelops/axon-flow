@@ -31,13 +31,13 @@ import {
   createJSONExporter,
   createPrometheusExporter,
 } from "../../../src/performance/decorators/index.js";
-import { EnhancedPerformanceTracker } from "../../../src/performance/tracker/tracker.classes.js";
+import { EnhancedPerformanceTracker } from "../../../src/performance/core/core.classes.js";
 import type {
   IEnhancedPerformanceConfig,
   IPerformanceBudget,
   IDecoratorActivationConditions,
   PerformanceCategory,
-} from "../../../src/performance/performance.types.js";
+} from "../../../src/performance/core/core.types.js";
 
 // Mock console methods to avoid noise in tests
 const mockConsole = {

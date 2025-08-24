@@ -30,8 +30,7 @@ export default tseslint.config(
     ],
     languageOptions: {
       parserOptions: {
-        project: ["./packages/core/*/tsconfig.json", "./apps/*/tsconfig.json"],
-        tsconfigRootDir: ".",
+        project: true,
         ecmaFeatures: {
           jsx: true,
         },
@@ -91,7 +90,7 @@ export default tseslint.config(
           ignoreRestSiblings: true,
         },
       ],
-      "@typescript-eslint/consistent-type-exports": "off",
+      "@typescript-eslint/consistent-type-exports": "warn",
       "@typescript-eslint/consistent-type-imports": [
         "warn",
         { prefer: "type-imports", fixStyle: "separate-type-imports" },

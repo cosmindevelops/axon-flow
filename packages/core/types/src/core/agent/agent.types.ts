@@ -6,6 +6,7 @@
  */
 
 import type { Timestamp, Version } from "../index.js";
+import type { MessageType } from "../message/message.types.js";
 
 /**
  * Unique identifier for an agent instance
@@ -182,4 +183,395 @@ export interface IAgentMetrics {
 
   /** Average task execution time in milliseconds */
   readonly avgExecutionTime?: number;
+}
+
+// ============================================================================
+// EXTENDED TYPE DEFINITIONS (Required by Test Suite)
+// ============================================================================
+
+/**
+ * Capability name identifier
+ */
+export type CapabilityName = string & { __brand: "CapabilityName" };
+
+/**
+ * Priority levels for tasks and messages
+ */
+export type Priority = "low" | "normal" | "high" | "critical";
+
+/**
+ * Connection status for agent connections
+ */
+export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "reconnecting" | "error";
+
+/**
+ * Health status for agent health checks
+ */
+export type HealthStatus = "healthy" | "unhealthy" | "warning" | "unknown";
+
+/**
+ * Extended parameter definition with validation and examples
+ */
+export interface IParameterDefinition extends ICapabilityParameter {
+  /** Validation constraints */
+  readonly validation?: {
+    readonly min?: number;
+    readonly max?: number;
+    readonly pattern?: string;
+  };
+
+  /** Usage examples */
+  readonly examples?: readonly unknown[];
+}
+
+/**
+ * Extended return definition with properties and examples
+ */
+export interface IReturnDefinition extends ICapabilityReturn {
+  /** Return value properties */
+  readonly properties?: Record<string, { type: string; description?: string }>;
+
+  /** Usage examples */
+  readonly examples?: readonly unknown[];
+}
+
+/**
+ * Agent message structure for communication
+ */
+export interface IAgentMessage {
+  /** Message identifier */
+  readonly id: string;
+
+  /** Message type */
+  readonly type: MessageType;
+
+  /** Sender agent ID */
+  readonly from: AgentId;
+
+  /** Recipient agent ID */
+  readonly to: AgentId;
+
+  /** Message timestamp */
+  readonly timestamp: Timestamp;
+
+  /** Correlation ID for tracking */
+  readonly correlationId: string;
+
+  /** Message priority */
+  readonly priority: Priority;
+
+  /** Message payload */
+  readonly payload: {
+    readonly action: string;
+    readonly capabilityName?: string;
+    readonly parameters?: Record<string, unknown>;
+  };
+
+  /** Additional metadata */
+  readonly metadata?: {
+    readonly timeout?: number;
+    readonly retryable?: boolean;
+    readonly maxRetries?: number;
+  };
+}
+
+/**
+ * Agent configuration structure
+ */
+export interface IAgentConfiguration {
+  /** Connection configuration */
+  readonly connection: {
+    readonly host: string;
+    readonly port: number;
+    readonly secure: boolean;
+    readonly timeout: number;
+    readonly retryAttempts: number;
+    readonly keepAlive: boolean;
+  };
+
+  /** Logging configuration */
+  readonly logging: {
+    readonly level: string;
+    readonly format: string;
+    readonly destination: string;
+    readonly includeMetadata: boolean;
+  };
+
+  /** Performance configuration */
+  readonly performance: {
+    readonly maxConcurrentTasks: number;
+    readonly heartbeatInterval: number;
+    readonly healthCheckInterval: number;
+    readonly taskTimeout: number;
+    readonly enableMetrics: boolean;
+  };
+
+  /** Capabilities configuration */
+  readonly capabilities: {
+    readonly enabled: readonly string[];
+    readonly disabled: readonly string[];
+    readonly autoLoad: boolean;
+  };
+
+  /** Security configuration */
+  readonly security?: {
+    readonly enableAuth: boolean;
+    readonly tokenExpiration: number;
+    readonly allowedOrigins: readonly string[];
+    readonly rateLimit: {
+      readonly requests: number;
+      readonly window: number;
+    };
+  };
+}
+
+/**
+ * Agent connection information
+ */
+export interface IAgentConnection {
+  /** Agent identifier */
+  readonly agentId: AgentId;
+
+  /** Connection status */
+  readonly status: ConnectionStatus;
+
+  /** Connection endpoint */
+  readonly endpoint: string;
+
+  /** Connection timestamp */
+  readonly connectedAt: Timestamp;
+
+  /** Last activity timestamp */
+  readonly lastActivity: Timestamp;
+
+  /** Connection protocol */
+  readonly protocol: string;
+
+  /** Protocol version */
+  readonly version: string;
+
+  /** Supported features */
+  readonly features: readonly string[];
+
+  /** Connection metrics */
+  readonly metrics: {
+    readonly bytesSent: number;
+    readonly bytesReceived: number;
+    readonly messagesSent: number;
+    readonly messagesReceived: number;
+    readonly averageLatency: number;
+  };
+
+  /** Security information */
+  readonly security?: {
+    readonly authenticated: boolean;
+    readonly tokenExpiry: Timestamp;
+    readonly permissions: readonly string[];
+  };
+}
+
+/**
+ * Agent task information
+ */
+export interface IAgentTask {
+  /** Task identifier */
+  readonly id: string;
+
+  /** Agent identifier */
+  readonly agentId: AgentId;
+
+  /** Capability name */
+  readonly capabilityName: CapabilityName;
+
+  /** Task status */
+  readonly status: string;
+
+  /** Task priority */
+  readonly priority: Priority;
+
+  /** Task parameters */
+  readonly parameters: Record<string, unknown>;
+
+  /** Creation timestamp */
+  readonly createdAt: Timestamp;
+
+  /** Start timestamp */
+  readonly startedAt?: Timestamp;
+
+  /** Expected duration */
+  readonly expectedDuration: number;
+
+  /** Task timeout */
+  readonly timeout: number;
+
+  /** Retry count */
+  readonly retryCount: number;
+
+  /** Maximum retries */
+  readonly maxRetries: number;
+
+  /** Correlation ID */
+  readonly correlationId: string;
+
+  /** Task metadata */
+  readonly metadata?: {
+    readonly source?: string;
+    readonly category?: string;
+    readonly tags?: readonly string[];
+  };
+}
+
+/**
+ * Agent performance metrics
+ */
+export interface IAgentPerformanceMetrics {
+  /** Agent identifier */
+  readonly agentId: AgentId;
+
+  /** Metrics timestamp */
+  readonly timestamp: Timestamp;
+
+  /** Agent uptime */
+  readonly uptime: number;
+
+  /** Task metrics */
+  readonly tasks: {
+    readonly completed: number;
+    readonly failed: number;
+    readonly inProgress: number;
+    readonly queued: number;
+    readonly totalDuration: number;
+    readonly averageDuration: number;
+    readonly successRate: number;
+  };
+
+  /** Resource metrics */
+  readonly resources: {
+    readonly cpuUsage: number;
+    readonly memoryUsage: number;
+    readonly networkBytesIn: number;
+    readonly networkBytesOut: number;
+    readonly diskReadBytes: number;
+    readonly diskWriteBytes: number;
+  };
+
+  /** Capability metrics */
+  readonly capabilities: {
+    readonly active: number;
+    readonly total: number;
+    readonly utilizationRate: number;
+  };
+
+  /** Error metrics */
+  readonly errors: {
+    readonly total: number;
+    readonly byType: Record<string, number>;
+    readonly recent: readonly {
+      readonly type: string;
+      readonly message: string;
+      readonly timestamp: Timestamp;
+    }[];
+  };
+}
+
+/**
+ * Agent heartbeat information
+ */
+export interface IAgentHeartbeat {
+  /** Agent identifier */
+  readonly agentId: AgentId;
+
+  /** Heartbeat timestamp */
+  readonly timestamp: Timestamp;
+
+  /** Agent status */
+  readonly status: AgentStatus;
+
+  /** Health status */
+  readonly health: HealthStatus;
+
+  /** System metrics */
+  readonly metrics?: {
+    readonly cpu: number;
+    readonly memory: number;
+    readonly activeTasks: number;
+  };
+}
+
+/**
+ * Enhanced agent health with detailed checks
+ */
+export interface IAgentHealthExtended extends IAgentHealth {
+  /** Response time */
+  readonly responseTime: number;
+
+  /** Agent uptime */
+  readonly uptime: number;
+
+  /** Consecutive failures */
+  readonly consecutiveFailures: number;
+
+  /** Health checks */
+  readonly checks: {
+    readonly connectivity?: {
+      readonly status: string;
+      readonly responseTime: number;
+      readonly timestamp: Timestamp;
+    };
+    readonly resources?: {
+      readonly status: string;
+      readonly cpu: number;
+      readonly memory: number;
+      readonly timestamp: Timestamp;
+    };
+    readonly capabilities?: {
+      readonly status: string;
+      readonly available: number;
+      readonly active: number;
+      readonly timestamp: Timestamp;
+    };
+  };
+
+  /** Performance metrics */
+  readonly metrics?: {
+    readonly tasksCompleted: number;
+    readonly tasksInProgress: number;
+    readonly averageTaskDuration: number;
+    readonly errorRate: number;
+  };
+}
+
+/**
+ * Extended agent capability with examples
+ */
+export interface IAgentCapabilityExtended extends IAgentCapability {
+  /** Parameter definitions */
+  readonly parameters: readonly IParameterDefinition[];
+
+  /** Return definition */
+  readonly returns: IReturnDefinition;
+
+  /** Usage examples */
+  readonly examples?: readonly {
+    readonly name: string;
+    readonly input: Record<string, unknown>;
+    readonly output: unknown;
+  }[];
+}
+
+/**
+ * Extended agent registration with additional fields
+ */
+export interface IAgentRegistrationExtended extends IAgentRegistration {
+  /** Agent description */
+  readonly description: string;
+
+  /** Agent tags */
+  readonly tags?: readonly string[];
+
+  /** Agent configuration */
+  readonly configuration?: Record<string, unknown>;
+
+  /** Agent dependencies */
+  readonly dependencies?: Record<string, string>;
 }
