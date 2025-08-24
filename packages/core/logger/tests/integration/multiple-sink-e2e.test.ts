@@ -53,7 +53,7 @@ describe("Multiple Sink Configuration E2E", () => {
     const statMock = fsMock.promises.stat as ReturnType<typeof vi.fn>;
     const appendFileMock = fsMock.promises.appendFile as ReturnType<typeof vi.fn>;
     const readdirMock = fsMock.promises.readdir as ReturnType<typeof vi.fn>;
-    
+
     mkdirMock.mockResolvedValue(undefined);
     statMock.mockResolvedValue({ size: 1024 } as any);
     appendFileMock.mockResolvedValue(undefined);
@@ -63,10 +63,10 @@ describe("Multiple Sink Configuration E2E", () => {
   afterEach(async () => {
     TransportCircuitBreakerFactory.clear();
     vi.clearAllTimers();
-    
+
     // Enhanced cleanup with proper async handling
     await new Promise((resolve) => setTimeout(resolve, 50));
-    
+
     // Ensure any pending promises are resolved
     await Promise.resolve();
   });

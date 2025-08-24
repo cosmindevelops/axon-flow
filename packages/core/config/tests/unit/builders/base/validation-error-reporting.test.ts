@@ -11,15 +11,15 @@ describe("ConfigBuilder Enhanced Error Reporting", () => {
   it("should provide detailed context for schema validation failures", () => {
     // Create a builder with invalid configuration data
     const builder = new ConfigBuilder();
-    
+
     // Add configuration that will fail validation
     builder.fromMemory({
       database: {
         host: 123, // Should be string
         port: "invalid", // Should be number
-        ssl: "maybe" // Should be boolean
+        ssl: "maybe", // Should be boolean
       },
-      missingRequired: undefined
+      missingRequired: undefined,
     });
 
     // Define a schema that will fail
@@ -27,9 +27,9 @@ describe("ConfigBuilder Enhanced Error Reporting", () => {
       database: z.object({
         host: z.string(),
         port: z.number(),
-        ssl: z.boolean()
+        ssl: z.boolean(),
       }),
-      requiredField: z.string()
+      requiredField: z.string(),
     });
 
     // Attempt to build and capture the error
@@ -43,14 +43,14 @@ describe("ConfigBuilder Enhanced Error Reporting", () => {
     // Verify it's a ConfigurationError with enhanced context
     expect(thrownError).toBeInstanceOf(ConfigurationError);
     expect(thrownError?.code).toBe("CONFIG_VALIDATION_FAILED");
-    
+
     // Check that enhanced context is provided via standard ConfigurationError properties
     expect(thrownError?.message).toContain("Configuration validation failed:");
     expect(thrownError?.message).toContain("Details:");
     expect(thrownError?.configSource).toBeDefined();
     expect(thrownError?.configKey).toBeDefined();
     expect(thrownError?.expectedType).toBeDefined();
-    
+
     // Verify specific validation details are included in the message
     expect(thrownError?.message).toContain("Validation errors:");
     expect(thrownError?.configSource).toContain("MemoryConfigRepository");
@@ -58,17 +58,17 @@ describe("ConfigBuilder Enhanced Error Reporting", () => {
 
   it("should handle single validation error with specific path context", () => {
     const builder = new ConfigBuilder();
-    
+
     builder.fromMemory({
       api: {
-        timeout: "not-a-number"
-      }
+        timeout: "not-a-number",
+      },
     });
 
     const schema = z.object({
       api: z.object({
-        timeout: z.number()
-      })
+        timeout: z.number(),
+      }),
     });
 
     let thrownError: ConfigurationError | undefined;
@@ -86,21 +86,21 @@ describe("ConfigBuilder Enhanced Error Reporting", () => {
 
   it("should handle multiple validation errors with summary", () => {
     const builder = new ConfigBuilder();
-    
+
     builder.fromMemory({
       server: {
         port: "invalid",
         host: 123,
-        enabled: "not-boolean"
-      }
+        enabled: "not-boolean",
+      },
     });
 
     const schema = z.object({
       server: z.object({
         port: z.number(),
         host: z.string(),
-        enabled: z.boolean()
-      })
+        enabled: z.boolean(),
+      }),
     });
 
     let thrownError: ConfigurationError | undefined;

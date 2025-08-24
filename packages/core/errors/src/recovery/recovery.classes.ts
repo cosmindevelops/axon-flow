@@ -187,7 +187,7 @@ export class RetryHandler extends BaseRecoveryHandler {
 
     // Set defaults for required configuration
     this.config = {
-      maxAttempts: maxAttempts,
+      maxAttempts,
       initialDelay: config.initialDelay,
       backoffStrategy: config.backoffStrategy,
       maxDelay: config.maxDelay || 30000, // 30 seconds default
@@ -773,7 +773,7 @@ export class GracefulDegradationHandler extends BaseRecoveryHandler {
 
     this.config = {
       ...config,
-      degradationStrategies: degradationStrategies,
+      degradationStrategies,
     };
     this.errorFactory = new ErrorFactory(ErrorSeverity.WARNING, ErrorCategory.APPLICATION);
   }

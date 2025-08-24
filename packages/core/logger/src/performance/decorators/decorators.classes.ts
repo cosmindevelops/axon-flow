@@ -699,7 +699,7 @@ export function withTiming<T extends (...args: any[]) => any>(fn: T, options: IP
           });
       }
 
-      // Handle sync functions  
+      // Handle sync functions
       // Capture timing before finishOperation clears it
       const endTime = getSafePerformanceTime();
       const startTime = measurement.startTime;
@@ -1066,9 +1066,7 @@ export function createPrometheusExporter(name: string, interval = 0): IPerforman
  */
 function getSafePerformanceTime(): number {
   try {
-    return typeof performance !== "undefined" && performance.now 
-      ? performance.now() 
-      : Date.now();
+    return typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
   } catch (_error) {
     // Performance API unavailable - fallback to Date.now()
     return Date.now();

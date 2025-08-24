@@ -15,11 +15,11 @@ describe("Environment Classes", () => {
         detect: function () {
           // Mock environment detection logic
           if (typeof process !== "undefined") {
-            if (process.env['NODE_ENV'] === "production") {
+            if (process.env["NODE_ENV"] === "production") {
               this.currentEnvironment = "production";
-            } else if (process.env['NODE_ENV'] === "test") {
+            } else if (process.env["NODE_ENV"] === "test") {
               this.currentEnvironment = "test";
-            } else if (process.env['NODE_ENV'] === "development") {
+            } else if (process.env["NODE_ENV"] === "development") {
               this.currentEnvironment = "development";
             } else {
               this.currentEnvironment = "local";
@@ -235,7 +235,7 @@ describe("Environment Classes", () => {
         getEnvironmentVariables: function () {
           if (typeof process !== "undefined") {
             return {
-              NODE_ENV: process.env['NODE_ENV'],
+              NODE_ENV: process.env["NODE_ENV"],
               PORT: process.env.PORT,
               HOST: process.env.HOST,
               // Filter out sensitive variables

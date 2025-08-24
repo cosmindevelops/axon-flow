@@ -81,8 +81,8 @@ export * from "./status/status.schemas.js";
 export * from "./environment/environment.schemas.js";
 
 // Configuration hierarchy and provider schemas
-export * from "./config/hierarchy/hierarchy.schemas.js";
-export * from "./config/provider/provider.schemas.js";
+export type * from "./config/hierarchy/hierarchy.schemas.js";
+export type * from "./config/provider/provider.schemas.js";
 export * from "./config/schema/schema.schemas.js";
 
 // Logging system schemas

@@ -6,7 +6,6 @@
  */
 
 import { glob } from "glob";
-import path from "node:path";
 import { defineConfig, mergeConfig } from "vitest/config";
 
 // Limit Node memory per worker to be WSL-friendly
@@ -65,10 +64,10 @@ export const baseConfig = defineConfig({
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["**/*.d.ts", "**/*.config.*", "**/*.test.*", "**/*.spec.*", "**/types/**", "**/index.ts"],
       thresholds: {
-        lines: 0,
-        functions: 0,
-        branches: 0,
-        statements: 0,
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90,
       },
       clean: true,
       cleanOnRerun: true,
@@ -76,6 +75,9 @@ export const baseConfig = defineConfig({
 
     // Environment
     environment: "node",
+
+    // Cross-environment compatibility
+    environmentMatchGlobs: [["**/*.{test,spec}.{ts,tsx,js,jsx}", "node"]],
 
     // Watch mode
     watch: false,
@@ -89,8 +91,22 @@ export const baseConfig = defineConfig({
       enabled: false,
     },
 
-    // Setup files
-    setupFiles: [],
+    // Setup files - including visual regression testing for error outputs
+    setupFiles: [
+      // Resolve setup file relative to project root, not package directory
+      typeof process !== "undefined" && process.cwd().includes("packages/")
+        ? "../../../tools/config/vitest/setup-visual-regression.ts"
+        : "./tools/config/vitest/setup-visual-regression.ts",
+    ],
+
+    // Snapshot testing with visual regression support for error outputs
+    resolveSnapshotPath: (testPath: string, snapExtension: string) => {
+      // Support visual regression snapshots for error outputs
+      if (testPath.includes("error") && snapExtension.includes(".visual")) {
+        return testPath.replace(/\.test\.([jt]sx?)/, `.visual.snap${snapExtension}`);
+      }
+      return testPath.replace(/\.test\.([jt]sx?)/, `.snap${snapExtension}`);
+    },
 
     // Sequence configuration
     sequence: {
@@ -120,7 +136,7 @@ export default defineConfig(async () => {
 
       ...testDirs.map((testDir) => ({
         test: {
-          name: `integration-${path.basename(testDir)}`,
+          name: `integration-${testDir.split("/").pop()?.replace("/", "") || "unknown"}`,
           root: testDir,
           include: ["**/*.{test,spec}.{ts,tsx,js,jsx}"],
           testTimeout: 30000,

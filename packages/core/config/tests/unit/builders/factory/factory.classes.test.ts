@@ -33,16 +33,16 @@ describe("Configuration Factory Classes", () => {
 
   beforeEach(() => {
     factory = new ConfigBuilderFactory();
-    originalNodeEnv = process.env['NODE_ENV'];
+    originalNodeEnv = process.env["NODE_ENV"];
     vi.clearAllMocks();
   });
 
   afterEach(() => {
     // Restore original NODE_ENV
     if (originalNodeEnv !== undefined) {
-      process.env['NODE_ENV'] = originalNodeEnv;
+      process.env["NODE_ENV"] = originalNodeEnv;
     } else {
-      delete process.env['NODE_ENV'];
+      delete process.env["NODE_ENV"];
     }
   });
 
@@ -96,21 +96,21 @@ describe("Configuration Factory Classes", () => {
 
   describe("Environment Detection", () => {
     it("should detect development environment from NODE_ENV", () => {
-      process.env['NODE_ENV'] = "development";
+      process.env["NODE_ENV"] = "development";
       const detection = factory.detectEnvironment();
       expect(detection.environment).toBe("development");
       expect(detection.source).toBe("environment");
     });
 
     it("should detect production environment from NODE_ENV", () => {
-      process.env['NODE_ENV'] = "production";
+      process.env["NODE_ENV"] = "production";
       const detection = factory.detectEnvironment();
       expect(detection.environment).toBe("production");
       expect(detection.source).toBe("environment");
     });
 
     it("should detect test environment from NODE_ENV", () => {
-      process.env['NODE_ENV'] = "test";
+      process.env["NODE_ENV"] = "test";
       const detection = factory.detectEnvironment();
       expect(detection.environment).toBe("test");
       expect(detection.source).toBe("environment");
@@ -124,25 +124,25 @@ describe("Configuration Factory Classes", () => {
       ];
 
       aliases.forEach(({ env, expected }) => {
-        process.env['NODE_ENV'] = env;
+        process.env["NODE_ENV"] = env;
         const detection = factory.detectEnvironment();
         expect(detection.environment).toBe(expected);
       });
     });
 
     it("should use APP_ENV when NODE_ENV not available", () => {
-      delete process.env['NODE_ENV'];
-      process.env['APP_ENV'] = "development"; // Use valid environment instead of staging
+      delete process.env["NODE_ENV"];
+      process.env["APP_ENV"] = "development"; // Use valid environment instead of staging
       const detection = factory.detectEnvironment();
       expect(detection.source).toBe("environment");
       expect(detection.environment).toBe("development");
     });
 
     it("should fall back to development when no environment detected", () => {
-      delete process.env['NODE_ENV'];
-      delete process.env['APP_ENV'];
-      delete process.env['ENVIRONMENT'];
-      delete process.env['ENV'];
+      delete process.env["NODE_ENV"];
+      delete process.env["APP_ENV"];
+      delete process.env["ENVIRONMENT"];
+      delete process.env["ENV"];
 
       const detection = factory.detectEnvironment();
       expect(detection.environment).toBe("development");
@@ -152,8 +152,8 @@ describe("Configuration Factory Classes", () => {
 
     it("should throw error in strict mode when environment not detected", () => {
       const strictFactory = new ConfigBuilderFactory({ strictMode: true });
-      delete process.env['NODE_ENV'];
-      delete process.env['APP_ENV'];
+      delete process.env["NODE_ENV"];
+      delete process.env["APP_ENV"];
 
       expect(() => strictFactory.detectEnvironment()).toThrow("Unable to detect environment in strict mode");
     });
@@ -169,7 +169,7 @@ describe("Configuration Factory Classes", () => {
     });
 
     it("should prefer explicit environment over detection", () => {
-      process.env['NODE_ENV'] = "development";
+      process.env["NODE_ENV"] = "development";
       const explicitFactory = new ConfigBuilderFactory({
         environment: "production",
       });
@@ -210,7 +210,7 @@ describe("Configuration Factory Classes", () => {
     });
 
     it("should detect environment using default factory", () => {
-      process.env['NODE_ENV'] = "production";
+      process.env["NODE_ENV"] = "production";
       const detection = detectEnvironment();
       expect(detection.environment).toBe("production");
     });
@@ -266,16 +266,16 @@ describe("Configuration Factory Classes", () => {
 
   describe("Error Handling", () => {
     it("should handle missing environment variables gracefully", () => {
-      delete process.env['NODE_ENV'];
-      delete process.env['APP_ENV'];
-      delete process.env['ENVIRONMENT'];
-      delete process.env['ENV'];
+      delete process.env["NODE_ENV"];
+      delete process.env["APP_ENV"];
+      delete process.env["ENVIRONMENT"];
+      delete process.env["ENV"];
 
       expect(() => factory.detectEnvironment()).not.toThrow();
     });
 
     it("should handle invalid environment variables", () => {
-      process.env['NODE_ENV'] = "invalid-env";
+      process.env["NODE_ENV"] = "invalid-env";
       const detection = factory.detectEnvironment();
 
       expect(detection.environment).toBe("development"); // Falls back to default
@@ -283,10 +283,10 @@ describe("Configuration Factory Classes", () => {
     });
 
     it("should validate custom detection results", () => {
-      delete process.env['NODE_ENV'];
-      delete process.env['APP_ENV'];
-      delete process.env['ENVIRONMENT'];
-      delete process.env['ENV'];
+      delete process.env["NODE_ENV"];
+      delete process.env["APP_ENV"];
+      delete process.env["ENVIRONMENT"];
+      delete process.env["ENV"];
 
       const customFactory = new ConfigBuilderFactory({
         customDetection: () => null,

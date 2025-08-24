@@ -375,10 +375,10 @@ export class DIContainer implements IDIContainer {
         "DI_ASYNC_FACTORY_NOT_SUPPORTED",
         {
           correlationId: `asyncFactory_${Date.now()}`,
-          metadata: { 
-            token: String(token), 
+          metadata: {
+            token: String(token),
             containerName: this.name,
-            hint: "Use container.resolveAsync() to support async factories and dependencies"
+            hint: "Use container.resolveAsync() to support async factories and dependencies",
           },
         },
       );
@@ -547,14 +547,15 @@ export class DIContainer implements IDIContainer {
       };
 
       // Check if we need async resolution
-      const hasAsyncDependencies = options.dependencies?.some((dep) => {
-        try {
-          const depResult = this.internalResolveCore(dep, context);
-          return depResult instanceof Promise;
-        } catch {
-          return false;
-        }
-      }) ?? false;
+      const hasAsyncDependencies =
+        options.dependencies?.some((dep) => {
+          try {
+            const depResult = this.internalResolveCore(dep, context);
+            return depResult instanceof Promise;
+          } catch {
+            return false;
+          }
+        }) ?? false;
 
       if (hasAsyncDependencies) {
         // Async path - resolve all dependencies asynchronously

@@ -68,10 +68,10 @@ describe("FileRotationManager", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Reset the createWriteStream mock to return the default mockWriteStream
     mockFs.createWriteStream.mockReturnValue(mockWriteStream);
-    
+
     // Reset all mock implementations
     mockWriteStream.write.mockImplementation((data, callback) => {
       if (callback) callback();

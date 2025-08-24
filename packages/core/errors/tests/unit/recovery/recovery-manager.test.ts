@@ -5,18 +5,14 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { BaseAxonError } from "../../../src/base/base-error.classes.js";
 import { ErrorSeverity, ErrorCategory } from "../../../src/base/base-error.types.js";
-import { 
+import {
   RecoveryManager,
   RetryHandler,
   CircuitBreakerHandler,
   TimeoutHandler,
-  GracefulDegradationHandler
+  GracefulDegradationHandler,
 } from "../../../src/recovery/recovery.classes.js";
-import { 
-  BackoffStrategy,
-  RecoveryStrategy,
-  RecoveryState 
-} from "../../../src/recovery/recovery.types.js";
+import { BackoffStrategy, RecoveryStrategy, RecoveryState } from "../../../src/recovery/recovery.types.js";
 
 describe("RecoveryManager", () => {
   let recoveryManager: RecoveryManager;
@@ -28,7 +24,7 @@ describe("RecoveryManager", () => {
       severity: ErrorSeverity.ERROR,
       category: ErrorCategory.SYSTEM,
     });
-    
+
     recoveryManager = new RecoveryManager();
   });
 
@@ -48,12 +44,12 @@ describe("RecoveryManager", () => {
         retryConfig: {
           maxRetries: 3,
           backoffStrategy: BackoffStrategy.EXPONENTIAL,
-          initialDelay: 100
+          initialDelay: 100,
         },
         circuitBreakerConfig: {
           failureThreshold: 5,
-          resetTimeout: 60000
-        }
+          resetTimeout: 60000,
+        },
       };
       const manager = new RecoveryManager(config);
       expect(manager).toBeDefined();
@@ -64,9 +60,9 @@ describe("RecoveryManager", () => {
       const config = {
         retryConfig: { maxRetries: 3 },
         timeoutConfig: { defaultTimeout: 5000 },
-        gracefulDegradationConfig: { 
-          fallbackStrategies: new Map([["ERROR", async () => "fallback"]])
-        }
+        gracefulDegradationConfig: {
+          fallbackStrategies: new Map([["ERROR", async () => "fallback"]]),
+        },
       };
       const manager = new RecoveryManager(config);
       expect(manager.getHandlers().length).toBe(3);
@@ -77,9 +73,9 @@ describe("RecoveryManager", () => {
     it("should register recovery handlers", () => {
       const retryHandler = new RetryHandler({
         maxRetries: 3,
-        backoffStrategy: BackoffStrategy.EXPONENTIAL
+        backoffStrategy: BackoffStrategy.EXPONENTIAL,
       });
-      
+
       recoveryManager.registerHandler(retryHandler);
       expect(recoveryManager.getHandlers().length).toBe(1);
       expect(recoveryManager.getHandlers()[0]).toBe(retryHandler);
@@ -88,12 +84,12 @@ describe("RecoveryManager", () => {
     it("should unregister recovery handlers by name", () => {
       const retryHandler = new RetryHandler({
         maxRetries: 3,
-        backoffStrategy: BackoffStrategy.EXPONENTIAL
+        backoffStrategy: BackoffStrategy.EXPONENTIAL,
       });
-      
+
       recoveryManager.registerHandler(retryHandler);
       expect(recoveryManager.getHandlers().length).toBe(1);
-      
+
       const removed = recoveryManager.unregisterHandler(retryHandler.name);
       expect(removed).toBe(true);
       expect(recoveryManager.getHandlers().length).toBe(0);
@@ -107,7 +103,7 @@ describe("RecoveryManager", () => {
     it("should provide read-only access to handlers", () => {
       const retryHandler = new RetryHandler({ maxRetries: 3 });
       recoveryManager.registerHandler(retryHandler);
-      
+
       const handlers = recoveryManager.getHandlers();
       expect(() => {
         (handlers as any).push("should not work");
@@ -120,11 +116,11 @@ describe("RecoveryManager", () => {
       const mockOperation = {
         name: "test-operation",
         operation: vi.fn().mockResolvedValue("success"),
-        timeout: 5000
+        timeout: 5000,
       };
-      
+
       const result = await recoveryManager.executeWithRecovery(mockOperation);
-      
+
       expect(result).toBe("success");
       expect(mockOperation.operation).toHaveBeenCalledTimes(1);
     });
@@ -133,11 +129,11 @@ describe("RecoveryManager", () => {
       const retryHandler = new RetryHandler({
         maxRetries: 2,
         backoffStrategy: BackoffStrategy.LINEAR,
-        initialDelay: 10
+        initialDelay: 10,
       });
-      
+
       recoveryManager.registerHandler(retryHandler);
-      
+
       let callCount = 0;
       const mockOperation = {
         name: "retry-test",
@@ -149,11 +145,11 @@ describe("RecoveryManager", () => {
           }
           return "success on retry";
         }),
-        timeout: 5000
+        timeout: 5000,
       };
-      
+
       const result = await recoveryManager.executeWithRecovery(mockOperation);
-      
+
       expect(result).toBe("success on retry");
       expect(mockOperation.operation).toHaveBeenCalledTimes(2);
     });
@@ -162,28 +158,24 @@ describe("RecoveryManager", () => {
       const retryHandler = new RetryHandler({
         maxRetries: 1,
         backoffStrategy: BackoffStrategy.LINEAR,
-        initialDelay: 10
+        initialDelay: 10,
       });
-      
+
       const degradationHandler = new GracefulDegradationHandler({
-        fallbackStrategies: new Map([
-          ["SERVICE_ERROR", async () => ({ fallback: true, data: [] })]
-        ])
+        fallbackStrategies: new Map([["SERVICE_ERROR", async () => ({ fallback: true, data: [] })]]),
       });
-      
+
       recoveryManager.registerHandler(retryHandler);
       recoveryManager.registerHandler(degradationHandler);
-      
+
       const failingOperation = {
         name: "degradation-test",
-        operation: vi.fn().mockRejectedValue(
-          new BaseAxonError("Service error", "SERVICE_ERROR")
-        ),
-        timeout: 5000
+        operation: vi.fn().mockRejectedValue(new BaseAxonError("Service error", "SERVICE_ERROR")),
+        timeout: 5000,
       };
-      
+
       const result = await recoveryManager.executeWithRecovery(failingOperation);
-      
+
       expect(result).toEqual({ fallback: true, data: [] });
     });
 
@@ -191,20 +183,18 @@ describe("RecoveryManager", () => {
       const retryHandler = new RetryHandler({
         maxRetries: 1,
         backoffStrategy: BackoffStrategy.LINEAR,
-        initialDelay: 10
+        initialDelay: 10,
       });
-      
+
       recoveryManager.registerHandler(retryHandler);
-      
+
       const failingOperation = {
         name: "failing-test",
         operation: vi.fn().mockRejectedValue(new Error("Persistent failure")),
-        timeout: 5000
+        timeout: 5000,
       };
-      
-      await expect(
-        recoveryManager.executeWithRecovery(failingOperation)
-      ).rejects.toThrow();
+
+      await expect(recoveryManager.executeWithRecovery(failingOperation)).rejects.toThrow();
     });
   });
 
@@ -213,13 +203,13 @@ describe("RecoveryManager", () => {
       const retryHandler = new RetryHandler({
         maxRetries: 2,
         backoffStrategy: BackoffStrategy.LINEAR,
-        initialDelay: 10
+        initialDelay: 10,
       });
-      
+
       recoveryManager.registerHandler(retryHandler);
-      
+
       const result = await recoveryManager.attemptRecovery(mockError);
-      
+
       expect(result).toBeDefined();
       expect(result.success).toBeDefined();
       expect(result.strategy).toBeDefined();
@@ -228,7 +218,7 @@ describe("RecoveryManager", () => {
 
     it("should return failure when no handlers available", async () => {
       const result = await recoveryManager.attemptRecovery(mockError);
-      
+
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe("NO_RECOVERY_HANDLERS");
     });
@@ -238,16 +228,16 @@ describe("RecoveryManager", () => {
       const failingHandler = new RetryHandler({
         maxRetries: 1,
         backoffStrategy: BackoffStrategy.LINEAR,
-        initialDelay: 10
+        initialDelay: 10,
       });
-      
+
       recoveryManager.registerHandler(failingHandler);
-      
+
       // Create an error that the retry handler cannot actually recover from
       const unrecoverableError = new BaseAxonError("Unrecoverable error", "UNRECOVERABLE_ERROR");
-      
+
       const result = await recoveryManager.attemptRecovery(unrecoverableError);
-      
+
       // The retry handler may attempt recovery but it should ultimately fail
       // since there's no actual operation to retry - it's just the error itself
       expect(result.attempts).toBeGreaterThan(0);
@@ -260,13 +250,13 @@ describe("RecoveryManager", () => {
       const mockOperation = {
         name: "metrics-test",
         operation: vi.fn().mockResolvedValue("success"),
-        timeout: 5000
+        timeout: 5000,
       };
-      
+
       await recoveryManager.executeWithRecovery(mockOperation);
-      
+
       const metrics = recoveryManager.getMetrics();
-      
+
       expect(metrics.totalAttempts).toBeGreaterThan(0);
       expect(metrics.successfulAttempts).toBeGreaterThan(0);
       expect(metrics.totalRecoveryTime).toBeGreaterThan(0);
@@ -277,22 +267,20 @@ describe("RecoveryManager", () => {
       const retryHandler = new RetryHandler({
         maxRetries: 1,
         backoffStrategy: BackoffStrategy.LINEAR,
-        initialDelay: 10
+        initialDelay: 10,
       });
       recoveryManager.registerHandler(retryHandler);
-      
+
       const failingOperation = {
         name: "failed-metrics-test",
         operation: vi.fn().mockRejectedValue(new Error("Operation failed")),
-        timeout: 5000
+        timeout: 5000,
       };
-      
-      await expect(
-        recoveryManager.executeWithRecovery(failingOperation)
-      ).rejects.toThrow();
-      
+
+      await expect(recoveryManager.executeWithRecovery(failingOperation)).rejects.toThrow();
+
       const metrics = recoveryManager.getMetrics();
-      
+
       expect(metrics.totalAttempts).toBeGreaterThan(0);
       expect(metrics.failedAttempts).toBeGreaterThan(0);
     });
@@ -300,21 +288,21 @@ describe("RecoveryManager", () => {
     it("should clear metrics", async () => {
       const retryHandler = new RetryHandler({ maxRetries: 2 });
       recoveryManager.registerHandler(retryHandler);
-      
+
       // Generate some metrics by executing a successful operation
       const successOperation = {
         name: "success-for-metrics",
         operation: vi.fn().mockResolvedValue("success"),
-        timeout: 5000
+        timeout: 5000,
       };
-      
+
       await recoveryManager.executeWithRecovery(successOperation);
-      
+
       const beforeClear = recoveryManager.getMetrics();
       expect(beforeClear.totalAttempts).toBeGreaterThan(0);
-      
+
       recoveryManager.clearMetrics();
-      
+
       const afterClear = recoveryManager.getMetrics();
       expect(afterClear.totalAttempts).toBe(0);
     });
@@ -323,15 +311,15 @@ describe("RecoveryManager", () => {
       const retryHandler = new RetryHandler({
         maxRetries: 2,
         backoffStrategy: BackoffStrategy.LINEAR,
-        initialDelay: 10
+        initialDelay: 10,
       });
-      
+
       recoveryManager.registerHandler(retryHandler);
-      
+
       await recoveryManager.attemptRecovery(mockError);
-      
+
       const metrics = recoveryManager.getMetrics();
-      
+
       expect(metrics.attemptsByStrategy).toBeDefined();
       expect(metrics.successRateByStrategy).toBeDefined();
       expect(metrics.recoveryTimeByStrategy).toBeDefined();
@@ -343,23 +331,19 @@ describe("RecoveryManager", () => {
       const retryHandler = new RetryHandler({
         maxRetries: 1,
         backoffStrategy: BackoffStrategy.LINEAR,
-        initialDelay: 10
+        initialDelay: 10,
       });
-      
+
       recoveryManager.registerHandler(retryHandler);
-      
-      const errors = Array.from({ length: 5 }, (_, i) =>
-        new BaseAxonError(`Error ${i}`, `ERROR_${i}`)
-      );
-      
-      const recoveryPromises = errors.map(error => 
-        recoveryManager.attemptRecovery(error)
-      );
-      
+
+      const errors = Array.from({ length: 5 }, (_, i) => new BaseAxonError(`Error ${i}`, `ERROR_${i}`));
+
+      const recoveryPromises = errors.map((error) => recoveryManager.attemptRecovery(error));
+
       const results = await Promise.all(recoveryPromises);
-      
+
       expect(results).toHaveLength(5);
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result).toBeDefined();
         expect(result.success).toBeDefined();
       });
@@ -369,13 +353,11 @@ describe("RecoveryManager", () => {
       const operations = Array.from({ length: 3 }, (_, i) => ({
         name: `concurrent-op-${i}`,
         operation: () => Promise.resolve(`result-${i}`),
-        timeout: 5000
+        timeout: 5000,
       }));
-      
-      const results = await Promise.all(
-        operations.map(op => recoveryManager.executeWithRecovery(op))
-      );
-      
+
+      const results = await Promise.all(operations.map((op) => recoveryManager.executeWithRecovery(op)));
+
       expect(results).toEqual(["result-0", "result-1", "result-2"]);
     });
   });
@@ -385,21 +367,21 @@ describe("RecoveryManager", () => {
       // Create handlers with different priorities
       const highPriorityHandler = new TimeoutHandler({
         defaultTimeout: 1000,
-        priority: 1
+        priority: 1,
       });
-      
+
       const lowPriorityHandler = new RetryHandler({
         maxRetries: 2,
         backoffStrategy: BackoffStrategy.LINEAR,
-        priority: 10
+        priority: 10,
       });
-      
+
       recoveryManager.registerHandler(highPriorityHandler);
       recoveryManager.registerHandler(lowPriorityHandler);
-      
+
       const handlers = recoveryManager.getHandlers();
       expect(handlers.length).toBe(2);
-      
+
       // Test that recovery attempts use priority ordering
       const result = await recoveryManager.attemptRecovery(mockError);
       expect(result).toBeDefined();
@@ -408,15 +390,15 @@ describe("RecoveryManager", () => {
     it("should filter handlers based on error compatibility", async () => {
       const networkHandler = new RetryHandler({
         maxRetries: 2,
-        backoffStrategy: BackoffStrategy.LINEAR
+        backoffStrategy: BackoffStrategy.LINEAR,
       });
-      
+
       recoveryManager.registerHandler(networkHandler);
-      
+
       const networkError = new BaseAxonError("Network timeout", "NETWORK_ERROR", {
-        category: ErrorCategory.NETWORK
+        category: ErrorCategory.NETWORK,
       });
-      
+
       const result = await recoveryManager.attemptRecovery(networkError);
       expect(result).toBeDefined();
     });

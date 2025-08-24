@@ -1062,8 +1062,8 @@ export class MeasurementPool implements IMeasurementPool {
    */
   private getSafePerformanceTime(): number {
     try {
-      return this.platform.hasPerformanceNow && typeof performance !== "undefined" && performance.now 
-        ? performance.now() 
+      return this.platform.hasPerformanceNow && typeof performance !== "undefined" && performance.now
+        ? performance.now()
         : Date.now();
     } catch (_error) {
       // Performance API unavailable - fallback to Date.now()
@@ -1245,8 +1245,8 @@ export class EnhancedPerformanceTracker implements IEnhancedPerformanceTracker {
    */
   private getPerformanceTime(): number {
     try {
-      return this.platform.hasPerformanceNow && typeof performance !== "undefined" && performance.now 
-        ? performance.now() 
+      return this.platform.hasPerformanceNow && typeof performance !== "undefined" && performance.now
+        ? performance.now()
         : Date.now();
     } catch (_error) {
       // Performance API unavailable - fallback to Date.now()

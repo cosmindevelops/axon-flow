@@ -144,7 +144,7 @@ export class ConsoleTransportProvider implements ITransportProvider {
     return new Promise((resolve) => {
       // Remove event listeners to prevent memory leaks
       this.stream.removeListener("error", this.errorHandler);
-      
+
       if (this.stream !== process.stdout && this.stream !== process.stderr) {
         if ("end" in this.stream && typeof this.stream.end === "function") {
           this.stream.end(() => {

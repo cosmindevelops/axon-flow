@@ -15,12 +15,6 @@ export default defineProject(
       coverage: {
         enabled: true,
         include: ["src/**/*.{ts,tsx}"],
-        thresholds: {
-          lines: 0,
-          functions: 0,
-          branches: 0,
-          statements: 0,
-        },
       },
     },
   }),

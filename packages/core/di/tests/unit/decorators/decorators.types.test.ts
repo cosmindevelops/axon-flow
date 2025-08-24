@@ -5,9 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import {
-  DECORATOR_METADATA_KEYS,
-} from "../../../src/decorators/decorators.types.js";
+import { DECORATOR_METADATA_KEYS } from "../../../src/decorators/decorators.types.js";
 import type {
   IInjectableOptions,
   IInjectOptions,
