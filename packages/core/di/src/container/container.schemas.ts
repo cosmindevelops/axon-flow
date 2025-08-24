@@ -15,7 +15,10 @@ export const CONTAINER_LIFECYCLE_SCHEMA = z.enum(["singleton", "transient", "sco
  * DI token validation schema - simplified to avoid complex function validation
  */
 export const DI_TOKEN_SCHEMA = z.union([
-  z.string().min(1, "Token string cannot be empty"),
+  z.string().min(1, "Token string cannot be empty").refine(
+    (val) => val.trim().length > 0,
+    { message: "Token string cannot be empty" }
+  ),
   z.symbol(),
   z.any().refine((val) => typeof val === "function", "Must be a function"),
 ]);
@@ -86,14 +89,14 @@ export const CONTAINER_METRICS_SCHEMA = z.object({
 /**
  * Default container configuration
  */
-export const DEFAULT_CONTAINER_CONFIG = {
+export const DEFAULT_CONTAINER_CONFIG = Object.freeze({
   strictMode: true,
   defaultLifecycle: "transient" as const,
   enableMetrics: true,
   maxResolutionDepth: 20,
   enableCache: true,
   autoDispose: false,
-} as const;
+} as const);
 
 /**
  * Validate container configuration

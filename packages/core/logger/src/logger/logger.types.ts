@@ -27,6 +27,11 @@ export interface ILoggerConfig extends IBaseConfig {
   performance: IPerformanceConfig;
   objectPool: IObjectPoolConfig;
   circuitBreaker: ICircuitBreakerConfig;
+  bufferSize?: number;
+  flushIntervalMs?: number;
+  enableCorrelationIds: boolean;
+  timestampFormat: "iso" | "unix" | "epoch";
+  testStream?: NodeJS.WritableStream; // Custom stream for test output capture
 }
 
 /**

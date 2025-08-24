@@ -318,7 +318,7 @@ describe("Factory-Pool Integration", () => {
 
       // Acquire multiple connections
       for (let i = 0; i < 8; i++) {
-        const conn = (await container.resolve(DB_CONNECTION_TOKEN)) as DatabaseConnection;
+        const conn = await container.resolveAsync(DB_CONNECTION_TOKEN);
         conn.connect();
         conn.query(`SELECT ${i}`);
         connections.push(conn);

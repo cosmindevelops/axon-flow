@@ -199,7 +199,7 @@ describe("Infrastructure Configuration Schemas", () => {
       };
       const result = RABBITMQ_CONFIG_SCHEMA.parse(config);
       expect(result.exchanges).toHaveLength(1);
-      expect(result.exchanges[0].type).toBe("topic");
+      expect(result.exchanges?.[0]?.type).toBe("topic");
     });
 
     it("should validate retry policy configuration", () => {

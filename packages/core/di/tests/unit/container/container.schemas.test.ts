@@ -45,7 +45,7 @@ describe("Container Schemas", () => {
 
     it("should reject empty string tokens", () => {
       expect(() => DI_TOKEN_SCHEMA.parse("")).toThrow(z.ZodError);
-      expect(() => DI_TOKEN_SCHEMA.parse("   ")).toThrow(); // Only whitespace should fail
+      expect(() => DI_TOKEN_SCHEMA.parse("   ")).toThrow(z.ZodError); // Only whitespace should fail
     });
 
     it("should validate symbol tokens", () => {

@@ -32,14 +32,15 @@ vi.mock("fs", () => {
 });
 
 describe("Multiple Sink Configuration E2E", () => {
-  let mockFetch: any;
+  let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
-    mockFetch = vi.mocked(fetch);
+    mockFetch = fetch as ReturnType<typeof vi.fn>;
     mockFetch.mockClear();
 
     // Reset fs mock to default state
-    vi.mocked((await import("fs")).createWriteStream).mockReturnValue({
+    const createWriteStreamMock = (await import("fs")).createWriteStream as ReturnType<typeof vi.fn>;
+    createWriteStreamMock.mockReturnValue({
       write: vi.fn(),
       end: vi.fn(),
       on: vi.fn(),
@@ -48,15 +49,26 @@ describe("Multiple Sink Configuration E2E", () => {
     } as any);
 
     const fsMock = (await vi.importMock("fs")) as any;
-    vi.mocked(fsMock.promises.mkdir).mockResolvedValue(undefined);
-    vi.mocked(fsMock.promises.stat).mockResolvedValue({ size: 1024 } as any);
-    vi.mocked(fsMock.promises.appendFile).mockResolvedValue(undefined);
-    vi.mocked(fsMock.promises.readdir).mockResolvedValue([]);
+    const mkdirMock = fsMock.promises.mkdir as ReturnType<typeof vi.fn>;
+    const statMock = fsMock.promises.stat as ReturnType<typeof vi.fn>;
+    const appendFileMock = fsMock.promises.appendFile as ReturnType<typeof vi.fn>;
+    const readdirMock = fsMock.promises.readdir as ReturnType<typeof vi.fn>;
+    
+    mkdirMock.mockResolvedValue(undefined);
+    statMock.mockResolvedValue({ size: 1024 } as any);
+    appendFileMock.mockResolvedValue(undefined);
+    readdirMock.mockResolvedValue([]);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     TransportCircuitBreakerFactory.clear();
     vi.clearAllTimers();
+    
+    // Enhanced cleanup with proper async handling
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    
+    // Ensure any pending promises are resolved
+    await Promise.resolve();
   });
 
   it("should demonstrate complete multiple sink workflow", async () => {
@@ -186,7 +198,8 @@ describe("Multiple Sink Configuration E2E", () => {
       on: vi.fn(),
     };
     const fs = (await vi.importMock("fs")) as any;
-    vi.mocked(fs.createWriteStream).mockReturnValue(mockFileStream);
+    const createWriteStreamMock = fs.createWriteStream as ReturnType<typeof vi.fn>;
+    createWriteStreamMock.mockReturnValue(mockFileStream);
 
     // Mock successful remote response
     mockFetch.mockResolvedValue({
@@ -304,7 +317,8 @@ describe("Multiple Sink Configuration E2E", () => {
 
     // Mock large file size to trigger rotation
     const fsMockForRotation = (await vi.importMock("fs")) as any;
-    vi.mocked(fsMockForRotation.promises.stat).mockResolvedValue({ size: 11 * 1024 * 1024 }); // 11MB > 10MB limit
+    const statMockForRotation = fsMockForRotation.promises.stat as ReturnType<typeof vi.fn>;
+    statMockForRotation.mockResolvedValue({ size: 11 * 1024 * 1024 }); // 11MB > 10MB limit
 
     const largeEntry: ILogEntry = {
       level: "info",
@@ -317,7 +331,8 @@ describe("Multiple Sink Configuration E2E", () => {
     await manager.write(largeEntry);
 
     // Should have created multiple streams due to rotation
-    expect(vi.mocked(fsMockForRotation.createWriteStream)).toHaveBeenCalledTimes(2);
+    const createWriteStreamMockForRotation = fsMockForRotation.createWriteStream as ReturnType<typeof vi.fn>;
+    expect(createWriteStreamMockForRotation).toHaveBeenCalledTimes(2);
 
     // Test performance monitoring
     console.log("Testing performance monitoring");

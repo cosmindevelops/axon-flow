@@ -23,4 +23,5 @@ export * from "./pool/index.js";
 // Platform compatibility
 export * from "./platform/index.js";
 
-// Note: @axon/types integration will be added when types package is available
+// Shared types integration
+export type { Status, Environment } from "@axon/types";

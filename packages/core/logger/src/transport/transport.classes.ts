@@ -39,6 +39,7 @@ export class ConsoleTransportProvider implements ITransportProvider {
   private metrics: ITransportMetrics;
   private readonly options: IConsoleTransportOptions;
   private readonly adapter: CrossEnvironmentAdapter;
+  private readonly errorHandler: (error: Error) => void;
 
   constructor(config: ITransportConfig) {
     this.options = (config.options as IConsoleTransportOptions) || {};
@@ -55,12 +56,15 @@ export class ConsoleTransportProvider implements ITransportProvider {
       averageWriteTime: 0,
     };
 
-    // Handle stream errors
-    this.stream.on("error", (error) => {
+    // Store error handler reference for proper cleanup
+    this.errorHandler = (error: Error) => {
       console.error("Console transport error:", error);
       this.healthy = false;
       this.metrics.lastErrorTime = new Date();
-    });
+    };
+
+    // Handle stream errors
+    this.stream.on("error", this.errorHandler);
   }
 
   async write(logEntry: Record<string, unknown>): Promise<void> {
@@ -138,6 +142,9 @@ export class ConsoleTransportProvider implements ITransportProvider {
 
   async close(): Promise<void> {
     return new Promise((resolve) => {
+      // Remove event listeners to prevent memory leaks
+      this.stream.removeListener("error", this.errorHandler);
+      
       if (this.stream !== process.stdout && this.stream !== process.stderr) {
         if ("end" in this.stream && typeof this.stream.end === "function") {
           this.stream.end(() => {

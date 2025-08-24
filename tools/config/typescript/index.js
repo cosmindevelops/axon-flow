@@ -5,8 +5,8 @@
  * Provides optimized configuration supporting both Node.js and React environments.
  */
 
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const currentFileUrl = fileURLToPath(import.meta.url);
 const currentDir = dirname(currentFileUrl);

@@ -251,6 +251,98 @@ export class ConfigBuilder implements IFluentConfigBuilder {
   }
 
   /**
+   * Extract detailed validation error information from Zod errors
+   */
+  private extractValidationDetails(error: unknown, config: Record<string, unknown>) {
+    // Default fallback details
+    let summary = "Schema validation error";
+    let details = "Unknown validation error";
+    let paths: string[] = [];
+    let sample: unknown = undefined;
+    let expected = "Valid configuration object";
+
+    // Check if it's a Zod error with structured information
+    if (error && typeof error === "object" && "issues" in error) {
+      const zodError = error as { issues: Array<{
+        path: (string | number)[];
+        message: string;
+        code: string;
+        expected?: unknown;
+        received?: unknown;
+      }> };
+
+      if (Array.isArray(zodError.issues) && zodError.issues.length > 0) {
+        const firstIssue = zodError.issues[0]!;
+        const pathString = firstIssue.path.join(".");
+        
+        // Create comprehensive summary
+        const issueCount = zodError.issues.length;
+        summary = issueCount === 1 
+          ? `Invalid value at '${pathString}': ${firstIssue.message}`
+          : `${issueCount} validation errors, starting with '${pathString}': ${firstIssue.message}`;
+
+        // Extract all failed paths
+        paths = zodError.issues.map(issue => issue.path.join(".")).filter(path => path.length > 0);
+        if (paths.length === 0) paths = ["<root>"];
+
+        // Get sample of failed value
+        if (firstIssue.path.length > 0) {
+          try {
+            sample = firstIssue.path.reduce((obj: any, key) => obj?.[key], config);
+          } catch {
+            sample = undefined;
+          }
+        } else {
+          sample = config;
+        }
+
+        // Determine expected type
+        if (firstIssue.expected !== undefined) {
+          expected = String(firstIssue.expected);
+        } else if (firstIssue.code) {
+          // Map common Zod error codes to readable expected types
+          const expectedMap: Record<string, string> = {
+            "invalid_type": "Correct data type",
+            "invalid_string": "Valid string format",
+            "invalid_number": "Valid number",
+            "invalid_boolean": "Boolean value",
+            "invalid_enum_value": "One of the allowed enum values",
+            "too_small": "Value meeting minimum requirements",
+            "too_big": "Value meeting maximum requirements",
+            "invalid_date": "Valid date",
+            "custom": "Value meeting custom validation rules"
+          };
+          expected = expectedMap[firstIssue.code] || "Valid value according to schema";
+        }
+
+        // Format detailed error information
+        const errorSummaries = zodError.issues.slice(0, 3).map(issue => {
+          const issuePath = issue.path.join(".") || "<root>";
+          return `  • ${issuePath}: ${issue.message}`;
+        });
+        
+        if (zodError.issues.length > 3) {
+          errorSummaries.push(`  • ... and ${zodError.issues.length - 3} more errors`);
+        }
+        
+        details = `Validation errors:\n${errorSummaries.join("\n")}`;
+      }
+    } else if (error instanceof Error) {
+      // Fallback for generic errors
+      summary = error.message;
+      details = `Generic error: ${error.message}`;
+    }
+
+    return {
+      summary,
+      details,
+      paths,
+      sample,
+      expected
+    };
+  }
+
+  /**
    * Validate repository data against schema using cache
    */
   private validateWithCache<T extends z.ZodType>(repository: IConfigRepository, schema: T): void {
@@ -267,11 +359,28 @@ export class ConfigBuilder implements IFluentConfigBuilder {
     try {
       schema.parse(config);
       globalValidationCache.set(cacheKey, "validated", schemaHash);
-    } catch (_error) {
+    } catch (error) {
       if (this.state.validationOptions.errorOnInvalidSchema) {
-        throw new ConfigurationError("Configuration validation failed", "CONFIG_VALIDATION_FAILED", {
-          operation: "validateWithCache",
-        });
+        // Enhanced error reporting with detailed context
+        const validationDetails = this.extractValidationDetails(error, config);
+        const configSources = this.state.sources
+          .map(source => source?.repository?.constructor?.name || "UnknownRepository")
+          .join(", ");
+        
+        // Create enhanced error message with validation details
+        const enhancedMessage = `Configuration validation failed: ${validationDetails.summary}\n\nDetails:\n${validationDetails.details}`;
+        
+        throw new ConfigurationError(
+          enhancedMessage,
+          "CONFIG_VALIDATION_FAILED",
+          {
+            operation: "validateWithCache",
+            configSource: configSources,
+            configKey: validationDetails.paths[0] || "<root>",
+            configValue: validationDetails.sample,
+            expectedType: validationDetails.expected,
+          }
+        );
       }
     }
   }

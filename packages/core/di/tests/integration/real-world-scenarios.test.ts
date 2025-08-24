@@ -548,7 +548,7 @@ describe("Real-World Integration Scenarios", () => {
       // Use multiple user services (simulating concurrent requests)
       const services: UserService[] = [];
       for (let i = 0; i < 5; i++) {
-        services.push(container.resolve(USER_SERVICE_TOKEN));
+        services.push(await container.resolveAsync(USER_SERVICE_TOKEN));
       }
 
       // All should use pooled database connections

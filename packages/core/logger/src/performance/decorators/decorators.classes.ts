@@ -372,6 +372,11 @@ export function Timed(options: IPerformanceDecoratorOptions = {}) {
       const measurement = tracker.startOperation(category, enhancedMetadata);
 
       const finishMeasurement = (isSuccess: boolean) => {
+        // Capture timing data BEFORE finishOperation clears it
+        const endTime = getSafePerformanceTime();
+        const startTime = measurement.startTime;
+        const latency = endTime - startTime;
+
         tracker.finishOperation(measurement);
 
         if (isSuccess) {
@@ -380,22 +385,18 @@ export function Timed(options: IPerformanceDecoratorOptions = {}) {
           tracker.recordFailure();
         }
 
-        if (measurement.endTime && measurement.startTime) {
-          const latency = measurement.endTime - measurement.startTime;
+        // Check custom threshold using captured timing
+        if (threshold && latency > threshold) {
+          console.warn(`@Timed: ${category} exceeded custom threshold: ${latency.toFixed(2)}ms > ${threshold}ms`);
+        }
 
-          // Check custom threshold
-          if (threshold && latency > threshold) {
-            console.warn(`@Timed: ${category} exceeded custom threshold: ${latency.toFixed(2)}ms > ${threshold}ms`);
-          }
+        // Check performance budget
+        checkPerformanceBudget(category, latency, options.budget);
 
-          // Check performance budget
-          checkPerformanceBudget(category, latency, options.budget);
-
-          // Export metrics
-          if (options.exporters) {
-            const metrics = tracker.getCategoryMetrics(category);
-            exportMetrics(category, metrics, options.exporters);
-          }
+        // Export metrics
+        if (options.exporters) {
+          const metrics = tracker.getCategoryMetrics(category);
+          exportMetrics(category, metrics, options.exporters);
         }
       };
 
@@ -540,11 +541,15 @@ export function Benchmark(options: { runs?: number; warmup?: number; category?: 
             console.warn(`@Benchmark: Async methods not fully supported in benchmark mode`);
           }
 
+          // Capture timing before finishOperation clears it
+          const endTime = getSafePerformanceTime();
+          const startTime = measurement.startTime;
+          const latency = endTime - startTime;
+
           tracker.finishOperation(measurement);
 
-          if (measurement.endTime && measurement.startTime) {
-            measurements.push(measurement.endTime - measurement.startTime);
-          }
+          // Use captured timing data
+          measurements.push(latency);
 
           tracker.recordSuccess();
         } catch (error) {
@@ -673,14 +678,16 @@ export function withTiming<T extends (...args: any[]) => any>(fn: T, options: IP
       if (result && typeof result.then === "function") {
         return result
           .then((value: any) => {
+            // Capture timing before finishOperation clears it
+            const endTime = getSafePerformanceTime();
+            const startTime = measurement.startTime;
+            const latency = endTime - startTime;
+
             tracker.finishOperation(measurement);
             tracker.recordSuccess();
 
-            if (threshold && measurement.endTime && measurement.startTime) {
-              const latency = measurement.endTime - measurement.startTime;
-              if (latency > threshold) {
-                console.warn(`withTiming: ${category} exceeded threshold: ${latency.toFixed(2)}ms > ${threshold}ms`);
-              }
+            if (threshold && latency > threshold) {
+              console.warn(`withTiming: ${category} exceeded threshold: ${latency.toFixed(2)}ms > ${threshold}ms`);
             }
 
             return value;
@@ -692,15 +699,17 @@ export function withTiming<T extends (...args: any[]) => any>(fn: T, options: IP
           });
       }
 
-      // Handle sync functions
+      // Handle sync functions  
+      // Capture timing before finishOperation clears it
+      const endTime = getSafePerformanceTime();
+      const startTime = measurement.startTime;
+      const latency = endTime - startTime;
+
       tracker.finishOperation(measurement);
       tracker.recordSuccess();
 
-      if (threshold && measurement.endTime && measurement.startTime) {
-        const latency = measurement.endTime - measurement.startTime;
-        if (latency > threshold) {
-          console.warn(`withTiming: ${category} exceeded threshold: ${latency.toFixed(2)}ms > ${threshold}ms`);
-        }
+      if (threshold && latency > threshold) {
+        console.warn(`withTiming: ${category} exceeded threshold: ${latency.toFixed(2)}ms > ${threshold}ms`);
       }
 
       return result;
@@ -1050,4 +1059,18 @@ export function createPrometheusExporter(name: string, interval = 0): IPerforman
       return output;
     },
   };
+}
+
+/**
+ * Safe performance timing that matches EnhancedPerformanceTracker behavior
+ */
+function getSafePerformanceTime(): number {
+  try {
+    return typeof performance !== "undefined" && performance.now 
+      ? performance.now() 
+      : Date.now();
+  } catch (_error) {
+    // Performance API unavailable - fallback to Date.now()
+    return Date.now();
+  }
 }

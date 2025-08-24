@@ -28,7 +28,7 @@ import { FactoryRegistry, FactoryResolver } from "../factory/factory.classes.js"
 import { now } from "../platform/index.js";
 
 // Import proper error classes from @axon/errors
-import { ApplicationError, ConfigurationError, ValidationErrorCategory as ValidationError } from "@axon/errors";
+import { ApplicationError, ConfigurationError, ValidationError } from "@axon/errors";
 
 /**
  * Performance-optimized dependency injection container
@@ -371,11 +371,15 @@ export class DIContainer implements IDIContainer {
     // Ensure synchronous result
     if (result instanceof Promise) {
       throw new ApplicationError(
-        "Async factories not supported in synchronous resolution",
+        "Async factories not supported in synchronous resolution - use resolveAsync() instead",
         "DI_ASYNC_FACTORY_NOT_SUPPORTED",
         {
           correlationId: `asyncFactory_${Date.now()}`,
-          metadata: { token: String(token), containerName: this.name },
+          metadata: { 
+            token: String(token), 
+            containerName: this.name,
+            hint: "Use container.resolveAsync() to support async factories and dependencies"
+          },
         },
       );
     }
@@ -525,8 +529,51 @@ export class DIContainer implements IDIContainer {
         return factoryResult as T | Promise<T>;
       }
 
-      // Resolve dependencies - for now, we only support sync dependency resolution
-      // TODO: Add support for async dependency resolution in the future
+      // Resolve dependencies - support both sync and async dependency resolution
+      const resolveDependencies = async (): Promise<unknown[]> => {
+        if (!options.dependencies || options.dependencies.length === 0) {
+          return [];
+        }
+
+        const dependencyPromises = options.dependencies.map(async (dep) => {
+          const depResult = this.internalResolveCore(dep, context);
+          if (depResult instanceof Promise) {
+            return await depResult;
+          }
+          return depResult;
+        });
+
+        return await Promise.all(dependencyPromises);
+      };
+
+      // Check if we need async resolution
+      const hasAsyncDependencies = options.dependencies?.some((dep) => {
+        try {
+          const depResult = this.internalResolveCore(dep, context);
+          return depResult instanceof Promise;
+        } catch {
+          return false;
+        }
+      }) ?? false;
+
+      if (hasAsyncDependencies) {
+        // Async path - resolve all dependencies asynchronously
+        return resolveDependencies().then((dependencies) => {
+          if (typeof implementation === "function") {
+            return new (implementation as new (...args: unknown[]) => T)(...dependencies);
+          }
+          throw new ValidationError("Invalid implementation type", "DI_INVALID_IMPLEMENTATION", {
+            correlationId: `invalidImpl_${Date.now()}`,
+            metadata: {
+              token: String(registration.token),
+              implementationType: typeof implementation,
+              containerName: this.name,
+            },
+          });
+        });
+      }
+
+      // Sync path - resolve dependencies synchronously (original logic)
       const dependencies =
         options.dependencies?.map((dep) => {
           const depResult = this.internalResolveCore(dep, context);

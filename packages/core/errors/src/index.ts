@@ -11,14 +11,14 @@ export * from "./base/index.js";
 // Chain of responsibility pattern
 export * from "./chain/index.js";
 
-// Error categories - export specific items to avoid conflicts
+// Error categories - simplified exports
 export {
   // Types
   type ISystemError,
   type IApplicationError,
-  type IValidationError as IValidationErrorCategory,
-  type IConfigurationError as IConfigurationErrorCategory,
-  type INetworkError as INetworkErrorCategory,
+  type IValidationError,
+  type IConfigurationError,
+  type INetworkError,
   type ISecurityError,
   type IDatabaseError,
   type IFileSystemError,
@@ -29,12 +29,10 @@ export {
   type IConflictError,
   type IPermissionError,
   type IAuthenticationError,
-  // Classes - use aliases for conflicting ones
+  // Classes
   SystemError,
   ApplicationError,
-  ValidationError as ValidationErrorCategory,
-  ConfigurationError as ConfigurationErrorCategory,
-  // Direct export without alias for backward compatibility
+  ValidationError,
   ConfigurationError,
   NetworkError,
   SecurityError,
@@ -58,6 +56,9 @@ export {
   AuthMethod,
   AuthFailureReason,
 } from "./categories/categories.types.js";
+
+// Add backward compatibility alias for config package
+export { ConfigurationError as ConfigurationErrorCategory } from "./categories/index.js";
 
 // Serialization system
 export * from "./serialization/index.js";
@@ -102,12 +103,12 @@ export {
   BackoffStrategy,
   RecoveryStrategy,
   RecoveryState,
-  // Recovery-specific schemas (use aliases for conflicting ones)
+  // Recovery schemas
   BACKOFF_STRATEGY_SCHEMA,
   RECOVERY_STRATEGY_SCHEMA,
   RECOVERY_STATE_SCHEMA,
-  RETRY_CONFIG_SCHEMA as RECOVERY_RETRY_CONFIG_SCHEMA,
-  CIRCUIT_BREAKER_CONFIG_SCHEMA as RECOVERY_CIRCUIT_BREAKER_CONFIG_SCHEMA,
+  RETRY_CONFIG_SCHEMA,
+  CIRCUIT_BREAKER_CONFIG_SCHEMA,
   GRACEFUL_DEGRADATION_CONFIG_SCHEMA,
   TIMEOUT_CONFIG_SCHEMA,
   BULKHEAD_CONFIG_SCHEMA,
@@ -127,11 +128,8 @@ export {
   RecoveryManager,
 } from "./recovery/index.js";
 
-// Recovery types with aliases for conflicting interfaces
-export type {
-  IRetryConfig as IRecoveryRetryConfig,
-  ICircuitBreakerConfig as IRecoveryCircuitBreakerConfig,
-} from "./recovery/index.js";
+// Recovery types
+export type { IRetryConfig, ICircuitBreakerConfig } from "./recovery/index.js";
 
 // Decorator utilities
 export * from "./decorators/index.js";

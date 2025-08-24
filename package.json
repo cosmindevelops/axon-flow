@@ -100,6 +100,9 @@
     "vitest": "^3.2.4",
     "zod": "^4.0.17"
   },
+  "dependencies": {
+    "pino": "^9.9.0"
+  },
   "pnpm": {
     "peerDependencyRules": {
       "ignoreMissing": [
@@ -128,8 +131,5 @@
     "turbo.json": [
       "node tools/scripts/axon-tools.cjs turbo validate-config"
     ]
-  },
-  "dependencies": {
-    "pino": "^9.9.0"
   }
 }

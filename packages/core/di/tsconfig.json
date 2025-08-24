@@ -2,7 +2,7 @@
   "extends": "../../../tools/config/typescript/base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "./src",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "composite": false,
     "experimentalDecorators": true,

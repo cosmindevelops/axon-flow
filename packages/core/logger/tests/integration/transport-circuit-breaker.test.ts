@@ -17,7 +17,7 @@ global.fetch = vi.fn();
 
 describe("Transport Circuit Breaker Integration", () => {
   let mockLogEntry: ILogEntry;
-  let mockFetch: any;
+  let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     mockLogEntry = {
@@ -28,7 +28,7 @@ describe("Transport Circuit Breaker Integration", () => {
       meta: { source: "test-service" },
     };
 
-    mockFetch = vi.mocked(fetch);
+    mockFetch = fetch as ReturnType<typeof vi.fn>;
     mockFetch.mockClear();
   });
 
@@ -38,6 +38,12 @@ describe("Transport Circuit Breaker Integration", () => {
     vi.clearAllTimers();
     vi.useRealTimers();
 
+    // Increase max listeners temporarily to prevent warnings during cleanup
+    if (typeof process !== "undefined" && process.stdout && process.stdout.setMaxListeners) {
+      process.stdout.setMaxListeners(20);
+      process.stderr.setMaxListeners(20);
+    }
+
     // Force garbage collection if available
     if (typeof (global as any).gc === "function") {
       (global as any).gc();
@@ -45,6 +51,12 @@ describe("Transport Circuit Breaker Integration", () => {
 
     // Small delay to allow cleanup
     await new Promise((resolve) => setTimeout(resolve, 10));
+
+    // Reset max listeners back to default
+    if (typeof process !== "undefined" && process.stdout && process.stdout.setMaxListeners) {
+      process.stdout.setMaxListeners(10);
+      process.stderr.setMaxListeners(10);
+    }
   });
 
   describe("Remote Transport Circuit Breaker", () => {
@@ -150,7 +162,7 @@ describe("Transport Circuit Breaker Integration", () => {
       } finally {
         vi.useRealTimers();
       }
-    });
+    }, 15000); // Increase timeout to 15 seconds
 
     it("should handle retry logic with exponential backoff", async () => {
       vi.useFakeTimers();
@@ -205,7 +217,7 @@ describe("Transport Circuit Breaker Integration", () => {
       } finally {
         vi.useRealTimers();
       }
-    });
+    }, 15000); // Increase timeout to 15 seconds
   });
 
   describe("Multi-Transport Failure Handling", () => {

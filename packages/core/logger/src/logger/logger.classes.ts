@@ -15,8 +15,10 @@ import {
 } from "../circuit-breaker/circuit-breaker.classes.js";
 import { createPooledLogEntry, logEntryPool, releaseLogEntry } from "../pool/pool.classes.js";
 import { MultiTransportManager } from "../transport/transport.classes.js";
-import type { ILogger, ILoggerConfig, IPerformanceMetrics } from "../types/index.js";
-import { PerformanceTracker } from "../utils/utils.classes.js";
+import type { ILogger, ILoggerConfig } from "./logger.types.js";
+import type { IPerformanceMetrics } from "../types/index.js";
+import type { IEnhancedPerformanceConfig } from "../performance/core/core.types.js";
+import { EnhancedPerformanceTracker } from "../performance/core/core.classes.js";
 
 // Dynamic pino import to handle CommonJS compatibility
 let pinoModule: any = null;
@@ -55,7 +57,7 @@ export class HighPerformancePinoLogger implements ILogger {
   private correlationId?: CorrelationId;
   private readonly config: ILoggerConfig;
   private readonly transportManager?: MultiTransportManager;
-  private readonly performanceTracker: PerformanceTracker;
+  private readonly performanceTracker: EnhancedPerformanceTracker;
   private readonly correlationManager: IEnhancedCorrelationManager;
   private readonly loggerInitPromise: Promise<void>;
 
@@ -74,8 +76,25 @@ export class HighPerformancePinoLogger implements ILogger {
       initializeCircuitBreaker(this.config.circuitBreaker);
     }
 
-    // Initialize performance tracker
-    this.performanceTracker = new PerformanceTracker(this.config.performance);
+    // Initialize enhanced performance tracker with extended config
+    const enhancedPerfConfig: IEnhancedPerformanceConfig = {
+      ...this.config.performance,
+      enableMemoryTracking: true,
+      enableGCTracking: false, // Conservative default
+      maxLatencyHistory: 100,
+      maxGCEventHistory: 50,
+      resourceMetricsInterval: 5000,
+      enableMeasurementPooling: true,
+      measurementPoolInitialSize: 20,
+      measurementPoolMaxSize: 100,
+      enableEnvironmentOptimization: true,
+      enableAutoProfileSelection: false,
+      enableParityValidation: false,
+      parityValidationInterval: 0,
+      enableWebWorkerSupport: false,
+      enableBrowserFallbacks: true,
+    };
+    this.performanceTracker = new EnhancedPerformanceTracker(enhancedPerfConfig);
 
     // Initialize correlation manager
     const factory = new CorrelationManagerFactory();
@@ -180,7 +199,19 @@ export class HighPerformancePinoLogger implements ILogger {
     const poolMetrics = logEntryPool.getMetrics();
     const objectPoolUtilization = poolMetrics.utilization;
 
-    return this.performanceTracker.getMetrics(circuitBreakerState, objectPoolUtilization);
+    // EnhancedPerformanceTracker returns enhanced metrics directly
+    const enhancedMetrics = this.performanceTracker.getMetrics();
+
+    // Convert to legacy IPerformanceMetrics format
+    return {
+      logsPerSecond: enhancedMetrics.logsPerSecond,
+      averageLatencyMs: enhancedMetrics.averageLatencyMs,
+      peakLatencyMs: enhancedMetrics.peakLatencyMs,
+      totalLogs: enhancedMetrics.totalLogs,
+      failedLogs: enhancedMetrics.failedLogs,
+      circuitBreakerState,
+      objectPoolUtilization,
+    };
   }
 
   isHealthy(): boolean {
@@ -193,7 +224,10 @@ export class HighPerformancePinoLogger implements ILogger {
   }
 
   private logWithPerformanceTracking(level: string, message: string, meta: Record<string, unknown>): void {
-    const finishTiming = this.performanceTracker.startOperation();
+    const measurement = this.performanceTracker.startOperation("log", {
+      level,
+      transportType: this.transportManager ? "custom" : "pino",
+    });
 
     const logOperation = async (): Promise<void> => {
       try {
@@ -212,7 +246,7 @@ export class HighPerformancePinoLogger implements ILogger {
         console.error("Logger failed:", error);
         console.error("Original message:", { level, message, meta });
       } finally {
-        finishTiming();
+        this.performanceTracker.finishOperation(measurement);
       }
     };
 
@@ -278,20 +312,8 @@ export class HighPerformancePinoLogger implements ILogger {
       serializers: pinoStatics.stdSerializers,
     };
 
-    // Configure timestamp format
-    switch (this.config.timestampFormat) {
-      case "iso":
-        pinoConfig["timestamp"] = pinoStatics.stdTimeFunctions.isoTime;
-        break;
-      case "unix":
-        pinoConfig["timestamp"] = pinoStatics.stdTimeFunctions.unixTime;
-        break;
-      case "epoch":
-        pinoConfig["timestamp"] = () => `,"timestamp":${Date.now().toString()}`;
-        break;
-      default:
-        pinoConfig["timestamp"] = pinoStatics.stdTimeFunctions.isoTime;
-    }
+    // Use ISO timestamp by default
+    pinoConfig["timestamp"] = pinoStatics.stdTimeFunctions.isoTime;
 
     // Environment-specific optimizations
     if (this.config.environment === "production") {
@@ -309,28 +331,17 @@ export class HighPerformancePinoLogger implements ILogger {
         },
       };
     } else if (this.config.environment === "test") {
-      // Test environment: Use custom stream if provided for output capture
+      // Test environment: Use default stream
       pinoConfig["level"] = this.config.logLevel;
-
-      if (this.config.testStream) {
-        // CRITICAL FIX: Pass stream as second argument to Pino, not as config
-        const pino = await getPino();
-        return pino(pinoConfig, this.config.testStream);
-      } else {
-        // Default test stream to process.stdout if no custom stream provided
-        const pino = await getPino();
-        return pino(pinoConfig, process.stdout);
-      }
+      const pino = await getPino();
+      return pino(pinoConfig, process.stdout);
     }
 
     return createPinoLogger(pinoConfig);
   }
 
   private addCorrelation(meta: Record<string, unknown>): Record<string, unknown> {
-    if (!this.config.enableCorrelationIds) {
-      return meta;
-    }
-
+    // Always enable correlation IDs for enhanced tracking
     // Priority: manual correlation ID > automatic context detection
     let correlationId = this.correlationId;
 
@@ -380,8 +391,6 @@ export class HighPerformancePinoLogger implements ILogger {
         maxSize: 1000,
         growthFactor: 1.5,
       },
-      bufferSize: 1000,
-      flushIntervalMs: 5000,
       enableCorrelationIds: true,
       timestampFormat: "iso",
     };
@@ -412,8 +421,6 @@ export class PinoLogger extends HighPerformancePinoLogger {
       performance: { enabled: false, sampleRate: 0, thresholdMs: 1000 },
       circuitBreaker: { enabled: false, failureThreshold: 10, resetTimeoutMs: 60000, monitorTimeWindowMs: 120000 },
       objectPool: { enabled: false, initialSize: 0, maxSize: 0, growthFactor: 1 },
-      enableCorrelationIds: true,
-      timestampFormat: "iso" as const,
       ...configOptions,
     };
 

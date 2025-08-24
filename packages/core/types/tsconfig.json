@@ -2,8 +2,10 @@
   "extends": "../../../tools/config/typescript/base.json",
   "compilerOptions": {
     "outDir": "./dist",
+    "rootDir": "./src",
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "composite": false
+    "composite": false,
+    "emitDeclarationOnly": true
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],
   "exclude": ["node_modules", "dist", "tests"]

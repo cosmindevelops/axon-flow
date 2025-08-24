@@ -178,9 +178,16 @@ export class RetryHandler extends BaseRecoveryHandler {
   constructor(config: IRetryConfig, priority: HandlerPriority = Priority.MEDIUM) {
     super("RetryHandler", priority);
 
+    // Handle both maxAttempts and maxRetries for backward compatibility
+    const maxAttempts = (config as any).maxAttempts || (config as any).maxRetries;
+
+    if (!maxAttempts) {
+      throw new Error("RetryHandler requires either maxAttempts or maxRetries to be specified");
+    }
+
     // Set defaults for required configuration
     this.config = {
-      maxAttempts: config.maxAttempts,
+      maxAttempts: maxAttempts,
       initialDelay: config.initialDelay,
       backoffStrategy: config.backoffStrategy,
       maxDelay: config.maxDelay || 30000, // 30 seconds default
@@ -345,8 +352,16 @@ export class RetryHandler extends BaseRecoveryHandler {
       duration: PerformanceUtils.now() - startTime,
     });
 
-    // All attempts failed, throw the last error
-    throw lastError;
+    // All attempts failed, throw the last error or create a fallback error
+    if (lastError) {
+      throw lastError;
+    } else {
+      // This should never happen, but provide a safe fallback
+      throw this.errorFactory.create(
+        `Operation failed after ${attempt} attempts with no recorded error`,
+        "RETRY_FAILED_NO_ERROR",
+      );
+    }
   }
 
   /**
@@ -533,7 +548,7 @@ export class CircuitBreakerHandler extends BaseRecoveryHandler {
       duration,
       context: {
         ...recoveryContext,
-        recoveryState: newState === "open" ? RecoveryState.FAILED : RecoveryState.RECOVERED,
+        recoveryState: newState === "open" ? RecoveryState.FAILED : RecoveryState.RECOVERING,
         recoveryData: {
           ...recoveryContext.recoveryData,
           circuitState: newState,
@@ -747,7 +762,19 @@ export class GracefulDegradationHandler extends BaseRecoveryHandler {
 
   constructor(config: IGracefulDegradationConfig, priority: HandlerPriority = Priority.LOW) {
     super("GracefulDegradationHandler", priority);
-    this.config = config;
+
+    // Handle both degradationStrategies and fallbackStrategies for backward compatibility
+    let degradationStrategies = config.degradationStrategies || (config as any).fallbackStrategies;
+
+    // Convert Map to Record if necessary
+    if (degradationStrategies && degradationStrategies instanceof Map) {
+      degradationStrategies = Object.fromEntries(degradationStrategies);
+    }
+
+    this.config = {
+      ...config,
+      degradationStrategies: degradationStrategies,
+    };
     this.errorFactory = new ErrorFactory(ErrorSeverity.WARNING, ErrorCategory.APPLICATION);
   }
 
@@ -833,7 +860,7 @@ export class GracefulDegradationHandler extends BaseRecoveryHandler {
         result,
         context: {
           ...recoveryContext,
-          recoveryState: RecoveryState.RECOVERED,
+          recoveryState: RecoveryState.RECOVERING,
           recoveryData: {
             ...recoveryContext.recoveryData,
             fallbackUsed,
@@ -962,7 +989,7 @@ export class TimeoutHandler extends BaseRecoveryHandler {
     super("TimeoutHandler", priority);
 
     this.config = {
-      timeout: config.timeout,
+      timeout: config.timeout || 5000, // Default to 5 seconds if not provided
       warningThreshold: config.warningThreshold || 0.8,
       gracePeriod: config.gracePeriod || 1000,
       timeoutErrorFactory:
@@ -984,6 +1011,12 @@ export class TimeoutHandler extends BaseRecoveryHandler {
         }),
       allowGracefulCompletion: config.allowGracefulCompletion !== false,
     } as Required<ITimeoutConfig>;
+
+    // Validate timeout is a valid number
+    if (isNaN(this.config.timeout) || this.config.timeout <= 0) {
+      console.warn(`Invalid timeout value: ${this.config.timeout}. Setting to default 5000ms.`);
+      this.config.timeout = 5000;
+    }
 
     this.errorFactory = new ErrorFactory(ErrorSeverity.WARNING, ErrorCategory.SYSTEM);
   }
@@ -1267,7 +1300,15 @@ export class RecoveryManager implements IRecoveryManager {
         return result;
       } catch (error) {
         // The retry handler has already attempted retries, so now we can try other recovery strategies
-        const axonError = error instanceof BaseAxonError ? error : this.errorFactory.createFromError(error as Error);
+        // Properly handle error conversion to avoid generic "Unknown error occurred" messages
+        const axonError =
+          error instanceof BaseAxonError
+            ? error
+            : error instanceof Error
+              ? this.errorFactory.createFromError(error)
+              : this.errorFactory.create(String(error) || "Operation failed with unknown error", "OPERATION_FAILED", {
+                  metadata: { originalError: error },
+                });
 
         // Update metrics for failed retry operation
         this.updateMetrics({
@@ -1277,14 +1318,27 @@ export class RecoveryManager implements IRecoveryManager {
           duration: PerformanceUtils.now() - startTime,
         });
 
-        // Attempt recovery using other handlers (excluding retry since that already failed)
-        const otherHandlers = Array.from(this.handlers.values())
-          .filter((handler) => handler.strategy !== RecoveryStrategy.RETRY)
-          .filter((handler) => handler.canHandle(axonError) && handler.canRecover(axonError, context))
-          .sort((a, b) => a.priority - b.priority);
+        // Create a fresh recovery context for non-retry recovery attempts
+        const freshContext: IRecoveryContext = {
+          ...axonError.context,
+          attemptNumber: 1,
+          totalAttempts: 0,
+          strategiesAttempted: [],
+          recoveryState: RecoveryState.RECOVERING,
+          recoveryStartedAt: new Date(),
+        };
 
-        if (otherHandlers.length > 0) {
-          const recoveryResult = await this.attemptRecovery(axonError, context);
+        // Attempt recovery with non-retry handlers (to avoid infinite retry loops)
+        const nonRetryHandlers = Array.from(this.handlers.values()).filter(
+          (handler) => handler.strategy !== RecoveryStrategy.RETRY,
+        );
+
+        if (nonRetryHandlers.length > 0) {
+          const recoveryResult = await this.attemptRecoveryWithSpecificHandlers(
+            axonError,
+            freshContext,
+            nonRetryHandlers,
+          );
           if (recoveryResult.success && recoveryResult.result !== undefined) {
             return recoveryResult.result as T;
           }
@@ -1308,8 +1362,15 @@ export class RecoveryManager implements IRecoveryManager {
 
       return result;
     } catch (error) {
-      // Convert to BaseAxonError if needed
-      const axonError = error instanceof BaseAxonError ? error : this.errorFactory.createFromError(error as Error);
+      // Convert to BaseAxonError with proper error handling
+      const axonError =
+        error instanceof BaseAxonError
+          ? error
+          : error instanceof Error
+            ? this.errorFactory.createFromError(error)
+            : this.errorFactory.create(String(error) || "Operation failed with unknown error", "OPERATION_FAILED", {
+                metadata: { originalError: error },
+              });
 
       // Attempt recovery
       const recoveryResult = await this.attemptRecovery(axonError, context);
@@ -1393,6 +1454,79 @@ export class RecoveryManager implements IRecoveryManager {
     return {
       success: false,
       strategy: sortedHandlers[sortedHandlers.length - 1]?.strategy || RecoveryStrategy.RETRY,
+      attempts: recoveryContext.attemptNumber,
+      duration,
+      error: this.errorFactory.create("All recovery strategies exhausted", "RECOVERY_EXHAUSTED"),
+      context: {
+        ...recoveryContext,
+        recoveryState: RecoveryState.EXHAUSTED,
+        recoveryCompletedAt: new Date(),
+      },
+      metrics: this.createMetrics(0, recoveryContext.attemptNumber, duration, RecoveryStrategy.RETRY),
+    };
+  }
+
+  private async attemptRecoveryWithSpecificHandlers(
+    error: IBaseAxonError,
+    context: IRecoveryContext,
+    specificHandlers: BaseRecoveryHandler[],
+  ): Promise<IRecoveryResult> {
+    const startTime = PerformanceUtils.now();
+    const recoveryContext: IRecoveryContext = {
+      ...context,
+    };
+
+    const sortedHandlers = specificHandlers
+      .filter((handler) => handler.canHandle(error) && handler.canRecover(error, recoveryContext))
+      .sort((a, b) => a.priority - b.priority);
+
+    if (sortedHandlers.length === 0) {
+      const duration = PerformanceUtils.now() - startTime;
+      return {
+        success: false,
+        strategy: RecoveryStrategy.RETRY, // Default strategy for no handlers
+        attempts: 0,
+        duration,
+        error: this.errorFactory.create("No recovery handlers available for error", "NO_RECOVERY_HANDLERS"),
+        context: {
+          ...recoveryContext,
+          recoveryState: RecoveryState.FAILED,
+        },
+        metrics: this.createMetrics(0, 1, duration, RecoveryStrategy.RETRY),
+      };
+    }
+
+    // Try each handler in priority order
+    for (const handler of sortedHandlers) {
+      try {
+        const result = await handler.recover(error, recoveryContext);
+
+        // Update context with strategy attempted
+        result.context.strategiesAttempted.push(handler.strategy);
+
+        if (result.success) {
+          return result;
+        }
+      } catch (handlerError) {
+        // Handler threw an error; continue to next handler
+        const axonError =
+          handlerError instanceof BaseAxonError
+            ? handlerError
+            : handlerError instanceof Error
+              ? this.errorFactory.createFromError(handlerError)
+              : this.errorFactory.create(String(handlerError) || "Recovery handler failed", "RECOVERY_HANDLER_FAILED");
+
+        // Continue to next handler
+        recoveryContext.strategiesAttempted.push(handler.strategy);
+      }
+    }
+
+    // All handlers failed
+    const duration = PerformanceUtils.now() - startTime;
+    const lastHandler = sortedHandlers[sortedHandlers.length - 1];
+    return {
+      success: false,
+      strategy: lastHandler ? lastHandler.strategy : RecoveryStrategy.RETRY,
       attempts: recoveryContext.attemptNumber,
       duration,
       error: this.errorFactory.create("All recovery strategies exhausted", "RECOVERY_EXHAUSTED"),

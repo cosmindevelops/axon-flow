@@ -47,9 +47,28 @@ import type { IEnhancedErrorContext } from "../../base/base-error.types.js";
  * Extends the base ErrorFactory with convenient domain-specific creation methods
  */
 export class EnhancedErrorFactory extends ErrorFactory {
+  private globalContext: Partial<IEnhancedErrorContext>;
+
+  constructor(
+    globalContext?: Partial<IEnhancedErrorContext>,
+    defaultSeverity = ErrorSeverity.ERROR,
+    defaultCategory = ErrorCategory.UNKNOWN,
+  ) {
+    super(defaultSeverity, defaultCategory);
+    this.globalContext = globalContext || {};
+  }
+
+  /**
+   * Merge global context with provided context
+   */
+  private mergeContext(context?: Partial<IEnhancedErrorContext>): Partial<IEnhancedErrorContext> {
+    return { ...this.globalContext, ...context };
+  }
+
   /**
    * Create a system error
    */
+  createSystemError(message: string, code?: string): ISystemError;
   createSystemError(options: {
     message: string;
     code?: string;
@@ -57,8 +76,29 @@ export class EnhancedErrorFactory extends ErrorFactory {
     resourceType?: string;
     resourceId?: string;
     context?: Partial<IEnhancedErrorContext>;
-  }): ISystemError {
-    const systemOptions: any = { ...options.context };
+  }): ISystemError;
+  createSystemError(
+    messageOrOptions:
+      | string
+      | {
+          message: string;
+          code?: string;
+          systemComponent?: string;
+          resourceType?: string;
+          resourceId?: string;
+          context?: Partial<IEnhancedErrorContext>;
+        },
+    code?: string,
+  ): ISystemError {
+    // Handle simple signature (backward compatibility)
+    if (typeof messageOrOptions === "string") {
+      const systemOptions = this.mergeContext();
+      return new SystemError(messageOrOptions, code || "SYSTEM_ERROR", systemOptions);
+    }
+
+    // Handle options object signature
+    const options = messageOrOptions;
+    const systemOptions: any = this.mergeContext(options.context);
     if (options.systemComponent !== undefined) systemOptions.systemComponent = options.systemComponent;
     if (options.resourceType !== undefined) systemOptions.resourceType = options.resourceType;
     if (options.resourceId !== undefined) systemOptions.resourceId = options.resourceId;
@@ -69,6 +109,7 @@ export class EnhancedErrorFactory extends ErrorFactory {
   /**
    * Create an application error
    */
+  createApplicationError(message: string, code?: string): IApplicationError;
   createApplicationError(options: {
     message: string;
     code?: string;
@@ -76,8 +117,29 @@ export class EnhancedErrorFactory extends ErrorFactory {
     operation?: string;
     businessRule?: string;
     context?: Partial<IEnhancedErrorContext>;
-  }): IApplicationError {
-    const appOptions: any = { ...options.context };
+  }): IApplicationError;
+  createApplicationError(
+    messageOrOptions:
+      | string
+      | {
+          message: string;
+          code?: string;
+          module?: string;
+          operation?: string;
+          businessRule?: string;
+          context?: Partial<IEnhancedErrorContext>;
+        },
+    code?: string,
+  ): IApplicationError {
+    // Handle simple signature (backward compatibility)
+    if (typeof messageOrOptions === "string") {
+      const appOptions = this.mergeContext();
+      return new ApplicationError(messageOrOptions, code || "APPLICATION_ERROR", appOptions);
+    }
+
+    // Handle options object signature
+    const options = messageOrOptions;
+    const appOptions: any = this.mergeContext(options.context);
     if (options.module !== undefined) appOptions.module = options.module;
     if (options.operation !== undefined) appOptions.operation = options.operation;
     if (options.businessRule !== undefined) appOptions.businessRule = options.businessRule;
@@ -88,6 +150,7 @@ export class EnhancedErrorFactory extends ErrorFactory {
   /**
    * Create a validation error with Zod integration support
    */
+  createValidationError(message: string, code?: string): IValidationError;
   createValidationError(options: {
     message: string;
     code?: string;
@@ -100,8 +163,34 @@ export class EnhancedErrorFactory extends ErrorFactory {
       constraint: string;
     }>;
     context?: Partial<IEnhancedErrorContext>;
-  }): IValidationError {
-    const validationOptions: any = { ...options.context };
+  }): IValidationError;
+  createValidationError(
+    messageOrOptions:
+      | string
+      | {
+          message: string;
+          code?: string;
+          field?: string;
+          value?: unknown;
+          constraint?: string;
+          validationErrors?: Array<{
+            field: string;
+            message: string;
+            constraint: string;
+          }>;
+          context?: Partial<IEnhancedErrorContext>;
+        },
+    code?: string,
+  ): IValidationError {
+    // Handle simple signature (backward compatibility)
+    if (typeof messageOrOptions === "string") {
+      const validationOptions = this.mergeContext();
+      return new ValidationError(messageOrOptions, code || "VALIDATION_ERROR", validationOptions);
+    }
+
+    // Handle options object signature
+    const options = messageOrOptions;
+    const validationOptions: any = this.mergeContext(options.context);
     if (options.field !== undefined) validationOptions.field = options.field;
     if (options.value !== undefined) validationOptions.value = options.value;
     if (options.constraint !== undefined) validationOptions.constraint = options.constraint;
@@ -134,6 +223,7 @@ export class EnhancedErrorFactory extends ErrorFactory {
   /**
    * Create a network error with retry metadata
    */
+  createNetworkError(message: string, code?: string): INetworkError;
   createNetworkError(options: {
     message: string;
     code?: string;
@@ -143,8 +233,31 @@ export class EnhancedErrorFactory extends ErrorFactory {
     timeout?: number;
     retryCount?: number;
     context?: Partial<IEnhancedErrorContext>;
-  }): INetworkError {
-    const networkOptions: any = { ...options.context };
+  }): INetworkError;
+  createNetworkError(
+    messageOrOptions:
+      | string
+      | {
+          message: string;
+          code?: string;
+          url?: string;
+          method?: string;
+          statusCode?: number;
+          timeout?: number;
+          retryCount?: number;
+          context?: Partial<IEnhancedErrorContext>;
+        },
+    code?: string,
+  ): INetworkError {
+    // Handle simple signature (backward compatibility)
+    if (typeof messageOrOptions === "string") {
+      const networkOptions = this.mergeContext();
+      return new NetworkError(messageOrOptions, code || "NETWORK_ERROR", networkOptions);
+    }
+
+    // Handle options object signature
+    const options = messageOrOptions;
+    const networkOptions: any = this.mergeContext(options.context);
     if (options.url !== undefined) networkOptions.url = options.url;
     if (options.method !== undefined) networkOptions.method = options.method;
     if (options.statusCode !== undefined) networkOptions.statusCode = options.statusCode;
@@ -176,6 +289,7 @@ export class EnhancedErrorFactory extends ErrorFactory {
   /**
    * Create an authentication error with auth context
    */
+  createAuthenticationError(message: string, code?: string): IAuthenticationError;
   createAuthenticationError(options: {
     message: string;
     code?: string;
@@ -184,19 +298,42 @@ export class EnhancedErrorFactory extends ErrorFactory {
     authMethod?: string;
     failureReason?: string;
     context?: Partial<IEnhancedErrorContext>;
-  }): IAuthenticationError {
-    const authOptions: any = { ...options.context };
+  }): IAuthenticationError;
+  createAuthenticationError(
+    messageOrOptions:
+      | string
+      | {
+          message: string;
+          code?: string;
+          userId?: string;
+          attemptedAction?: string;
+          authMethod?: string;
+          failureReason?: string;
+          context?: Partial<IEnhancedErrorContext>;
+        },
+    code?: string,
+  ): IAuthenticationError {
+    // Handle simple signature (backward compatibility)
+    if (typeof messageOrOptions === "string") {
+      const authOptions = this.mergeContext();
+      return new AuthenticationError(messageOrOptions, code || "AUTH_ERROR", authOptions);
+    }
+
+    // Handle options object signature
+    const options = messageOrOptions;
+    const authOptions: any = this.mergeContext(options.context);
     if (options.userId !== undefined) authOptions.userId = options.userId;
     if (options.attemptedAction !== undefined) authOptions.attemptedAction = options.attemptedAction;
     if (options.authMethod !== undefined) authOptions.authMethod = options.authMethod;
     if (options.failureReason !== undefined) authOptions.failureReason = options.failureReason;
 
-    return new AuthenticationError(options.message, options.code || "AUTHENTICATION_ERROR", authOptions);
+    return new AuthenticationError(options.message, options.code || "AUTH_ERROR", authOptions);
   }
 
   /**
    * Create a database error
    */
+  createDatabaseError(message: string, code?: string): IDatabaseError;
   createDatabaseError(options: {
     message: string;
     code?: string;
@@ -206,8 +343,31 @@ export class EnhancedErrorFactory extends ErrorFactory {
     constraint?: string;
     affectedRows?: number;
     context?: Partial<IEnhancedErrorContext>;
-  }): IDatabaseError {
-    const dbOptions: any = { ...options.context };
+  }): IDatabaseError;
+  createDatabaseError(
+    messageOrOptions:
+      | string
+      | {
+          message: string;
+          code?: string;
+          query?: string;
+          table?: string;
+          operation?: string;
+          constraint?: string;
+          affectedRows?: number;
+          context?: Partial<IEnhancedErrorContext>;
+        },
+    code?: string,
+  ): IDatabaseError {
+    // Handle simple signature (backward compatibility)
+    if (typeof messageOrOptions === "string") {
+      const dbOptions = this.mergeContext();
+      return new DatabaseError(messageOrOptions, code || "DATABASE_ERROR", dbOptions as any);
+    }
+
+    // Handle options object signature
+    const options = messageOrOptions;
+    const dbOptions: any = this.mergeContext(options.context);
     if (options.query !== undefined) dbOptions.query = options.query;
     if (options.table !== undefined) dbOptions.table = options.table;
     if (options.operation !== undefined) dbOptions.operation = options.operation;
@@ -264,6 +424,7 @@ export class EnhancedErrorFactory extends ErrorFactory {
   /**
    * Create a timeout error
    */
+  createTimeoutError(message: string, code?: string): ITimeoutError;
   createTimeoutError(options: {
     message: string;
     code?: string;
@@ -271,8 +432,29 @@ export class EnhancedErrorFactory extends ErrorFactory {
     timeout?: number;
     elapsed?: number;
     context?: Partial<IEnhancedErrorContext>;
-  }): ITimeoutError {
-    const timeoutOptions: any = { ...options.context };
+  }): ITimeoutError;
+  createTimeoutError(
+    messageOrOptions:
+      | string
+      | {
+          message: string;
+          code?: string;
+          operation?: string;
+          timeout?: number;
+          elapsed?: number;
+          context?: Partial<IEnhancedErrorContext>;
+        },
+    code?: string,
+  ): ITimeoutError {
+    // Handle simple signature (backward compatibility)
+    if (typeof messageOrOptions === "string") {
+      const timeoutOptions = this.mergeContext();
+      return new TimeoutError(messageOrOptions, code || "TIMEOUT_ERROR", timeoutOptions);
+    }
+
+    // Handle options object signature
+    const options = messageOrOptions;
+    const timeoutOptions: any = this.mergeContext(options.context);
     if (options.operation !== undefined) timeoutOptions.operation = options.operation;
     if (options.timeout !== undefined) timeoutOptions.timeout = options.timeout;
     if (options.elapsed !== undefined) timeoutOptions.elapsed = options.elapsed;
@@ -402,6 +584,6 @@ export function createEnhancedFactory(
   defaultSeverity = ErrorSeverity.ERROR,
   defaultCategory = ErrorCategory.UNKNOWN,
 ): EnhancedErrorFactory {
-  const factory = new EnhancedErrorFactory(defaultSeverity, defaultCategory);
+  const factory = new EnhancedErrorFactory(undefined, defaultSeverity, defaultCategory);
   return factory;
 }

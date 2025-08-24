@@ -850,7 +850,8 @@ export class MeasurementPool implements IMeasurementPool {
     }
 
     measurement.inUse = true;
-    measurement.startTime = this.platform.hasPerformanceNow ? performance.now() : Date.now();
+    // Fix: Use the same safe timing method as EnhancedPerformanceTracker
+    measurement.startTime = this.getSafePerformanceTime();
     delete measurement.endTime;
     delete measurement.metadata;
     measurement.category = "default"; // Reset to default
@@ -1055,6 +1056,20 @@ export class MeasurementPool implements IMeasurementPool {
       this.resize(newSize);
     }
   }
+
+  /**
+   * Safe performance timing that matches EnhancedPerformanceTracker behavior
+   */
+  private getSafePerformanceTime(): number {
+    try {
+      return this.platform.hasPerformanceNow && typeof performance !== "undefined" && performance.now 
+        ? performance.now() 
+        : Date.now();
+    } catch (_error) {
+      // Performance API unavailable - fallback to Date.now()
+      return Date.now();
+    }
+  }
 }
 
 /**
@@ -1225,6 +1240,20 @@ export class EnhancedPerformanceTracker implements IEnhancedPerformanceTracker {
     }
   }
 
+  /**
+   * Safe performance timing that handles Performance API errors gracefully
+   */
+  private getPerformanceTime(): number {
+    try {
+      return this.platform.hasPerformanceNow && typeof performance !== "undefined" && performance.now 
+        ? performance.now() 
+        : Date.now();
+    } catch (_error) {
+      // Performance API unavailable - fallback to Date.now()
+      return Date.now();
+    }
+  }
+
   startOperation(category = "default", metadata?: Record<string, unknown>): IPerformanceMeasurement {
     if (!this.config.enabled || Math.random() > this.config.sampleRate) {
       // Return a no-op measurement for disabled/unsampled operations
@@ -1256,7 +1285,7 @@ export class EnhancedPerformanceTracker implements IEnhancedPerformanceTracker {
       return;
     }
 
-    const endTime = this.platform.hasPerformanceNow ? performance.now() : Date.now();
+    const endTime = this.getPerformanceTime();
     measurement.endTime = endTime;
 
     const latency = endTime - measurement.startTime;
@@ -1436,7 +1465,7 @@ export class EnhancedPerformanceTracker implements IEnhancedPerformanceTracker {
   private createDirectMeasurement(): IPerformanceMeasurement {
     return {
       id: "direct",
-      startTime: this.platform.hasPerformanceNow ? performance.now() : Date.now(),
+      startTime: this.getPerformanceTime(),
       category: "default",
       inUse: true,
     };

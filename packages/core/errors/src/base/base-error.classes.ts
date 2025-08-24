@@ -56,33 +56,16 @@ export class BaseAxonError extends Error implements IBaseAxonError {
     this.category = options.category ?? ErrorCategory.UNKNOWN;
 
     // Build context with platform detection - handle optional types carefully
-    const baseContext: IEnhancedErrorContext = {
+    // Start with all provided options to preserve custom properties
+    const baseContext: any = {
+      ...options, // Preserve all custom properties
       timestamp: this.createdAt.toISOString(),
       severity: this.severity,
       category: this.category,
     };
 
-    // Add optional properties only if they exist
-    if (options.correlationId !== undefined) {
-      baseContext.correlationId = options.correlationId;
-    }
-    if (options.component !== undefined) {
-      baseContext.component = options.component;
-    }
-    if (options.operation !== undefined) {
-      baseContext.operation = options.operation;
-    }
-    if (options.stackTrace !== undefined) {
-      baseContext.stackTrace = options.stackTrace;
-    }
-    if (options.metadata !== undefined) {
-      baseContext.metadata = options.metadata;
-    }
-
-    // Handle environment carefully
-    if (options.environment !== undefined) {
-      baseContext.environment = options.environment;
-    } else {
+    // Handle environment carefully - only set if not provided and we can detect
+    if (options.environment === undefined) {
       const detectedEnv = this.detectEnvironment();
       if (detectedEnv) {
         baseContext.environment = detectedEnv;
@@ -214,6 +197,13 @@ export class BaseAxonError extends Error implements IBaseAxonError {
    */
   get metadata(): Record<string, unknown> | undefined {
     return this.context.metadata;
+  }
+
+  /**
+   * Get timestamp as Date object for compatibility with existing tests
+   */
+  get timestamp(): Date {
+    return this.createdAt;
   }
 
   /**
@@ -375,6 +365,12 @@ export class ErrorFactory implements IErrorFactory {
     code = "WRAPPED_ERROR",
     options?: Partial<IEnhancedErrorContext>,
   ): IBaseAxonError {
+    // Handle null/undefined error gracefully
+    if (!error) {
+      const fallbackError = new Error("Unknown error occurred");
+      return this.create("Unknown error occurred", code, options);
+    }
+
     const contextOptions: Partial<IEnhancedErrorContext> = {
       severity: this.defaultSeverity,
       category: this.defaultCategory,
@@ -386,7 +382,7 @@ export class ErrorFactory implements IErrorFactory {
       contextOptions.stackTrace = error.stack;
     }
 
-    const axonError = new BaseAxonError(error.message, code, contextOptions);
+    const axonError = new BaseAxonError(error.message || "Unknown error", code, contextOptions);
 
     return axonError.withCause(error);
   }

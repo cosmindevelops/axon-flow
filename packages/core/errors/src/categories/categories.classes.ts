@@ -49,7 +49,7 @@ export class SystemError extends BaseAxonError implements ISystemError {
   ) {
     super(message, code, {
       ...options,
-      severity: options.severity ?? ErrorSeverity.CRITICAL,
+      severity: options.severity ?? ErrorSeverity.ERROR,
       category: ErrorCategory.SYSTEM,
     });
 

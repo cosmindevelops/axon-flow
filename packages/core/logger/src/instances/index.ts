@@ -15,6 +15,7 @@
  */
 
 import { PinoLogger, HighPerformancePinoLogger } from "../logger/index.js";
+import type { ILoggerConfig } from "../logger/logger.types.js";
 
 /**
  * Default logger instance (backward compatible)
@@ -24,7 +25,7 @@ export const logger = new PinoLogger();
 /**
  * High-performance logger instance with all features enabled
  */
-export const highPerformanceLogger = new HighPerformancePinoLogger({
+const highPerformanceConfig: Partial<ILoggerConfig> = {
   performance: {
     enabled: true,
     sampleRate: 0.1, // Sample 10% of operations
@@ -51,7 +52,9 @@ export const highPerformanceLogger = new HighPerformancePinoLogger({
   ],
   enableCorrelationIds: true,
   timestampFormat: "iso",
-});
+};
+
+export const highPerformanceLogger = new HighPerformancePinoLogger(highPerformanceConfig);
 
 /**
  * Production-optimized logger instance

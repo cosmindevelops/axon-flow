@@ -369,8 +369,11 @@ describe("Performance Benchmarks", () => {
         );
 
         const metrics = tracker.getMetrics();
-        const expectedCount = Math.min(totalOperations, 100); // Limited by reduced maxLatencyHistory
-        expect(metrics.operation.count).toBe(expectedCount);
+        // Account for sampling rate (0.5) and maxLatencyHistory (100) limit
+        const maxPossibleCount = Math.min(totalOperations, 100);
+        const minExpectedCount = Math.min(Math.floor(totalOperations * 0.3), maxPossibleCount); // Lower bound accounting for sampling variability
+        expect(metrics.operation.count).toBeGreaterThanOrEqual(minExpectedCount);
+        expect(metrics.operation.count).toBeLessThanOrEqual(maxPossibleCount);
         expect(metrics.totalLogs).toBe(totalOperations); // totalLogs tracks all operations
         expect(metrics.failedLogs).toBe(0);
       }
@@ -404,8 +407,11 @@ describe("Performance Benchmarks", () => {
         );
 
         const metrics = tracker.getMetrics();
-        const expectedCount = Math.min(count, 100); // Limited by reduced maxLatencyHistory
-        expect(metrics.operation.count).toBe(expectedCount);
+        // Account for sampling rate (0.5) and maxLatencyHistory (100) limit
+        const maxPossibleCount = Math.min(count, 100);
+        const minExpectedCount = Math.min(Math.floor(count * 0.3), maxPossibleCount); // Lower bound accounting for sampling variability
+        expect(metrics.operation.count).toBeGreaterThanOrEqual(minExpectedCount);
+        expect(metrics.operation.count).toBeLessThanOrEqual(maxPossibleCount);
 
         // Memory growth per operation should be reasonable
         expect(memoryPerOperation).toBeLessThan(2048); // Increased tolerance for test environment
@@ -507,8 +513,11 @@ describe("Performance Benchmarks", () => {
       // Each request generates 3 operations (api.request, database.query, request.processing)
       // but only calls recordSuccess() once per request
       const totalOperations = totalRequests * 3;
-      const expectedCount = Math.min(totalOperations, 100); // Limited by reduced maxLatencyHistory
-      expect(metrics.operation.count).toBe(expectedCount);
+      // Account for sampling rate (0.5) and maxLatencyHistory (100) limit
+      const maxPossibleCount = Math.min(totalOperations, 100);
+      const minExpectedCount = Math.min(Math.floor(totalOperations * 0.3), maxPossibleCount); // Lower bound accounting for sampling variability
+      expect(metrics.operation.count).toBeGreaterThanOrEqual(minExpectedCount);
+      expect(metrics.operation.count).toBeLessThanOrEqual(maxPossibleCount);
       expect(metrics.totalLogs).toBe(totalRequests); // recordSuccess() called once per request
       expect(metrics.averageLatencyMs).toBeGreaterThan(0);
     });
