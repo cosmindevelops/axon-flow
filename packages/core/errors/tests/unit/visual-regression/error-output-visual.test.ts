@@ -1,6 +1,6 @@
 /**
  * Visual regression tests for error outputs
- * 
+ *
  * Tests the visual formatting of various error types to ensure
  * consistent output formatting across changes.
  */
@@ -12,18 +12,14 @@ import { ErrorCategory, ErrorSeverity } from "../../../src/base/base-error.types
 describe("Error Output Visual Regression", () => {
   describe("BaseAxonError toString format", () => {
     it("should maintain consistent formatting for basic error", () => {
-      const error = new BaseAxonError(
-        "Database connection failed",
-        "DB_CONNECTION_ERROR",
-        {
-          severity: ErrorSeverity.CRITICAL,
-          category: ErrorCategory.INFRASTRUCTURE,
-          metadata: {
-            host: "localhost",
-            port: 5432,
-          },
-        }
-      );
+      const error = new BaseAxonError("Database connection failed", "DB_CONNECTION_ERROR", {
+        severity: ErrorSeverity.CRITICAL,
+        category: ErrorCategory.INFRASTRUCTURE,
+        metadata: {
+          host: "localhost",
+          port: 5432,
+        },
+      });
 
       // Test visual regression for toString output
       expect(error).toMatchErrorOutputSnapshot();
@@ -41,7 +37,7 @@ describe("Error Output Visual Regression", () => {
             userId: "user-456",
             attemptCount: 3,
           },
-        }
+        },
       );
 
       // Test comprehensive formatted output
@@ -51,15 +47,9 @@ describe("Error Output Visual Regression", () => {
 
   describe("AggregateAxonError visual output", () => {
     it("should maintain consistent formatting for aggregate errors", () => {
-      const childError1 = new BaseAxonError(
-        "Validation failed for field 'email'",
-        "VALIDATION_ERROR"
-      );
-      
-      const childError2 = new BaseAxonError(
-        "Validation failed for field 'password'", 
-        "VALIDATION_ERROR"
-      );
+      const childError1 = new BaseAxonError("Validation failed for field 'email'", "VALIDATION_ERROR");
+
+      const childError2 = new BaseAxonError("Validation failed for field 'password'", "VALIDATION_ERROR");
 
       const aggregateError = new AggregateAxonError(
         "Multiple validation errors occurred",
@@ -68,7 +58,7 @@ describe("Error Output Visual Regression", () => {
         {
           severity: ErrorSeverity.ERROR,
           category: ErrorCategory.VALIDATION,
-        }
+        },
       );
 
       expect(aggregateError).toMatchErrorOutputSnapshot();
@@ -78,11 +68,8 @@ describe("Error Output Visual Regression", () => {
   describe("Error chain visual output", () => {
     it("should maintain consistent formatting for error chains", () => {
       const rootCause = new Error("Network timeout");
-      
-      const wrappedError = new BaseAxonError(
-        "Failed to fetch user data",
-        "USER_FETCH_ERROR"
-      ).withCause(rootCause);
+
+      const wrappedError = new BaseAxonError("Failed to fetch user data", "USER_FETCH_ERROR").withCause(rootCause);
 
       // Test the full stack trace formatting
       const fullStackOutput = wrappedError.getFullStack();

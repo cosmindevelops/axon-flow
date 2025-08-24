@@ -2,10 +2,40 @@
  * Unit tests for base error classes
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { BaseAxonError, ChainableError, AggregateAxonError, ErrorFactory } from "../../src/base/base-error.classes.js";
 import { ErrorSeverity, ErrorCategory } from "../../src/base/base-error.types.js";
 import type { IBaseAxonError } from "../../src/base/base-error.types.js";
+
+// Real handler implementations for testing
+class TestErrorHandler {
+  private static callCounts = new Map<string, number>();
+
+  static resetCallCounts() {
+    this.callCounts.clear();
+  }
+
+  static getCallCount(name: string): number {
+    return this.callCounts.get(name) || 0;
+  }
+
+  static incrementCallCount(name: string) {
+    this.callCounts.set(name, this.getCallCount(name) + 1);
+  }
+
+  static createHandler(name: string) {
+    return {
+      handle: (error: BaseAxonError) => {
+        this.incrementCallCount(`${name}_handle`);
+        return error;
+      },
+      setNext: (nextHandler: any) => {
+        this.incrementCallCount(`${name}_setNext`);
+        return nextHandler;
+      },
+    };
+  }
+}
 
 describe("BaseAxonError", () => {
   describe("constructor", () => {
@@ -158,33 +188,28 @@ describe("BaseAxonError", () => {
 });
 
 describe("ChainableError", () => {
+  beforeEach(() => {
+    TestErrorHandler.resetCallCounts();
+  });
+
   it("should support handler chaining", () => {
     const error = new ChainableError("Chainable error");
-    const handler1 = {
-      handle: vi.fn(),
-      setNext: vi.fn(),
-    };
-    const handler2 = {
-      handle: vi.fn(),
-      setNext: vi.fn(),
-    };
+    const handler1 = TestErrorHandler.createHandler("handler1");
+    const handler2 = TestErrorHandler.createHandler("handler2");
 
     error.chain(handler1).chain(handler2);
 
-    expect(handler1.setNext).toHaveBeenCalledWith(handler2);
+    expect(TestErrorHandler.getCallCount("handler1_setNext")).toBe(1);
   });
 
   it("should process through handler chain", () => {
     const error = new ChainableError("Process error");
-    const handler = {
-      handle: vi.fn(),
-      setNext: vi.fn(),
-    };
+    const handler = TestErrorHandler.createHandler("processHandler");
 
     error.chain(handler);
     error.process();
 
-    expect(handler.handle).toHaveBeenCalledWith(error);
+    expect(TestErrorHandler.getCallCount("processHandler_handle")).toBe(1);
   });
 });
 

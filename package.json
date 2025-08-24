@@ -114,8 +114,8 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "prettier --write",
       "eslint --fix",
+      "prettier --write",
       "node tools/scripts/axon-tools.cjs quality test-staged"
     ],
     "*.{json,md,yaml,yml}": [

@@ -9,7 +9,7 @@
  * - ESM/CJS dual compatibility
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 describe("Barrel Exports Validation", () => {
   describe("@axon/types package", () => {

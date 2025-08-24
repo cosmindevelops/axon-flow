@@ -8,5 +8,5 @@ export type * from "./environment.types.js";
 // Export all schemas
 export * from "./environment.schemas.js";
 
-// Export all classes (placeholder)
-export type * from "./environment.classes.js";
+// Export all classes
+export * from "./environment.classes.js";

@@ -48,24 +48,34 @@
   },
   "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.mjs"],
   "exclude": [
+    // Build artifacts and dependencies
     "**/node_modules",
     "**/dist",
     "**/build",
     "**/.next",
+    "**/lib",
+    
+    // Test artifacts and reports (not test source files)
     "**/coverage",
-    "**/*.test.ts",
-    "**/*.test.tsx",
-    "**/*.test.js",
-    "**/*.test.jsx",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "**/*.spec.js",
-    "**/*.spec.jsx",
-    "**/test/**",
-    "**/tests/**",
-    "**/__tests__/**",
-    "**/__mocks__/**",
+    "**/test-results",
+    "**/junit.xml",
+    "**/test-report.html",
+    "**/.nyc_output",
+    
+    // Auto-generated files
+    "**/generated",
+    "**/auto-generated",
+    "**/*.generated.ts",
+    "**/*.generated.tsx",
+    "**/schema.prisma.ts",
+    "**/graphql-types.ts",
+    
+    // E2E test frameworks (typically separate configs)
     "**/cypress/**",
-    "**/e2e/**"
+    "**/playwright/**",
+    "**/e2e/**",
+    
+    // Mock directories (often have relaxed typing)
+    "**/__mocks__/**"
   ]
 }

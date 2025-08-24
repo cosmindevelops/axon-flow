@@ -2,77 +2,14 @@
  * Test suite for status management classes
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
+import { StatusManager, HealthChecker, StatusReporter } from "../../../src/status/index.js";
 
 describe("Status Management Classes", () => {
   describe("StatusManager", () => {
-    let statusManager: any;
+    let statusManager: StatusManager;
 
     beforeEach(() => {
-      // Mock StatusManager class implementation
-      class StatusManager {
-        private statuses = new Map<string, any>();
-        private listeners = new Map<string, Array<(status: any) => void>>();
-
-        setStatus(key: string, status: any): void {
-          const previousStatus = this.statuses.get(key);
-          this.statuses.set(key, status);
-
-          // Notify listeners if status changed
-          if (JSON.stringify(previousStatus) !== JSON.stringify(status)) {
-            this.notifyListeners(key, status);
-          }
-        }
-
-        getStatus(key: string): any | undefined {
-          return this.statuses.get(key);
-        }
-
-        getAllStatuses(): Record<string, any> {
-          return Object.fromEntries(this.statuses);
-        }
-
-        clearStatuses(): void {
-          this.statuses.clear();
-        }
-
-        hasStatus(key: string): boolean {
-          return this.statuses.has(key);
-        }
-
-        removeStatus(key: string): boolean {
-          return this.statuses.delete(key);
-        }
-
-        getStatusCount(): number {
-          return this.statuses.size;
-        }
-
-        addListener(key: string, callback: (status: any) => void): void {
-          if (!this.listeners.has(key)) {
-            this.listeners.set(key, []);
-          }
-          this.listeners.get(key)!.push(callback);
-        }
-
-        removeListener(key: string, callback: (status: any) => void): void {
-          const listeners = this.listeners.get(key);
-          if (listeners) {
-            const index = listeners.indexOf(callback);
-            if (index > -1) {
-              listeners.splice(index, 1);
-            }
-          }
-        }
-
-        private notifyListeners(key: string, status: any): void {
-          const listeners = this.listeners.get(key);
-          if (listeners) {
-            listeners.forEach((callback) => callback(status));
-          }
-        }
-      }
-
       statusManager = new StatusManager();
     });
 
@@ -152,7 +89,12 @@ describe("Status Management Classes", () => {
     });
 
     it("should handle status listeners", () => {
-      const mockListener = vi.fn();
+      let callCount = 0;
+      const capturedCalls: any[] = [];
+      const mockListener = (status: any) => {
+        callCount++;
+        capturedCalls.push(status);
+      };
 
       statusManager.addListener("service1", mockListener);
 
@@ -160,147 +102,38 @@ describe("Status Management Classes", () => {
       const status2 = { code: 500, message: "Error" };
 
       statusManager.setStatus("service1", status1);
-      expect(mockListener).toHaveBeenCalledWith(status1);
+      expect(capturedCalls).toContain(status1);
 
       statusManager.setStatus("service1", status2);
-      expect(mockListener).toHaveBeenCalledWith(status2);
-      expect(mockListener).toHaveBeenCalledTimes(2);
+      expect(capturedCalls).toContain(status2);
+      expect(callCount).toBe(2);
     });
 
     it("should remove listeners correctly", () => {
-      const mockListener1 = vi.fn();
-      const mockListener2 = vi.fn();
+      let callCount1 = 0;
+      let callCount2 = 0;
+      const mockListener1 = () => { callCount1++; };
+      const mockListener2 = () => { callCount2++; };
 
       statusManager.addListener("service1", mockListener1);
       statusManager.addListener("service1", mockListener2);
 
       statusManager.setStatus("service1", { code: 200 });
-      expect(mockListener1).toHaveBeenCalledTimes(1);
-      expect(mockListener2).toHaveBeenCalledTimes(1);
+      expect(callCount1).toBe(1);
+      expect(callCount2).toBe(1);
 
       statusManager.removeListener("service1", mockListener1);
       statusManager.setStatus("service1", { code: 404 });
 
-      expect(mockListener1).toHaveBeenCalledTimes(1); // Not called again
-      expect(mockListener2).toHaveBeenCalledTimes(2); // Called again
+      expect(callCount1).toBe(1); // Not called again
+      expect(callCount2).toBe(2); // Called again
     });
   });
 
   describe("HealthChecker", () => {
-    let healthChecker: any;
+    let healthChecker: HealthChecker;
 
     beforeEach(() => {
-      // Mock HealthChecker class implementation
-      class HealthChecker {
-        private services = new Map<string, any>();
-        private checkInterval: NodeJS.Timeout | null = null;
-
-        addService(name: string, checkFn: () => Promise<any>): void {
-          this.services.set(name, {
-            name,
-            checkFn,
-            lastCheck: null,
-            lastResult: null,
-            isHealthy: null,
-          });
-        }
-
-        removeService(name: string): boolean {
-          return this.services.delete(name);
-        }
-
-        async checkHealth(serviceName: string): Promise<any> {
-          const service = this.services.get(serviceName);
-          if (!service) {
-            throw new Error(`Service ${serviceName} not found`);
-          }
-
-          const startTime = Date.now();
-          try {
-            const result = await service.checkFn();
-            const endTime = Date.now();
-
-            const healthResult = {
-              service: serviceName,
-              status: "healthy",
-              lastChecked: new Date().toISOString(),
-              responseTime: endTime - startTime,
-              details: result,
-            };
-
-            service.lastCheck = new Date().toISOString();
-            service.lastResult = healthResult;
-            service.isHealthy = true;
-
-            return healthResult;
-          } catch (error) {
-            const endTime = Date.now();
-
-            const healthResult = {
-              service: serviceName,
-              status: "unhealthy",
-              lastChecked: new Date().toISOString(),
-              responseTime: endTime - startTime,
-              error: error instanceof Error ? error.message : "Unknown error",
-            };
-
-            service.lastCheck = new Date().toISOString();
-            service.lastResult = healthResult;
-            service.isHealthy = false;
-
-            return healthResult;
-          }
-        }
-
-        async checkAllServices(): Promise<Record<string, any>> {
-          const results: Record<string, any> = {};
-
-          for (const [name] of this.services) {
-            results[name] = await this.checkHealth(name);
-          }
-
-          return results;
-        }
-
-        getServiceStatus(serviceName: string): any | null {
-          const service = this.services.get(serviceName);
-          return service ? service.lastResult : null;
-        }
-
-        getAllServiceStatuses(): Record<string, any> {
-          const statuses: Record<string, any> = {};
-
-          for (const [name, service] of this.services) {
-            if (service.lastResult) {
-              statuses[name] = service.lastResult;
-            }
-          }
-
-          return statuses;
-        }
-
-        startPeriodicChecks(intervalMs: number): void {
-          if (this.checkInterval) {
-            clearInterval(this.checkInterval);
-          }
-
-          this.checkInterval = setInterval(() => {
-            this.checkAllServices().catch(console.error);
-          }, intervalMs);
-        }
-
-        stopPeriodicChecks(): void {
-          if (this.checkInterval) {
-            clearInterval(this.checkInterval);
-            this.checkInterval = null;
-          }
-        }
-
-        getServiceCount(): number {
-          return this.services.size;
-        }
-      }
-
       healthChecker = new HealthChecker();
     });
 
@@ -310,7 +143,7 @@ describe("Status Management Classes", () => {
     });
 
     it("should add and remove services", () => {
-      const mockCheckFn = vi.fn().mockResolvedValue({ connected: true });
+      const mockCheckFn = async (): Promise<any> => ({ connected: true });
 
       healthChecker.addService("database", mockCheckFn);
       expect(healthChecker.getServiceCount()).toBe(1);
@@ -321,13 +154,17 @@ describe("Status Management Classes", () => {
     });
 
     it("should perform health checks", async () => {
-      const mockCheckFn = vi.fn().mockResolvedValue({ connected: true, poolSize: 10 });
+      let callCount = 0;
+      const mockCheckFn = async (): Promise<any> => {
+        callCount++;
+        return { connected: true, poolSize: 10 };
+      };
 
       healthChecker.addService("database", mockCheckFn);
 
       const result = await healthChecker.checkHealth("database");
 
-      expect(mockCheckFn).toHaveBeenCalledTimes(1);
+      expect(callCount).toBe(1);
       expect(result.service).toBe("database");
       expect(result.status).toBe("healthy");
       expect(typeof result.lastChecked).toBe("string");
@@ -336,7 +173,9 @@ describe("Status Management Classes", () => {
     });
 
     it("should handle failed health checks", async () => {
-      const mockCheckFn = vi.fn().mockRejectedValue(new Error("Connection failed"));
+      const mockCheckFn = async (): Promise<any> => {
+        throw new Error("Connection failed");
+      };
 
       healthChecker.addService("database", mockCheckFn);
 
@@ -349,8 +188,16 @@ describe("Status Management Classes", () => {
     });
 
     it("should check all services", async () => {
-      const mockDbCheck = vi.fn().mockResolvedValue({ connected: true });
-      const mockCacheCheck = vi.fn().mockResolvedValue({ status: "ok" });
+      let dbCallCount = 0;
+      let cacheCallCount = 0;
+      const mockDbCheck = async (): Promise<any> => {
+        dbCallCount++;
+        return { connected: true };
+      };
+      const mockCacheCheck = async (): Promise<any> => {
+        cacheCallCount++;
+        return { status: "ok" };
+      };
 
       healthChecker.addService("database", mockDbCheck);
       healthChecker.addService("cache", mockCacheCheck);
@@ -360,12 +207,12 @@ describe("Status Management Classes", () => {
       expect(Object.keys(results)).toEqual(["database", "cache"]);
       expect(results.database.status).toBe("healthy");
       expect(results.cache.status).toBe("healthy");
-      expect(mockDbCheck).toHaveBeenCalledTimes(1);
-      expect(mockCacheCheck).toHaveBeenCalledTimes(1);
+      expect(dbCallCount).toBe(1);
+      expect(cacheCallCount).toBe(1);
     });
 
     it("should retrieve service status", async () => {
-      const mockCheckFn = vi.fn().mockResolvedValue({ connected: true });
+      const mockCheckFn = async (): Promise<any> => ({ connected: true });
 
       healthChecker.addService("database", mockCheckFn);
 
@@ -380,82 +227,27 @@ describe("Status Management Classes", () => {
       expect(status.status).toBe("healthy");
     });
 
-    it("should handle periodic checks", () => {
-      vi.useFakeTimers();
-
-      const mockCheckFn = vi.fn().mockResolvedValue({ connected: true });
+    it("should handle periodic checks", (done) => {
+      let callCount = 0;
+      const mockCheckFn = async (): Promise<any> => {
+        callCount++;
+        return { connected: true };
+      };
+      
       healthChecker.addService("database", mockCheckFn);
+      healthChecker.startPeriodicChecks(100); // Short interval for test
 
-      healthChecker.startPeriodicChecks(1000);
-
-      // Fast-forward time
-      vi.advanceTimersByTime(2500);
-
-      // Should have been called at least twice
-      expect(mockCheckFn).toHaveBeenCalledTimes(2);
-
-      healthChecker.stopPeriodicChecks();
-      vi.useRealTimers();
+      // Wait long enough for multiple calls
+      setTimeout(() => {
+        healthChecker.stopPeriodicChecks();
+        expect(callCount).toBeGreaterThanOrEqual(2);
+        done();
+      }, 250);
     });
   });
 
   describe("StatusReporter", () => {
     it("should aggregate status information", () => {
-      // Mock StatusReporter class
-      class StatusReporter {
-        private statusSources = new Map<string, () => any>();
-
-        addStatusSource(name: string, sourceFn: () => any): void {
-          this.statusSources.set(name, sourceFn);
-        }
-
-        generateReport(): any {
-          const report = {
-            timestamp: new Date().toISOString(),
-            overall: "healthy",
-            services: {} as Record<string, any>,
-            summary: {
-              total: 0,
-              healthy: 0,
-              unhealthy: 0,
-              unknown: 0,
-            },
-          };
-
-          for (const [name, sourceFn] of this.statusSources) {
-            try {
-              const status = sourceFn();
-              report.services[name] = status;
-              report.summary.total++;
-
-              if (status.status === "healthy") {
-                report.summary.healthy++;
-              } else if (status.status === "unhealthy") {
-                report.summary.unhealthy++;
-              } else {
-                report.summary.unknown++;
-              }
-            } catch (error) {
-              report.services[name] = {
-                status: "error",
-                error: error instanceof Error ? error.message : "Unknown error",
-              };
-              report.summary.total++;
-              report.summary.unhealthy++;
-            }
-          }
-
-          // Determine overall status
-          if (report.summary.unhealthy > 0) {
-            report.overall = "unhealthy";
-          } else if (report.summary.unknown > 0) {
-            report.overall = "degraded";
-          }
-
-          return report;
-        }
-      }
-
       const reporter = new StatusReporter();
 
       reporter.addStatusSource("database", () => ({ status: "healthy", connections: 10 }));

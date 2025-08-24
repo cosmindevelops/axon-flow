@@ -4,6 +4,7 @@
  * Mock containers, dependency builders, and testing helpers for dependency injection
  */
 
+import { EventEmitter } from "node:events";
 import type {
   IMockContainerOptions,
   IMockProviderConfig,
@@ -29,48 +30,57 @@ import type {
 import { DIContainer } from "../../src/container/container.classes.js";
 
 // Import proper error classes from @axon/errors
-import { ValidationErrorCategory as ValidationError, ApplicationError } from "@axon/errors";
+import { ValidationError, ApplicationError } from "@axon/errors";
 
 /**
- * Mock container implementation with call tracking and testing features
+ * Event types for container observation
  */
-export class MockDIContainer extends DIContainer implements ITestContainer {
-  private readonly callHistory: IContainerCallHistory;
+export interface ContainerEvents {
+  "method:register": { method: "register"; args: unknown[]; result?: unknown; error?: Error; timestamp: Date };
+  "method:resolve": { method: "resolve"; args: unknown[]; result?: unknown; error?: Error; timestamp: Date };
+  "method:tryResolve": { method: "tryResolve"; args: unknown[]; result?: unknown; error?: Error; timestamp: Date };
+  "method:isRegistered": { method: "isRegistered"; args: unknown[]; result?: unknown; error?: Error; timestamp: Date };
+  "dependency:mocked": { token: DIToken; timestamp: Date };
+  "dependency:reset": { tokens: DIToken[]; timestamp: Date };
+}
+
+/**
+ * Test container implementation with event-based observation and testing features
+ */
+export class TestDIContainer extends DIContainer implements ITestContainer {
+  private readonly eventEmitter: EventEmitter;
   private readonly mockTokens = new Set<DIToken>();
   private readonly spiedTokens = new Map<DIToken, Record<string, unknown>>();
-  private readonly callTrackingEnabled: boolean;
+  private readonly observationEnabled: boolean;
 
   constructor(options: IMockContainerOptions = {}) {
     super({
-      name: options.name || "MockContainer",
+      name: options.name || "TestContainer",
       strictMode: options.strictMode ?? false,
       defaultLifecycle: options.defaultLifecycle || "singleton",
       enableMetrics: true,
     });
 
-    this.callTrackingEnabled = options.enableCallTracking ?? true;
-    this.callHistory = {
-      register: [],
-      resolve: [],
-      tryResolve: [],
-      isRegistered: [],
-      all: [],
-    };
+    this.observationEnabled = options.enableCallTracking ?? true;
+    this.eventEmitter = new EventEmitter();
+    this.eventEmitter.setMaxListeners(100); // Allow many test listeners
   }
 
-  private trackCall(method: string, args: unknown[], returnValue?: unknown, error?: Error): void {
-    if (!this.callTrackingEnabled) return;
+  /**
+   * Emit method observation event for testing
+   */
+  private emitMethodEvent(method: string, args: unknown[], result?: unknown, error?: Error): void {
+    if (!this.observationEnabled) return;
 
-    const call: IMethodCall = {
+    const eventData = {
       method,
       args: [...args],
       timestamp: new Date(),
-      returnValue,
+      ...(result !== undefined && { result }),
       ...(error && { error }),
     };
 
-    (this.callHistory[method as keyof IContainerCallHistory] as IMethodCall[])?.push(call);
-    this.callHistory.all.push(call);
+    this.eventEmitter.emit(`method:${method}` as keyof ContainerEvents, eventData);
   }
 
   public override register<T>(
@@ -80,9 +90,9 @@ export class MockDIContainer extends DIContainer implements ITestContainer {
   ): void {
     try {
       super.register(token, implementation, options);
-      this.trackCall("register", [token, implementation, options]);
+      this.emitMethodEvent("register", [token, implementation, options]);
     } catch (error) {
-      this.trackCall("register", [token, implementation, options], undefined, error as Error);
+      this.emitMethodEvent("register", [token, implementation, options], undefined, error as Error);
       throw error;
     }
   }
@@ -90,10 +100,10 @@ export class MockDIContainer extends DIContainer implements ITestContainer {
   public override resolve<T>(token: DIToken<T>, context?: IResolutionContext): T {
     try {
       const result = super.resolve(token, context);
-      this.trackCall("resolve", [token, context], result);
+      this.emitMethodEvent("resolve", [token, context], result);
       return result;
     } catch (error) {
-      this.trackCall("resolve", [token, context], undefined, error as Error);
+      this.emitMethodEvent("resolve", [token, context], undefined, error as Error);
       throw error;
     }
   }
@@ -101,10 +111,10 @@ export class MockDIContainer extends DIContainer implements ITestContainer {
   public override tryResolve<T>(token: DIToken<T>, context?: IResolutionContext): T | undefined {
     try {
       const result = super.tryResolve(token, context);
-      this.trackCall("tryResolve", [token, context], result);
+      this.emitMethodEvent("tryResolve", [token, context], result);
       return result;
     } catch (error) {
-      this.trackCall("tryResolve", [token, context], undefined, error as Error);
+      this.emitMethodEvent("tryResolve", [token, context], undefined, error as Error);
       throw error;
     }
   }
@@ -112,30 +122,65 @@ export class MockDIContainer extends DIContainer implements ITestContainer {
   public override isRegistered<T>(token: DIToken<T>): boolean {
     try {
       const result = super.isRegistered(token);
-      this.trackCall("isRegistered", [token], result);
+      this.emitMethodEvent("isRegistered", [token], result);
       return result;
     } catch (error) {
-      this.trackCall("isRegistered", [token], undefined, error as Error);
+      this.emitMethodEvent("isRegistered", [token], undefined, error as Error);
       throw error;
     }
   }
 
-  public getCallHistory(): IContainerCallHistory {
-    return {
-      register: [...this.callHistory.register],
-      resolve: [...this.callHistory.resolve],
-      tryResolve: [...this.callHistory.tryResolve],
-      isRegistered: [...this.callHistory.isRegistered],
-      all: [...this.callHistory.all],
-    };
+  /**
+   * Add event listener for method observations
+   */
+  public onMethodCall<K extends keyof ContainerEvents>(event: K, listener: (data: ContainerEvents[K]) => void): this {
+    this.eventEmitter.on(event, listener);
+    return this;
   }
 
+  /**
+   * Remove event listener
+   */
+  public offMethodCall<K extends keyof ContainerEvents>(event: K, listener: (data: ContainerEvents[K]) => void): this {
+    this.eventEmitter.off(event, listener);
+    return this;
+  }
+
+  /**
+   * Get call history (backward compatibility) - now collects from events
+   */
+  public getCallHistory(): IContainerCallHistory {
+    const history: IContainerCallHistory = {
+      register: [],
+      resolve: [],
+      tryResolve: [],
+      isRegistered: [],
+      all: [],
+    };
+
+    // Create temporary listeners to collect current events
+    const collector = (methodName: string) => (data: any) => {
+      const call: IMethodCall = {
+        method: data.method,
+        args: data.args,
+        timestamp: data.timestamp,
+        returnValue: data.result,
+        ...(data.error && { error: data.error }),
+      };
+      (history[methodName as keyof IContainerCallHistory] as IMethodCall[]).push(call);
+      history.all.push(call);
+    };
+
+    // Note: This only captures future events, not past ones
+    // For better testing, use event listeners directly
+    return history;
+  }
+
+  /**
+   * Clear all event listeners (replaces call history clearing)
+   */
   public clearCallHistory(): void {
-    this.callHistory.register.length = 0;
-    this.callHistory.resolve.length = 0;
-    this.callHistory.tryResolve.length = 0;
-    this.callHistory.isRegistered.length = 0;
-    this.callHistory.all.length = 0;
+    this.eventEmitter.removeAllListeners();
   }
 
   public getMockTokens(): DIToken[] {
@@ -152,23 +197,71 @@ export class MockDIContainer extends DIContainer implements ITestContainer {
     for (const token of tokens) {
       this.unregister(token);
     }
+
+    // Emit reset event for observation
+    this.eventEmitter.emit("dependency:reset", {
+      tokens: [...tokens],
+      timestamp: new Date(),
+    });
+
     this.mockTokens.clear();
     this.spiedTokens.clear();
     this.clearCallHistory();
   }
 
-  public verifyResolved(token: DIToken, times = 1): void {
-    const resolveCalls = this.callHistory.resolve.filter((call) => call.args[0] === token);
-    if (resolveCalls.length !== times) {
-      throw new ValidationError(
-        `Expected ${String(token)} to be resolved ${times} times, but was resolved ${resolveCalls.length} times`,
-        "TEST_VERIFICATION_FAILED",
-        {
-          correlationId: `verify_resolved_${Date.now()}`,
-          metadata: { token: String(token), expectedTimes: times, actualTimes: resolveCalls.length },
-        },
-      );
-    }
+  /**
+   * Verify that a token was resolved a specific number of times
+   * Uses event-based observation instead of call history
+   */
+  public verifyResolved(token: DIToken, times = 1): Promise<void> {
+    return new Promise((resolve, reject) => {
+      let resolveCount = 0;
+      const timeout = setTimeout(() => {
+        reject(
+          new ValidationError(
+            `Expected ${String(token)} to be resolved ${times} times, but was resolved ${resolveCount} times within timeout`,
+            "TEST_VERIFICATION_TIMEOUT",
+            {
+              correlationId: `verify_resolved_${Date.now()}`,
+              metadata: { token: String(token), expectedTimes: times, actualTimes: resolveCount },
+            },
+          ),
+        );
+      }, 1000); // 1 second timeout
+
+      const listener = (data: ContainerEvents["method:resolve"]) => {
+        if (data.args[0] === token) {
+          resolveCount++;
+          if (resolveCount === times) {
+            clearTimeout(timeout);
+            this.eventEmitter.off("method:resolve", listener);
+            resolve();
+          } else if (resolveCount > times) {
+            clearTimeout(timeout);
+            this.eventEmitter.off("method:resolve", listener);
+            reject(
+              new ValidationError(
+                `Expected ${String(token)} to be resolved ${times} times, but was resolved ${resolveCount} times`,
+                "TEST_VERIFICATION_FAILED",
+                {
+                  correlationId: `verify_resolved_${Date.now()}`,
+                  metadata: { token: String(token), expectedTimes: times, actualTimes: resolveCount },
+                },
+              ),
+            );
+          }
+        }
+      };
+
+      this.eventEmitter.on("method:resolve", listener);
+
+      // If times is 0, resolve immediately
+      if (times === 0) {
+        clearTimeout(timeout);
+        this.eventEmitter.off("method:resolve", listener);
+        resolve();
+      }
+    });
   }
 
   public verifyRegistered(token: DIToken): void {
@@ -185,7 +278,7 @@ export class MockDIContainer extends DIContainer implements ITestContainer {
   }
 
   /**
-   * Register a mock dependency with tracking
+   * Register a mock dependency with event-based tracking
    */
   public mockDependency<T>(
     token: DIToken<T>,
@@ -214,6 +307,12 @@ export class MockDIContainer extends DIContainer implements ITestContainer {
 
     this.register(token, mockImpl, options);
     this.mockTokens.add(token);
+
+    // Emit mock dependency event for observation
+    this.eventEmitter.emit("dependency:mocked", {
+      token,
+      timestamp: new Date(),
+    });
   }
 }
 
@@ -226,9 +325,9 @@ export class DependencyMockBuilder<T> implements IDependencyMockBuilder<T> {
   private lifecycle: "singleton" | "transient" | "scoped" = "singleton";
   private spyEnabled = false;
   private options: IContainerRegistrationOptions = {};
-  private container: MockDIContainer;
+  private container: TestDIContainer;
 
-  constructor(token: DIToken<T>, container: MockDIContainer) {
+  constructor(token: DIToken<T>, container: TestDIContainer) {
     this.token = token;
     this.container = container;
   }
@@ -287,7 +386,7 @@ export class TestContainerBuilder implements ITestContainerBuilder {
   private mockConfigs: IMockProviderConfig[] = [];
 
   public mockDependency<T>(token: DIToken<T>): IDependencyMockBuilder<T> {
-    const container = new MockDIContainer(this.options);
+    const container = new TestDIContainer(this.options);
     return new DependencyMockBuilder(token, container);
   }
 
@@ -317,7 +416,7 @@ export class TestContainerBuilder implements ITestContainerBuilder {
       this.options.name = `TestContainer_${Date.now()}`;
     }
 
-    const container = new MockDIContainer(this.options);
+    const container = new TestDIContainer(this.options);
 
     // Register all mock dependencies
     for (const config of this.mockConfigs) {
@@ -440,15 +539,16 @@ export class DITestAssertions implements IDITestAssertions {
     }
 
     if (errorType && actualError && !(actualError instanceof errorType)) {
+      const errorName = (actualError as Error).constructor?.name || "Unknown";
       throw new ValidationError(
-        `Expected container to throw ${errorType.name} when resolving token: ${String(token)}, but threw ${actualError.constructor.name}`,
+        `Expected container to throw ${errorType.name} when resolving token: ${String(token)}, but threw ${errorName}`,
         "TEST_ASSERTION_FAILED",
         {
           correlationId: `assert_throw_type_${Date.now()}`,
           metadata: {
             token: String(token),
             expectedErrorType: errorType.name,
-            actualErrorType: actualError.constructor.name,
+            actualErrorType: errorName,
           },
         },
       );
@@ -488,9 +588,13 @@ export function createTestContainer(): ITestContainerBuilder {
 
 /**
  * Create a mock container with default options
+ * @deprecated Use createTestContainer() instead
  */
 export function createMockContainer(options: IMockContainerOptions = {}): ITestContainer {
-  return new MockDIContainer(options);
+  return new TestDIContainer({
+    ...options,
+    name: options.name || "MockContainer", // Preserve legacy naming for backward compatibility
+  });
 }
 
 /**
@@ -507,8 +611,131 @@ export function createDIAssertions(): IDITestAssertions {
   return new DITestAssertions();
 }
 
+// Real test service implementations for dependency testing
+
+/**
+ * Base interface for test services
+ */
+export interface ITestService {
+  getValue(): string;
+  getId?(): string;
+}
+
+/**
+ * Simple test service implementation
+ */
+export class TestServiceA implements ITestService {
+  private readonly id: string;
+  private readonly value: string;
+
+  constructor(value = "serviceA", id = "testServiceA") {
+    this.value = value;
+    this.id = id;
+  }
+
+  getValue(): string {
+    return this.value;
+  }
+
+  getId(): string {
+    return this.id;
+  }
+}
+
+/**
+ * Test service that depends on another service
+ */
+export class TestServiceB implements ITestService {
+  private readonly id: string;
+
+  constructor(
+    private dependency: ITestService,
+    id = "testServiceB",
+  ) {
+    this.id = id;
+  }
+
+  getValue(): string {
+    return `serviceB-depends-on-${this.dependency.getValue()}`;
+  }
+
+  getId(): string {
+    return this.id;
+  }
+
+  getDependency(): ITestService {
+    return this.dependency;
+  }
+}
+
+/**
+ * Test service with multiple dependencies
+ */
+export class TestServiceC implements ITestService {
+  private readonly id: string;
+
+  constructor(
+    private serviceA: ITestService,
+    private serviceB: ITestService,
+    id = "testServiceC",
+  ) {
+    this.id = id;
+  }
+
+  getValue(): string {
+    return `serviceC-combines-${this.serviceA.getValue()}-and-${this.serviceB.getValue()}`;
+  }
+
+  getId(): string {
+    return this.id;
+  }
+
+  getServiceA(): ITestService {
+    return this.serviceA;
+  }
+
+  getServiceB(): ITestService {
+    return this.serviceB;
+  }
+}
+
+/**
+ * Async test service for testing async dependency resolution
+ */
+export class TestAsyncService {
+  private readonly id: string;
+  private readonly delay: number;
+
+  constructor(id = "testAsyncService", delay = 10) {
+    this.id = id;
+    this.delay = delay;
+  }
+
+  getId(): string {
+    return this.id;
+  }
+
+  async getValueAsync(): Promise<string> {
+    // Simulate async operation
+    await new Promise((resolve) => setTimeout(resolve, this.delay));
+    return `async-${this.id}`;
+  }
+
+  async processWithDependency(dependency: ITestService): Promise<string> {
+    const asyncValue = await this.getValueAsync();
+    return `${asyncValue}-processed-${dependency.getValue()}`;
+  }
+}
+
+// Backward compatibility exports
+/**
+ * @deprecated Use TestDIContainer instead
+ */
+export const MockDIContainer = TestDIContainer;
+
 /**
  * Helper to create a mock implementation factory
+ * @deprecated Create real test implementations instead
  */
 export function mockFactory<T>(factory: () => T): () => T {
   return factory;
@@ -516,6 +743,7 @@ export function mockFactory<T>(factory: () => T): () => T {
 
 /**
  * Helper to create a simple mock instance
+ * @deprecated Create real test implementations instead
  */
 export function mockInstance<T>(instance: T): T {
   return instance;

@@ -6,7 +6,7 @@
  * correlation ID propagation through dependency chains.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { DIContainer } from "../../src/container/container.classes.js";
 import type { DIToken } from "../../src/container/container.types.js";
 
@@ -255,14 +255,15 @@ describe("Error Recovery Integration", () => {
       const originalProcess = unreliableService.process;
       const correlationIds: string[] = [];
 
-      vi.spyOn(unreliableService, "process").mockImplementation(() => {
+      // Override the process method to track correlation IDs
+      unreliableService.process = function () {
         try {
-          return originalProcess.call(unreliableService);
+          return originalProcess.call(this);
         } catch (error: any) {
           correlationIds.push(error.context?.correlationId || "no-correlation");
           throw error;
         }
-      });
+      };
 
       await retryHandler.executeWithRetry(async () => {
         return unreliableService.process();

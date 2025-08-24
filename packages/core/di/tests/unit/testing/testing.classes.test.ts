@@ -4,7 +4,7 @@
  * Comprehensive test suite for mock containers and testing helpers
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
 import {
   MockDIContainer,
@@ -151,29 +151,33 @@ describe("MockDIContainer", () => {
     });
 
     it("should track tryResolve calls", () => {
+      eventTracker.track(mockContainer, "method:tryResolve");
+
       mockContainer.register("TestService", TestService);
 
       mockContainer.tryResolve("TestService");
       mockContainer.tryResolve("NonExistent");
 
-      const history = mockContainer.getCallHistory();
+      const tryResolveEvents = eventTracker.getEventsByType("method:tryResolve");
 
-      expect(history.tryResolve).toHaveLength(2);
-      expect(history.tryResolve[0].returnValue).toBeInstanceOf(TestService);
-      expect(history.tryResolve[1].returnValue).toBeUndefined();
+      expect(tryResolveEvents).toHaveLength(2);
+      expect(tryResolveEvents[0].data.result).toBeInstanceOf(TestService);
+      expect(tryResolveEvents[1].data.result).toBeUndefined();
     });
 
     it("should track isRegistered calls", () => {
+      eventTracker.track(mockContainer, "method:isRegistered");
+
       mockContainer.register("TestService", TestService);
 
       mockContainer.isRegistered("TestService");
       mockContainer.isRegistered("NonExistent");
 
-      const history = mockContainer.getCallHistory();
+      const isRegisteredEvents = eventTracker.getEventsByType("method:isRegistered");
 
-      expect(history.isRegistered).toHaveLength(2);
-      expect(history.isRegistered[0].returnValue).toBe(true);
-      expect(history.isRegistered[1].returnValue).toBe(false);
+      expect(isRegisteredEvents).toHaveLength(2);
+      expect(isRegisteredEvents[0].data.result).toBe(true);
+      expect(isRegisteredEvents[1].data.result).toBe(false);
     });
 
     it("should track method errors", () => {
@@ -196,30 +200,34 @@ describe("MockDIContainer", () => {
       mockContainer.register("TestService", TestService);
 
       const endTime = Date.now();
-      const history = mockContainer.getCallHistory();
+      const registerEvents = eventTracker.getEventsByType("method:register");
 
-      expect(history.register[0].timestamp).toBeInstanceOf(Date);
-      expect(history.register[0].timestamp.getTime()).toBeGreaterThanOrEqual(startTime);
-      expect(history.register[0].timestamp.getTime()).toBeLessThanOrEqual(endTime);
+      expect(registerEvents[0].data.timestamp).toBeInstanceOf(Date);
+      expect(registerEvents[0].data.timestamp.getTime()).toBeGreaterThanOrEqual(startTime);
+      expect(registerEvents[0].data.timestamp.getTime()).toBeLessThanOrEqual(endTime);
     });
 
     it("should maintain chronological order in all calls", () => {
+      eventTracker.track(mockContainer, "method:register");
+      eventTracker.track(mockContainer, "method:resolve");
+      eventTracker.track(mockContainer, "method:isRegistered");
+
       mockContainer.register("Service1", TestService);
       mockContainer.register("Service2", TestService);
       mockContainer.resolve("Service1");
       mockContainer.isRegistered("Service2");
 
-      const history = mockContainer.getCallHistory();
+      const allEvents = eventTracker.events;
 
-      expect(history.all).toHaveLength(4);
-      expect(history.all[0].method).toBe("register");
-      expect(history.all[1].method).toBe("register");
-      expect(history.all[2].method).toBe("resolve");
-      expect(history.all[3].method).toBe("isRegistered");
+      expect(allEvents).toHaveLength(4);
+      expect(allEvents[0].data.method).toBe("register");
+      expect(allEvents[1].data.method).toBe("register");
+      expect(allEvents[2].data.method).toBe("resolve");
+      expect(allEvents[3].data.method).toBe("isRegistered");
 
       // Check chronological order
-      for (let i = 1; i < history.all.length; i++) {
-        expect(history.all[i].timestamp.getTime()).toBeGreaterThanOrEqual(history.all[i - 1].timestamp.getTime());
+      for (let i = 1; i < allEvents.length; i++) {
+        expect(allEvents[i].data.timestamp.getTime()).toBeGreaterThanOrEqual(allEvents[i - 1].data.timestamp.getTime());
       }
     });
 
@@ -502,13 +510,19 @@ describe("DependencyMockBuilder", () => {
     });
 
     it("should warn about unimplemented spy functionality", () => {
-      const consoleSpy = vi.spyOn(console, "warn").mockImplementation();
+      // Track console warnings using real console with capture
+      const originalWarn = console.warn;
+      const warnings: string[] = [];
+      console.warn = (...args: any[]) => {
+        warnings.push(args.join(" "));
+      };
 
       builder.withImplementation(new TestService("spy-test")).withSpy(true).build();
 
-      expect(consoleSpy).toHaveBeenCalledWith("Spy functionality not yet implemented");
+      expect(warnings).toContain("Spy functionality not yet implemented");
 
-      consoleSpy.mockRestore();
+      // Restore original console.warn
+      console.warn = originalWarn;
     });
   });
 

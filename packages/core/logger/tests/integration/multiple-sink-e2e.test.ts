@@ -2,67 +2,38 @@
  * End-to-end integration test for multiple sink configuration
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { TransportCircuitBreakerFactory } from "../../src/circuit-breaker/circuit-breaker.classes.js";
 import { MultiTransportManager } from "../../src/transport/transport.classes.js";
 import type { ILogEntry, IMultiTransportConfig } from "../../src/transport/transport.types.js";
-
-// Mock fetch and filesystem
-global.fetch = vi.fn();
-
-vi.mock("fs", () => {
-  const mockCreateWriteStream = vi.fn(() => ({
-    write: vi.fn(),
-    end: vi.fn(),
-    on: vi.fn(),
-    once: vi.fn(),
-    emit: vi.fn(),
-  }));
-
-  return {
-    createWriteStream: mockCreateWriteStream,
-    promises: {
-      mkdir: vi.fn(),
-      stat: vi.fn(),
-      appendFile: vi.fn(),
-      readdir: vi.fn(),
-      unlink: vi.fn(),
-    },
-  };
-});
+import { InMemoryTransport, TestFileTransport, TestHttpTransport } from "../utils/index.js";
 
 describe("Multiple Sink Configuration E2E", () => {
-  let mockFetch: ReturnType<typeof vi.fn>;
+  let consoleTransport: InMemoryTransport;
+  let fileTransport: TestFileTransport;
+  let errorFileTransport: TestFileTransport;
+  let httpTransport: TestHttpTransport;
 
   beforeEach(async () => {
-    mockFetch = fetch as ReturnType<typeof vi.fn>;
-    mockFetch.mockClear();
-
-    // Reset fs mock to default state
-    const createWriteStreamMock = (await import("fs")).createWriteStream as ReturnType<typeof vi.fn>;
-    createWriteStreamMock.mockReturnValue({
-      write: vi.fn(),
-      end: vi.fn(),
-      on: vi.fn(),
-      once: vi.fn(),
-      emit: vi.fn(),
-    } as any);
-
-    const fsMock = (await vi.importMock("fs")) as any;
-    const mkdirMock = fsMock.promises.mkdir as ReturnType<typeof vi.fn>;
-    const statMock = fsMock.promises.stat as ReturnType<typeof vi.fn>;
-    const appendFileMock = fsMock.promises.appendFile as ReturnType<typeof vi.fn>;
-    const readdirMock = fsMock.promises.readdir as ReturnType<typeof vi.fn>;
-
-    mkdirMock.mockResolvedValue(undefined);
-    statMock.mockResolvedValue({ size: 1024 } as any);
-    appendFileMock.mockResolvedValue(undefined);
-    readdirMock.mockResolvedValue([]);
+    // Initialize real transports for testing
+    consoleTransport = new InMemoryTransport();
+    fileTransport = new TestFileTransport("application.log");
+    errorFileTransport = new TestFileTransport("error.log");
+    httpTransport = await TestHttpTransport.create({
+      port: 0, // Let system assign port
+      path: "/api/v1/logs",
+      shouldFail: false,
+    });
   });
 
   afterEach(async () => {
     TransportCircuitBreakerFactory.clear();
-    vi.clearAllTimers();
+
+    // Clean up real transports
+    consoleTransport.reset();
+    fileTransport.cleanup();
+    errorFileTransport.cleanup();
+    await TestHttpTransport.cleanup(httpTransport);
 
     // Enhanced cleanup with proper async handling
     await new Promise((resolve) => setTimeout(resolve, 50));

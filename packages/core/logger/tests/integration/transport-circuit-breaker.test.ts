@@ -3,24 +3,26 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as http from "http";
 import { TransportCircuitBreakerFactory } from "../../src/circuit-breaker/circuit-breaker.classes.js";
 import { MultiTransportManager, RemoteTransportProvider } from "../../src/transport/transport.classes.js";
+import type { ILogEntry } from "../../src/types/index.js";
 import type {
-  ILogEntry,
   IMultiTransportConfig,
   IRemoteTransportOptions,
   ITransportConfig,
 } from "../../src/transport/transport.types.js";
 
-// Mock fetch globally
-global.fetch = vi.fn();
+// Test HTTP server for real network operations
+let testServer: http.Server;
+let testServerPort: number;
+let serverRequestHandler: (req: http.IncomingMessage, res: http.ServerResponse) => void;
 
 describe("Transport Circuit Breaker Integration", () => {
-  let mockLogEntry: ILogEntry;
-  let mockFetch: ReturnType<typeof vi.fn>;
+  let testLogEntry: ILogEntry;
 
-  beforeEach(() => {
-    mockLogEntry = {
+  beforeEach(async () => {
+    testLogEntry = {
       level: "info",
       message: "Test message",
       timestamp: Date.now(),
@@ -28,8 +30,25 @@ describe("Transport Circuit Breaker Integration", () => {
       meta: { source: "test-service" },
     };
 
-    mockFetch = fetch as ReturnType<typeof vi.fn>;
-    mockFetch.mockClear();
+    // Create real HTTP test server
+    testServer = http.createServer((req, res) => {
+      if (serverRequestHandler) {
+        serverRequestHandler(req, res);
+      } else {
+        // Default successful response
+        res.statusCode = 200;
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify({ status: "success" }));
+      }
+    });
+
+    // Start server on random available port
+    await new Promise<void>((resolve) => {
+      testServer.listen(0, () => {
+        testServerPort = (testServer.address() as any)?.port;
+        resolve();
+      });
+    });
   });
 
   afterEach(async () => {
@@ -37,6 +56,16 @@ describe("Transport Circuit Breaker Integration", () => {
     TransportCircuitBreakerFactory.clear();
     vi.clearAllTimers();
     vi.useRealTimers();
+
+    // Close test server
+    if (testServer) {
+      await new Promise<void>((resolve) => {
+        testServer.close(() => resolve());
+      });
+    }
+
+    // Reset server request handler
+    serverRequestHandler = undefined as any;
 
     // Increase max listeners temporarily to prevent warnings during cleanup
     if (typeof process !== "undefined" && process.stdout && process.stdout.setMaxListeners) {
@@ -61,11 +90,19 @@ describe("Transport Circuit Breaker Integration", () => {
 
   describe("Remote Transport Circuit Breaker", () => {
     it("should open circuit after failure threshold", async () => {
+      // Set up server to always fail
+      let requestCount = 0;
+      serverRequestHandler = (req, res) => {
+        requestCount++;
+        res.statusCode = 500;
+        res.end("Server Error");
+      };
+
       const config: ITransportConfig = {
         name: "remote",
         type: "remote",
         options: {
-          url: "https://logs.example.com/api/logs",
+          url: `http://localhost:${testServerPort}/api/logs`,
           circuitBreaker: {
             enabled: true,
             failureThreshold: 3,
@@ -73,17 +110,15 @@ describe("Transport Circuit Breaker Integration", () => {
             monitorTimeWindowMs: 1000,
           },
           batchSize: 1, // Force immediate flush
+          timeout: 1000, // Shorter timeout for faster tests
         } as IRemoteTransportOptions,
       };
 
       const transport = new RemoteTransportProvider(config);
 
-      // Mock fetch to always fail
-      mockFetch.mockRejectedValue(new Error("Network error"));
-
       // First 3 failures should be attempted
       for (let i = 0; i < 3; i++) {
-        await expect(transport.write(mockLogEntry)).rejects.toThrow();
+        await expect(transport.write(testLogEntry as unknown as Record<string, unknown>)).rejects.toThrow();
         await transport.flush(); // Force flush to trigger circuit breaker
       }
 
@@ -95,12 +130,12 @@ describe("Transport Circuit Breaker Integration", () => {
       expect(metrics.circuitBreakerMetrics?.state).toBe("open");
 
       // Next attempt should fail immediately without network call
-      const callCountBefore = mockFetch.mock.calls.length;
-      await expect(transport.write(mockLogEntry)).rejects.toThrow();
+      const callCountBefore = requestCount;
+      await expect(transport.write(testLogEntry as unknown as Record<string, unknown>)).rejects.toThrow();
       await transport.flush();
 
       // Should not make additional network calls when circuit is open
-      expect(mockFetch.mock.calls.length).toBe(callCountBefore);
+      expect(requestCount).toBe(callCountBefore);
 
       // Clean up transport to prevent memory leaks
       await transport.close();
@@ -110,11 +145,26 @@ describe("Transport Circuit Breaker Integration", () => {
       vi.useFakeTimers();
 
       try {
+        let requestCount = 0;
+        let shouldFail = true;
+        
+        serverRequestHandler = (req, res) => {
+          requestCount++;
+          if (shouldFail && requestCount <= 2) {
+            res.statusCode = 500;
+            res.end('Server Error');
+          } else {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ status: 'success' }));
+          }
+        };
+
         const config: ITransportConfig = {
           name: "remote",
           type: "remote",
           options: {
-            url: "https://logs.example.com/api/logs",
+            url: `http://localhost:${testServerPort}/api/logs`,
             circuitBreaker: {
               enabled: true,
               failureThreshold: 2,
@@ -122,18 +172,16 @@ describe("Transport Circuit Breaker Integration", () => {
               monitorTimeWindowMs: 1000,
             },
             batchSize: 1,
+            timeout: 1000,
           } as IRemoteTransportOptions,
         };
 
         const transport = new RemoteTransportProvider(config);
 
         // Trigger circuit breaker opening
-        mockFetch.mockRejectedValueOnce(new Error("Network error"));
-        mockFetch.mockRejectedValueOnce(new Error("Network error"));
-
-        await expect(transport.write(mockLogEntry)).rejects.toThrow();
+        await expect(transport.write(testLogEntry as unknown as Record<string, unknown>)).rejects.toThrow();
         await transport.flush();
-        await expect(transport.write(mockLogEntry)).rejects.toThrow();
+        await expect(transport.write(testLogEntry as unknown as Record<string, unknown>)).rejects.toThrow();
         await transport.flush();
 
         expect(transport.getMetrics().circuitBreakerMetrics?.state).toBe("open");
@@ -144,15 +192,11 @@ describe("Transport Circuit Breaker Integration", () => {
         // Give time for async operations to complete
         await new Promise((resolve) => setTimeout(resolve, 0));
 
-        // Mock successful response
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          statusText: "OK",
-        });
+        // Server should now succeed
+        shouldFail = false;
 
         // Should transition to half-open and allow one attempt
-        await transport.write(mockLogEntry);
+        await transport.write(testLogEntry as unknown as Record<string, unknown>);
         await transport.flush();
 
         expect(transport.getMetrics().circuitBreakerMetrics?.state).toBe("closed");
@@ -187,17 +231,7 @@ describe("Transport Circuit Breaker Integration", () => {
 
         const transport = new RemoteTransportProvider(config);
 
-        // Mock transient failures followed by success
-        mockFetch
-          .mockRejectedValueOnce(new Error("Temporary failure"))
-          .mockRejectedValueOnce(new Error("Temporary failure"))
-          .mockResolvedValueOnce({
-            ok: true,
-            status: 200,
-            statusText: "OK",
-          });
-
-        await transport.write(mockLogEntry);
+        await transport.write(testLogEntry as unknown as Record<string, unknown>);
 
         // Advance timers to trigger retries
         vi.advanceTimersByTime(100); // First retry
@@ -209,7 +243,7 @@ describe("Transport Circuit Breaker Integration", () => {
         await transport.flush();
 
         // Should eventually succeed after retries
-        expect(mockFetch).toHaveBeenCalledTimes(3);
+        expect(requestCount).toBe(3);
         expect(transport.isHealthy()).toBe(true);
 
         // Clean up transport

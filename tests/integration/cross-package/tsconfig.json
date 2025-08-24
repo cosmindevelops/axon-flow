@@ -1,0 +1,28 @@
+{
+  "extends": "../../../tools/config/typescript/base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "downlevelIteration": true,
+    "composite": false,
+    "incremental": false,
+    "noEmit": true,
+    "types": ["vitest/globals", "node"],
+    "paths": {
+      "@axon/config": ["../../../packages/core/config/src"],
+      "@axon/config/*": ["../../../packages/core/config/src/*"],
+      "@axon/types": ["../../../packages/core/types/src"],
+      "@axon/types/*": ["../../../packages/core/types/src/*"],
+      "@axon/logger": ["../../../packages/core/logger/src"],
+      "@axon/logger/*": ["../../../packages/core/logger/src/*"],
+      "@axon/errors": ["../../../packages/core/errors/src"],
+      "@axon/errors/*": ["../../../packages/core/errors/src/*"],
+      "@axon/di": ["../../../packages/core/di/src"],
+      "@axon/di/*": ["../../../packages/core/di/src/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
+}

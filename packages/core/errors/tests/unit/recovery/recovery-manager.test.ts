@@ -2,7 +2,7 @@
  * Unit tests for RecoveryManager - central coordinator for recovery mechanisms
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { BaseAxonError } from "../../../src/base/base-error.classes.js";
 import { ErrorSeverity, ErrorCategory } from "../../../src/base/base-error.types.js";
 import {
@@ -14,12 +14,77 @@ import {
 } from "../../../src/recovery/recovery.classes.js";
 import { BackoffStrategy, RecoveryStrategy, RecoveryState } from "../../../src/recovery/recovery.types.js";
 
+// Real operation implementations for testing
+class TestOperations {
+  private static callCounts = new Map<string, number>();
+
+  static resetCallCounts() {
+    this.callCounts.clear();
+  }
+
+  static getCallCount(operationName: string): number {
+    return this.callCounts.get(operationName) || 0;
+  }
+
+  static incrementCallCount(operationName: string) {
+    this.callCounts.set(operationName, this.getCallCount(operationName) + 1);
+  }
+
+  static createSuccessfulOperation(name: string, result: any) {
+    return {
+      name,
+      operation: async () => {
+        this.incrementCallCount(name);
+        return result;
+      },
+      timeout: 5000,
+    };
+  }
+
+  static createFailingOperation(name: string, error: Error) {
+    return {
+      name,
+      operation: async () => {
+        this.incrementCallCount(name);
+        throw error;
+      },
+      timeout: 5000,
+    };
+  }
+
+  static createRetryableOperation(name: string, failTimes: number, successResult: any) {
+    return {
+      name,
+      operation: async () => {
+        const currentCount = this.getCallCount(name);
+        this.incrementCallCount(name);
+
+        if (currentCount < failTimes) {
+          throw new Error("Temporary failure");
+        }
+        return successResult;
+      },
+      timeout: 5000,
+    };
+  }
+
+  static createSimpleFunction(result: any) {
+    return async () => result;
+  }
+
+  static createFailingFunction(error: Error) {
+    return async () => {
+      throw error;
+    };
+  }
+}
+
 describe("RecoveryManager", () => {
   let recoveryManager: RecoveryManager;
   let mockError: BaseAxonError;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    TestOperations.resetCallCounts();
     mockError = new BaseAxonError("System failure", "SYSTEM_ERROR", {
       severity: ErrorSeverity.ERROR,
       category: ErrorCategory.SYSTEM,
@@ -29,7 +94,7 @@ describe("RecoveryManager", () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    TestOperations.resetCallCounts();
   });
 
   describe("constructor", () => {
@@ -113,16 +178,12 @@ describe("RecoveryManager", () => {
 
   describe("operation execution with recovery", () => {
     it("should execute successful operation without recovery", async () => {
-      const mockOperation = {
-        name: "test-operation",
-        operation: vi.fn().mockResolvedValue("success"),
-        timeout: 5000,
-      };
+      const successfulOperation = TestOperations.createSuccessfulOperation("test-operation", "success");
 
-      const result = await recoveryManager.executeWithRecovery(mockOperation);
+      const result = await recoveryManager.executeWithRecovery(successfulOperation);
 
       expect(result).toBe("success");
-      expect(mockOperation.operation).toHaveBeenCalledTimes(1);
+      expect(TestOperations.getCallCount("test-operation")).toBe(1);
     });
 
     it("should handle failed operation with retry handler", async () => {
@@ -134,24 +195,12 @@ describe("RecoveryManager", () => {
 
       recoveryManager.registerHandler(retryHandler);
 
-      let callCount = 0;
-      const mockOperation = {
-        name: "retry-test",
-        operation: vi.fn().mockImplementation(() => {
-          callCount++;
-          if (callCount === 1) {
-            const error = new Error("Temporary failure");
-            throw error;
-          }
-          return "success on retry";
-        }),
-        timeout: 5000,
-      };
+      const retryableOperation = TestOperations.createRetryableOperation("retry-test", 1, "success on retry");
 
-      const result = await recoveryManager.executeWithRecovery(mockOperation);
+      const result = await recoveryManager.executeWithRecovery(retryableOperation);
 
       expect(result).toBe("success on retry");
-      expect(mockOperation.operation).toHaveBeenCalledTimes(2);
+      expect(TestOperations.getCallCount("retry-test")).toBe(2);
     });
 
     it("should apply graceful degradation when retry fails", async () => {
@@ -162,17 +211,18 @@ describe("RecoveryManager", () => {
       });
 
       const degradationHandler = new GracefulDegradationHandler({
-        fallbackStrategies: new Map([["SERVICE_ERROR", async () => ({ fallback: true, data: [] })]]),
+        fallbackStrategies: new Map([
+          ["SERVICE_ERROR", TestOperations.createSimpleFunction({ fallback: true, data: [] })],
+        ]),
       });
 
       recoveryManager.registerHandler(retryHandler);
       recoveryManager.registerHandler(degradationHandler);
 
-      const failingOperation = {
-        name: "degradation-test",
-        operation: vi.fn().mockRejectedValue(new BaseAxonError("Service error", "SERVICE_ERROR")),
-        timeout: 5000,
-      };
+      const failingOperation = TestOperations.createFailingOperation(
+        "degradation-test",
+        new BaseAxonError("Service error", "SERVICE_ERROR"),
+      );
 
       const result = await recoveryManager.executeWithRecovery(failingOperation);
 
@@ -188,13 +238,9 @@ describe("RecoveryManager", () => {
 
       recoveryManager.registerHandler(retryHandler);
 
-      const failingOperation = {
-        name: "failing-test",
-        operation: vi.fn().mockRejectedValue(new Error("Persistent failure")),
-        timeout: 5000,
-      };
+      const failingOperation = TestOperations.createFailingOperation("failing-test", new Error("Persistent failure"));
 
-      await expect(recoveryManager.executeWithRecovery(failingOperation)).rejects.toThrow();
+      await expect(recoveryManager.executeWithRecovery(failingOperation)).rejects.toThrow("Persistent failure");
     });
   });
 
@@ -247,13 +293,9 @@ describe("RecoveryManager", () => {
 
   describe("metrics and monitoring", () => {
     it("should track operation metrics", async () => {
-      const mockOperation = {
-        name: "metrics-test",
-        operation: vi.fn().mockResolvedValue("success"),
-        timeout: 5000,
-      };
+      const successfulOperation = TestOperations.createSuccessfulOperation("metrics-test", "success");
 
-      await recoveryManager.executeWithRecovery(mockOperation);
+      await recoveryManager.executeWithRecovery(successfulOperation);
 
       const metrics = recoveryManager.getMetrics();
 
@@ -271,13 +313,12 @@ describe("RecoveryManager", () => {
       });
       recoveryManager.registerHandler(retryHandler);
 
-      const failingOperation = {
-        name: "failed-metrics-test",
-        operation: vi.fn().mockRejectedValue(new Error("Operation failed")),
-        timeout: 5000,
-      };
+      const failingOperation = TestOperations.createFailingOperation(
+        "failed-metrics-test",
+        new Error("Operation failed"),
+      );
 
-      await expect(recoveryManager.executeWithRecovery(failingOperation)).rejects.toThrow();
+      await expect(recoveryManager.executeWithRecovery(failingOperation)).rejects.toThrow("Operation failed");
 
       const metrics = recoveryManager.getMetrics();
 
@@ -290,11 +331,7 @@ describe("RecoveryManager", () => {
       recoveryManager.registerHandler(retryHandler);
 
       // Generate some metrics by executing a successful operation
-      const successOperation = {
-        name: "success-for-metrics",
-        operation: vi.fn().mockResolvedValue("success"),
-        timeout: 5000,
-      };
+      const successOperation = TestOperations.createSuccessfulOperation("success-for-metrics", "success");
 
       await recoveryManager.executeWithRecovery(successOperation);
 
@@ -350,11 +387,9 @@ describe("RecoveryManager", () => {
     });
 
     it("should handle concurrent operation execution", async () => {
-      const operations = Array.from({ length: 3 }, (_, i) => ({
-        name: `concurrent-op-${i}`,
-        operation: () => Promise.resolve(`result-${i}`),
-        timeout: 5000,
-      }));
+      const operations = Array.from({ length: 3 }, (_, i) =>
+        TestOperations.createSuccessfulOperation(`concurrent-op-${i}`, `result-${i}`),
+      );
 
       const results = await Promise.all(operations.map((op) => recoveryManager.executeWithRecovery(op)));
 

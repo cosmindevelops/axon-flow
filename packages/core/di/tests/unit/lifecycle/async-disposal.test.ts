@@ -5,7 +5,7 @@
  * These tests validate the fixes for scope disposal race conditions and timeout handling.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   AsyncDisposalManager,
   DisposalStateManager,
@@ -14,8 +14,56 @@ import {
 } from "../../../src/lifecycle/lifecycle.classes.js";
 import { ApplicationError, SystemError } from "@axon/errors";
 
+/**
+ * Real cleanup function implementations for testing
+ */
+class TestCleanupService {
+  public callHistory: Array<{ timestamp: Date; action: string; duration?: number }> = [];
+
+  public createAsyncCleanup(duration: number, result?: string): () => Promise<string> {
+    return async () => {
+      const startTime = Date.now();
+      this.callHistory.push({ timestamp: new Date(), action: "cleanup_started", duration });
+
+      await new Promise((resolve) => setTimeout(resolve, duration));
+
+      const actualDuration = Date.now() - startTime;
+      this.callHistory.push({ timestamp: new Date(), action: "cleanup_completed", duration: actualDuration });
+
+      return result || `cleanup-completed-${duration}ms`;
+    };
+  }
+
+  public createSyncCleanup(result?: string): () => string {
+    return () => {
+      this.callHistory.push({ timestamp: new Date(), action: "sync_cleanup" });
+      return result || "sync-cleanup";
+    };
+  }
+
+  public createFailingCleanup(message = "Cleanup failed"): () => never {
+    return () => {
+      this.callHistory.push({ timestamp: new Date(), action: "cleanup_failed" });
+      throw new Error(message);
+    };
+  }
+
+  public getCallCount(): number {
+    return this.callHistory.length;
+  }
+
+  public getCallsByAction(action: string): number {
+    return this.callHistory.filter((call) => call.action === action).length;
+  }
+
+  public reset(): void {
+    this.callHistory = [];
+  }
+}
+
 describe("AsyncDisposalManager", () => {
   let disposalManager: AsyncDisposalManager;
+  let cleanupService: TestCleanupService;
 
   beforeEach(() => {
     disposalManager = new AsyncDisposalManager({
@@ -25,6 +73,7 @@ describe("AsyncDisposalManager", () => {
       enableDisposalMetrics: true,
       maxConcurrentDisposals: 5,
     });
+    cleanupService = new TestCleanupService();
   });
 
   afterEach(async () => {
@@ -34,7 +83,7 @@ describe("AsyncDisposalManager", () => {
   describe("Race Condition Prevention", () => {
     it("should prevent concurrent disposal of the same scope", async () => {
       const scopeId = "test-scope-1";
-      const cleanupFn = vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 100)));
+      const cleanupFn = cleanupService.createAsyncCleanup(100);
 
       // Start two concurrent disposal operations for the same scope
       const disposal1 = disposalManager.disposeScope(scopeId, [cleanupFn]);
@@ -43,15 +92,18 @@ describe("AsyncDisposalManager", () => {
       // Both should complete successfully (second should wait for first)
       await Promise.all([disposal1, disposal2]);
 
-      // Cleanup function should only be called once
-      expect(cleanupFn).toHaveBeenCalledTimes(1);
+      // Cleanup function should only be called once (start + complete = 2 events)
+      expect(cleanupService.getCallsByAction("cleanup_started")).toBe(1);
+      expect(cleanupService.getCallsByAction("cleanup_completed")).toBe(1);
     });
 
     it("should handle multiple different scopes concurrently", async () => {
+      const cleanupServices = [new TestCleanupService(), new TestCleanupService(), new TestCleanupService()];
+
       const cleanupFns = [
-        vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 50))),
-        vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 75))),
-        vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 25))),
+        cleanupServices[0].createAsyncCleanup(50),
+        cleanupServices[1].createAsyncCleanup(75),
+        cleanupServices[2].createAsyncCleanup(25),
       ];
 
       // Start concurrent disposal of different scopes
@@ -64,7 +116,10 @@ describe("AsyncDisposalManager", () => {
       await Promise.all(disposals);
 
       // All cleanup functions should be called exactly once
-      cleanupFns.forEach((fn) => expect(fn).toHaveBeenCalledTimes(1));
+      cleanupServices.forEach((service) => {
+        expect(service.getCallsByAction("cleanup_started")).toBe(1);
+        expect(service.getCallsByAction("cleanup_completed")).toBe(1);
+      });
     });
 
     it("should enforce concurrent disposal limits", async () => {
@@ -96,36 +151,32 @@ describe("AsyncDisposalManager", () => {
 
   describe("Async Cleanup Handling", () => {
     it("should handle successful async cleanup functions", async () => {
-      const asyncCleanupFn = vi.fn().mockImplementation(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        return "cleanup-completed";
-      });
+      const asyncService = new TestCleanupService();
+      const syncService = new TestCleanupService();
 
-      const syncCleanupFn = vi.fn().mockImplementation(() => {
-        return "sync-cleanup";
-      });
+      const asyncCleanupFn = asyncService.createAsyncCleanup(50, "cleanup-completed");
+      const syncCleanupFn = syncService.createSyncCleanup("sync-cleanup");
 
       await disposalManager.disposeScope("test-scope", [asyncCleanupFn, syncCleanupFn]);
 
-      expect(asyncCleanupFn).toHaveBeenCalledTimes(1);
-      expect(syncCleanupFn).toHaveBeenCalledTimes(1);
+      expect(asyncService.getCallsByAction("cleanup_started")).toBe(1);
+      expect(asyncService.getCallsByAction("cleanup_completed")).toBe(1);
+      expect(syncService.getCallsByAction("sync_cleanup")).toBe(1);
     });
 
     it("should handle cleanup function failures gracefully", async () => {
-      const failingCleanup = vi.fn().mockImplementation(() => {
-        throw new Error("Cleanup failed");
-      });
+      const failingService = new TestCleanupService();
+      const successfulService = new TestCleanupService();
 
-      const successfulCleanup = vi.fn().mockImplementation(() => {
-        return "success";
-      });
+      const failingCleanup = failingService.createFailingCleanup("Cleanup failed");
+      const successfulCleanup = successfulService.createSyncCleanup("success");
 
       // Should throw error but still attempt all cleanup functions
       await expect(disposalManager.disposeScope("test-scope", [failingCleanup, successfulCleanup])).rejects.toThrow(
         ApplicationError,
       );
 
-      expect(failingCleanup).toHaveBeenCalledTimes(1);
+      expect(failingService.getCallsByAction("cleanup_failed")).toBe(1);
       // Note: In the current implementation, if one cleanup fails, others may not be attempted
       // This is a design decision that could be changed if needed
     });
@@ -138,10 +189,9 @@ describe("AsyncDisposalManager", () => {
       };
 
       const timeoutManager = new AsyncDisposalManager(timeoutConfig);
+      const timeoutService = new TestCleanupService();
 
-      const slowCleanup = vi.fn().mockImplementation(
-        () => new Promise((resolve) => setTimeout(resolve, 200)), // Longer than timeout
-      );
+      const slowCleanup = timeoutService.createAsyncCleanup(200); // Longer than timeout
 
       // Should complete due to forced disposal after timeout
       await timeoutManager.disposeScope("timeout-scope", [slowCleanup]);
@@ -175,9 +225,11 @@ describe("AsyncDisposalManager", () => {
 
   describe("Hierarchical Disposal", () => {
     it("should handle parent-child disposal contexts", async () => {
-      const parentCleanup = vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 50)));
+      const parentService = new TestCleanupService();
+      const childService = new TestCleanupService();
 
-      const childCleanup = vi.fn().mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 25)));
+      const parentCleanup = parentService.createAsyncCleanup(50);
+      const childCleanup = childService.createAsyncCleanup(25);
 
       // Start parent disposal
       const parentDisposal = disposalManager.disposeScope("parent-scope", [parentCleanup]);
@@ -187,8 +239,10 @@ describe("AsyncDisposalManager", () => {
 
       await Promise.all([parentDisposal, childDisposal]);
 
-      expect(parentCleanup).toHaveBeenCalledTimes(1);
-      expect(childCleanup).toHaveBeenCalledTimes(1);
+      expect(parentService.getCallsByAction("cleanup_started")).toBe(1);
+      expect(parentService.getCallsByAction("cleanup_completed")).toBe(1);
+      expect(childService.getCallsByAction("cleanup_started")).toBe(1);
+      expect(childService.getCallsByAction("cleanup_completed")).toBe(1);
     });
 
     it("should provide proper disposal metrics", async () => {
@@ -369,18 +423,12 @@ describe("Integration: Race Conditions in Hierarchical Containers", () => {
       maxConcurrentDisposals: 2,
     });
 
-    // Simulate parent and child containers with interdependent cleanup
-    const parentCleanup = vi.fn().mockImplementation(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      // Parent cleanup that might affect child resources
-      return "parent-cleaned";
-    });
+    const parentService = new TestCleanupService();
+    const childService = new TestCleanupService();
 
-    const childCleanup = vi.fn().mockImplementation(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 30));
-      // Child cleanup that depends on parent resources still being available
-      return "child-cleaned";
-    });
+    // Simulate parent and child containers with interdependent cleanup
+    const parentCleanup = parentService.createAsyncCleanup(50, "parent-cleaned");
+    const childCleanup = childService.createAsyncCleanup(30, "child-cleaned");
 
     // Start disposals concurrently (simulating the race condition scenario)
     const parentDisposalPromise = parentDisposal.disposeScope("parent", [parentCleanup]);
@@ -389,8 +437,10 @@ describe("Integration: Race Conditions in Hierarchical Containers", () => {
     // Both should complete successfully without race conditions
     await Promise.all([childDisposalPromise, parentDisposalPromise]);
 
-    expect(parentCleanup).toHaveBeenCalledTimes(1);
-    expect(childCleanup).toHaveBeenCalledTimes(1);
+    expect(parentService.getCallsByAction("cleanup_started")).toBe(1);
+    expect(parentService.getCallsByAction("cleanup_completed")).toBe(1);
+    expect(childService.getCallsByAction("cleanup_started")).toBe(1);
+    expect(childService.getCallsByAction("cleanup_completed")).toBe(1);
 
     // Cleanup managers
     await Promise.all([parentDisposal.dispose(), childDisposal.dispose()]);

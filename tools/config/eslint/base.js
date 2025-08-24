@@ -23,7 +23,6 @@ export default tseslint.config(
       "apps/**/*.{js,mjs,cjs,ts,tsx}",
       "!**/*.test.{js,ts,tsx,jsx}",
       "!**/*.spec.{js,ts,tsx,jsx}",
-      "!**/tests/**/*",
       "!**/*.config.{js,ts,mjs}",
       "!**/tools/**/*",
       "!**/tooling/**/*",
@@ -181,12 +180,46 @@ export default tseslint.config(
     },
   },
 
-  // Test files configuration - very relaxed for TDD
+  // Test files configuration - relaxed but still with meaningful checks
   {
     files: ["**/*.test.{js,ts,tsx,jsx}", "**/*.spec.{js,ts,tsx,jsx}", "tests/**/*", "**/tests/**/*"],
+    languageOptions: {
+      parserOptions: {
+        project: false, // Disable type-aware linting for tests to avoid tsconfig issues
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+      globals: {
+        // Vitest globals
+        describe: "readonly",
+        it: "readonly",
+        test: "readonly",
+        expect: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+        vi: "readonly",
+        vitest: "readonly",
+        // Node.js testing globals
+        __dirname: "readonly",
+        __filename: "readonly",
+        process: "readonly",
+        console: "readonly",
+        Buffer: "readonly",
+      },
+    },
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "off",
+      // Enable basic TypeScript checking but relaxed
+      "@typescript-eslint/no-explicit-any": "warn", // Changed from "off" to "warn"
+      "@typescript-eslint/no-unused-vars": ["warn", { 
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_"
+      }], // Enable unused vars checking
+      
+      // Keep these off for test flexibility
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
@@ -194,15 +227,22 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-argument": "off",
       "@typescript-eslint/strict-boolean-expressions": "off",
       "@typescript-eslint/unbound-method": "off",
-      "@typescript-eslint/consistent-type-exports": "off",
-      "@typescript-eslint/consistent-type-imports": "off",
-      "no-console": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-empty-function": "off",
       "@typescript-eslint/no-unnecessary-condition": "off",
       "@typescript-eslint/require-await": "off",
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
+      
+      // Disable type-aware rules since we can't use project: true for tests
+      "@typescript-eslint/consistent-type-exports": "off",
+      "@typescript-eslint/consistent-type-imports": "off",
+      "@typescript-eslint/no-import-type-side-effects": "off",
+      
+      // General rules
+      "no-console": "off",
+      "prefer-const": "warn",
+      "no-var": "error",
       "prefer-destructuring": "off",
     },
   },
@@ -238,24 +278,44 @@ export default tseslint.config(
     },
   },
 
-  // Global ignores
+  // Global ignores - only ignore auto-generated and build artifacts
   {
     ignores: [
+      // Build artifacts and dependencies
       "**/node_modules/",
       "**/dist/",
       "**/build/",
       "**/.next/",
-      "**/coverage/",
+      "**/lib/",
       "**/.turbo/",
       "**/.changeset/",
+      
+      // Test artifacts and coverage reports
+      "**/coverage/",
+      "**/test-results/",
+      "**/junit.xml",
+      "**/test-report.html",
+      "**/.nyc_output/",
       "**/storybook-static/",
-      "**/lib/",
+      
+      // Temporary and cache files
       "**/.cache/",
       "**/tmp/",
+      "**/temp/",
       "**/logs/",
       "**/*.log",
+      "**/.tsbuildinfo",
+      
+      // Environment files (except example)
       "**/.env*",
       "!**/.env.example",
+      
+      // Auto-generated files
+      "**/generated/",
+      "**/auto-generated/",
+      "**/*.generated.{js,ts,tsx}",
+      "**/schema.prisma.ts", // Prisma generated files
+      "**/graphql-types.ts", // GraphQL generated types
     ],
   },
 

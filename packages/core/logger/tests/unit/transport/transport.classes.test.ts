@@ -84,13 +84,13 @@ describe("Transport Classes", () => {
     beforeEach(() => {
       // Initialize console transport
       consoleTransport = {}; // Placeholder
-      vi.spyOn(console, "log").mockImplementation(() => {});
-      vi.spyOn(console, "error").mockImplementation(() => {});
-      vi.spyOn(console, "warn").mockImplementation(() => {});
+      // TODO: When ConsoleTransport is implemented, create real instance here
+      // consoleTransport = new ConsoleTransport(config);
     });
 
     afterEach(() => {
-      vi.restoreAllMocks();
+      // TODO: When ConsoleTransport is implemented, add cleanup here
+      // consoleTransport.cleanup();
     });
 
     describe("console output", () => {

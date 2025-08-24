@@ -3,7 +3,7 @@
  * Provides common scenarios, mocks, and helper functions
  */
 
-import { vi } from "vitest";
+import { EventEmitter } from "node:events";
 import { BaseAxonError } from "../../src/base/base-error.classes.js";
 import { ErrorCategory, ErrorSeverity } from "../../src/base/base-error.types.js";
 
@@ -22,7 +22,7 @@ export const TestErrors = {
   }),
 
   SERVICE_UNAVAILABLE: new BaseAxonError("External service unavailable", "SERVICE_DOWN", {
-    category: ErrorCategory.EXTERNAL_SERVICE,
+    category: ErrorCategory.SYSTEM,
     severity: ErrorSeverity.ERROR,
     metadata: {
       service: "user-service",
@@ -32,7 +32,7 @@ export const TestErrors = {
   }),
 
   DATABASE_CONNECTION_FAILED: new BaseAxonError("Database connection failed", "DB_CONN_FAIL", {
-    category: ErrorCategory.DATABASE,
+    category: ErrorCategory.SYSTEM,
     severity: ErrorSeverity.CRITICAL,
     metadata: {
       host: "localhost",
@@ -43,7 +43,7 @@ export const TestErrors = {
   }),
 
   AUTHENTICATION_FAILED: new BaseAxonError("Authentication failed", "AUTH_FAILED", {
-    category: ErrorCategory.AUTHENTICATION,
+    category: ErrorCategory.APPLICATION,
     severity: ErrorSeverity.ERROR,
     metadata: {
       userId: "user123",
@@ -63,7 +63,7 @@ export const TestErrors = {
   }),
 
   RATE_LIMIT_EXCEEDED: new BaseAxonError("Rate limit exceeded", "RATE_LIMITED", {
-    category: ErrorCategory.EXTERNAL_SERVICE,
+    category: ErrorCategory.NETWORK,
     severity: ErrorSeverity.WARNING,
     metadata: {
       limit: 1000,
@@ -123,7 +123,7 @@ export class TestErrorFactory {
     }>,
   ): BaseAxonError {
     return new BaseAxonError(`Service ${overrides?.service ?? "unknown"} is unavailable`, "SERVICE_ERROR", {
-      category: ErrorCategory.EXTERNAL_SERVICE,
+      category: ErrorCategory.SYSTEM,
       severity: ErrorSeverity.ERROR,
       metadata: {
         service: overrides?.service ?? "unknown-service",
@@ -170,78 +170,228 @@ export class TestErrorFactory {
 }
 
 /**
- * Mock operation factories for testing recovery mechanisms
+ * Real operation implementations with observation capabilities for testing recovery mechanisms
  */
-export class MockOperations {
+export class TestOperations {
   /**
-   * Create a mock operation that always succeeds
+   * Create a real operation that always succeeds with observation
    */
-  static createSuccessOperation<T>(result: T, delayMs = 0): () => Promise<T> {
-    return vi.fn().mockImplementation(async () => {
+  static createSuccessOperation<T>(
+    result: T,
+    delayMs = 0,
+  ): (() => Promise<T>) & { callCount: number; calls: any[]; reset: () => void } {
+    let callCount = 0;
+    const calls: any[] = [];
+
+    const operation = async () => {
+      callCount++;
+      const callData = { timestamp: new Date(), args: [], delayMs };
+      calls.push(callData);
+
       if (delayMs > 0) {
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
       return result;
+    };
+
+    // Add observation properties
+    (operation as any).callCount = 0;
+    (operation as any).calls = calls;
+    (operation as any).reset = () => {
+      callCount = 0;
+      calls.length = 0;
+    };
+
+    // Update callCount getter
+    Object.defineProperty(operation, "callCount", {
+      get: () => callCount,
     });
+
+    return operation as any;
   }
 
   /**
-   * Create a mock operation that always fails
+   * Create a real operation that always fails with observation
    */
-  static createFailureOperation(error: Error, delayMs = 0): () => Promise<never> {
-    return vi.fn().mockImplementation(async () => {
+  static createFailureOperation(
+    error: Error,
+    delayMs = 0,
+  ): (() => Promise<never>) & { callCount: number; calls: any[]; reset: () => void } {
+    let callCount = 0;
+    const calls: any[] = [];
+
+    const operation = async () => {
+      callCount++;
+      const callData = { timestamp: new Date(), args: [], delayMs, error: error.message };
+      calls.push(callData);
+
       if (delayMs > 0) {
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
       throw error;
+    };
+
+    // Add observation properties
+    (operation as any).callCount = 0;
+    (operation as any).calls = calls;
+    (operation as any).reset = () => {
+      callCount = 0;
+      calls.length = 0;
+    };
+
+    // Update callCount getter
+    Object.defineProperty(operation, "callCount", {
+      get: () => callCount,
     });
+
+    return operation as any;
   }
 
   /**
-   * Create a mock operation that fails N times then succeeds
+   * Create a real operation that fails N times then succeeds with observation
    */
-  static createEventualSuccessOperation<T>(failureCount: number, result: T, error?: Error): () => Promise<T> {
+  static createEventualSuccessOperation<T>(
+    failureCount: number,
+    result: T,
+    error?: Error,
+  ): (() => Promise<T>) & { callCount: number; calls: any[]; reset: () => void } {
     let attempts = 0;
     const failureError = error ?? TestErrors.NETWORK_TIMEOUT;
+    const calls: any[] = [];
 
-    return vi.fn().mockImplementation(async () => {
+    const operation = async () => {
       attempts++;
+      const callData = {
+        timestamp: new Date(),
+        attempt: attempts,
+        willFail: attempts <= failureCount,
+      };
+      calls.push(callData);
+
       if (attempts <= failureCount) {
         throw failureError;
       }
       return result;
+    };
+
+    // Add observation properties
+    (operation as any).callCount = 0;
+    (operation as any).calls = calls;
+    (operation as any).reset = () => {
+      attempts = 0;
+      calls.length = 0;
+    };
+
+    // Update callCount getter
+    Object.defineProperty(operation, "callCount", {
+      get: () => attempts,
     });
+
+    return operation as any;
   }
 
   /**
-   * Create a mock operation with intermittent failures
+   * Create a real operation with intermittent failures and observation
    */
-  static createIntermittentOperation<T>(result: T, failureRate = 0.3, error?: Error): () => Promise<T> {
+  static createIntermittentOperation<T>(
+    result: T,
+    failureRate = 0.3,
+    error?: Error,
+  ): (() => Promise<T>) & { callCount: number; calls: any[]; reset: () => void } {
     const failureError = error ?? TestErrors.SERVICE_UNAVAILABLE;
+    let callCount = 0;
+    const calls: any[] = [];
 
-    return vi.fn().mockImplementation(async () => {
-      if (Math.random() < failureRate) {
+    const operation = async () => {
+      callCount++;
+      const willFail = Math.random() < failureRate;
+      const callData = {
+        timestamp: new Date(),
+        attempt: callCount,
+        failureRate,
+        willFail,
+      };
+      calls.push(callData);
+
+      if (willFail) {
         throw failureError;
       }
       return result;
+    };
+
+    // Add observation properties
+    (operation as any).callCount = 0;
+    (operation as any).calls = calls;
+    (operation as any).reset = () => {
+      callCount = 0;
+      calls.length = 0;
+    };
+
+    // Update callCount getter
+    Object.defineProperty(operation, "callCount", {
+      get: () => callCount,
     });
+
+    return operation as any;
   }
 
   /**
-   * Create a mock operation that times out
+   * Create a real operation that times out with observation
    */
-  static createTimeoutOperation(timeoutMs: number): () => Promise<never> {
-    return vi.fn().mockImplementation(async () => {
+  static createTimeoutOperation(
+    timeoutMs: number,
+  ): (() => Promise<never>) & { callCount: number; calls: any[]; reset: () => void } {
+    let callCount = 0;
+    const calls: any[] = [];
+
+    const operation = async () => {
+      callCount++;
+      const callData = {
+        timestamp: new Date(),
+        timeoutMs,
+        actualDelay: timeoutMs * 2,
+      };
+      calls.push(callData);
+
       await new Promise((resolve) => setTimeout(resolve, timeoutMs * 2));
       throw TestErrorFactory.createTimeoutError(timeoutMs);
+    };
+
+    // Add observation properties
+    (operation as any).callCount = 0;
+    (operation as any).calls = calls;
+    (operation as any).reset = () => {
+      callCount = 0;
+      calls.length = 0;
+    };
+
+    // Update callCount getter
+    Object.defineProperty(operation, "callCount", {
+      get: () => callCount,
     });
+
+    return operation as any;
   }
 
   /**
-   * Create a cancellable mock operation
+   * Create a real cancellable operation with observation
    */
-  static createCancellableOperation<T>(result: T, operationDuration = 1000): (signal?: AbortSignal) => Promise<T> {
-    return vi.fn().mockImplementation(async (signal?: AbortSignal) => {
+  static createCancellableOperation<T>(
+    result: T,
+    operationDuration = 1000,
+  ): ((signal?: AbortSignal) => Promise<T>) & { callCount: number; calls: any[]; reset: () => void } {
+    let callCount = 0;
+    const calls: any[] = [];
+
+    const operation = async (signal?: AbortSignal) => {
+      callCount++;
+      const callData = {
+        timestamp: new Date(),
+        operationDuration,
+        hasAbortSignal: !!signal,
+      };
+      calls.push(callData);
+
       return new Promise<T>((resolve, reject) => {
         const timer = setTimeout(() => resolve(result), operationDuration);
 
@@ -252,7 +402,22 @@ export class MockOperations {
           });
         }
       });
+    };
+
+    // Add observation properties
+    (operation as any).callCount = 0;
+    (operation as any).calls = calls;
+    (operation as any).reset = () => {
+      callCount = 0;
+      calls.length = 0;
+    };
+
+    // Update callCount getter
+    Object.defineProperty(operation, "callCount", {
+      get: () => callCount,
     });
+
+    return operation as any;
   }
 }
 
@@ -338,7 +503,7 @@ export class RecoveryScenarios {
       description: "Database connection pool is exhausted under high load",
       errors: [
         new BaseAxonError("Connection pool exhausted", "DB_POOL_EXHAUSTED", {
-          category: ErrorCategory.DATABASE,
+          category: ErrorCategory.SYSTEM,
           severity: ErrorSeverity.CRITICAL,
           metadata: {
             poolSize: 20,
@@ -384,61 +549,90 @@ export class RecoveryScenarios {
 }
 
 /**
- * Mock recovery strategy implementations for testing
+ * Real recovery strategy implementations with observation capabilities for testing
  */
-export class MockRecoveryStrategies {
+export class TestRecoveryStrategies {
   /**
-   * Create a mock retry strategy
+   * Create a real retry strategy with event observation
    */
-  static createMockRetry(config?: { maxAttempts?: number; shouldSucceedOnAttempt?: number }) {
+  static createRetryHandler(config?: { maxAttempts?: number; shouldSucceedOnAttempt?: number }) {
     let attempts = 0;
+    const eventEmitter = new EventEmitter();
 
-    return {
-      name: "MockRetryHandler",
-      recover: vi.fn().mockImplementation(async (error: BaseAxonError) => {
+    const handler = {
+      name: "RetryHandler",
+      eventEmitter,
+      async recover(error: BaseAxonError) {
         attempts++;
 
+        // Emit attempt event for observation
+        eventEmitter.emit("retry:attempt", {
+          attempt: attempts,
+          error,
+          timestamp: new Date(),
+        });
+
         if (config?.shouldSucceedOnAttempt && attempts >= config.shouldSucceedOnAttempt) {
-          return {
+          const result = {
             recovered: true,
             strategy: "retry",
             attempts,
             value: "retry_success",
           };
+          eventEmitter.emit("retry:success", { result, timestamp: new Date() });
+          return result;
         }
 
         if (attempts >= (config?.maxAttempts ?? 3)) {
-          throw new Error(`Retry failed after ${attempts} attempts`);
+          const failureError = new Error(`Retry failed after ${attempts} attempts`);
+          eventEmitter.emit("retry:failure", { error: failureError, attempts, timestamp: new Date() });
+          throw failureError;
         }
 
+        eventEmitter.emit("retry:continue", { attempts, error, timestamp: new Date() });
         throw error;
-      }),
+      },
       getAttempts: () => attempts,
       reset: () => {
         attempts = 0;
+        eventEmitter.emit("retry:reset", { timestamp: new Date() });
       },
+      // Event observation methods
+      onAttempt: (listener: (data: any) => void) => eventEmitter.on("retry:attempt", listener),
+      onSuccess: (listener: (data: any) => void) => eventEmitter.on("retry:success", listener),
+      onFailure: (listener: (data: any) => void) => eventEmitter.on("retry:failure", listener),
+      removeAllListeners: () => eventEmitter.removeAllListeners(),
     };
+
+    return handler;
   }
 
   /**
-   * Create a mock circuit breaker strategy
+   * Create a real circuit breaker strategy with event observation
    */
-  static createMockCircuitBreaker(config?: { failureThreshold?: number; recoveryTime?: number }) {
+  static createCircuitBreakerHandler(config?: { failureThreshold?: number; recoveryTime?: number }) {
     let failureCount = 0;
     let state: "CLOSED" | "OPEN" | "HALF_OPEN" = "CLOSED";
     let lastFailureTime = 0;
+    const eventEmitter = new EventEmitter();
 
-    return {
-      name: "MockCircuitBreakerHandler",
-      recover: vi.fn().mockImplementation(async (error: BaseAxonError) => {
+    const handler = {
+      name: "CircuitBreakerHandler",
+      eventEmitter,
+      async recover(error: BaseAxonError) {
         const threshold = config?.failureThreshold ?? 5;
         const recoveryTime = config?.recoveryTime ?? 30000;
+
+        eventEmitter.emit("circuit:attempt", { state, failureCount, timestamp: new Date() });
 
         if (state === "OPEN") {
           if (Date.now() - lastFailureTime > recoveryTime) {
             state = "HALF_OPEN";
+            eventEmitter.emit("circuit:halfOpen", { timestamp: new Date() });
           } else {
-            throw new Error("Circuit breaker is OPEN");
+            const openError = new Error("Circuit breaker is OPEN");
+            eventEmitter.emit("circuit:blocked", { error: openError, timestamp: new Date() });
+            throw openError;
           }
         }
 
@@ -446,12 +640,14 @@ export class MockRecoveryStrategies {
           // Simulate successful recovery
           state = "CLOSED";
           failureCount = 0;
-          return {
+          const result = {
             recovered: true,
             strategy: "circuit_breaker",
             state: "CLOSED",
             value: "circuit_breaker_recovery",
           };
+          eventEmitter.emit("circuit:closed", { result, timestamp: new Date() });
+          return result;
         }
 
         // Simulate failure
@@ -460,62 +656,130 @@ export class MockRecoveryStrategies {
 
         if (failureCount >= threshold) {
           state = "OPEN";
+          eventEmitter.emit("circuit:opened", { failureCount, threshold, timestamp: new Date() });
         }
 
+        eventEmitter.emit("circuit:failure", { failureCount, state, error, timestamp: new Date() });
         throw error;
-      }),
+      },
       getState: () => state,
       getFailureCount: () => failureCount,
       reset: () => {
         failureCount = 0;
         state = "CLOSED";
         lastFailureTime = 0;
+        eventEmitter.emit("circuit:reset", { timestamp: new Date() });
       },
+      // Event observation methods
+      onAttempt: (listener: (data: any) => void) => eventEmitter.on("circuit:attempt", listener),
+      onOpened: (listener: (data: any) => void) => eventEmitter.on("circuit:opened", listener),
+      onClosed: (listener: (data: any) => void) => eventEmitter.on("circuit:closed", listener),
+      removeAllListeners: () => eventEmitter.removeAllListeners(),
     };
+
+    return handler;
   }
 
   /**
-   * Create a mock graceful degradation strategy
+   * Create a real graceful degradation strategy with event observation
    */
-  static createMockGracefulDegradation(fallbackValue: any = "fallback_result") {
-    return {
-      name: "MockGracefulDegradationHandler",
-      recover: vi.fn().mockImplementation(async (error: BaseAxonError) => {
+  static createGracefulDegradationHandler(fallbackValue: any = "fallback_result") {
+    const eventEmitter = new EventEmitter();
+    const fallbacks: any[] = [];
+
+    const handler = {
+      name: "GracefulDegradationHandler",
+      eventEmitter,
+      async recover(error: BaseAxonError) {
         // Simulate fallback logic
         const quality = 0.7; // Reduced quality fallback
 
-        return {
+        eventEmitter.emit("degradation:attempt", {
+          error,
+          fallbacksAvailable: fallbacks.length,
+          timestamp: new Date(),
+        });
+
+        const result = {
           recovered: true,
           strategy: "graceful_degradation",
           quality,
           value: fallbackValue,
           fallbackUsed: "emergency_fallback",
         };
-      }),
-      addFallback: vi.fn(),
-      getFallbacks: vi.fn().mockReturnValue([]),
+
+        eventEmitter.emit("degradation:success", { result, timestamp: new Date() });
+        return result;
+      },
+      addFallback: (fallback: any) => {
+        fallbacks.push(fallback);
+        eventEmitter.emit("degradation:fallbackAdded", {
+          fallback,
+          totalFallbacks: fallbacks.length,
+          timestamp: new Date(),
+        });
+      },
+      getFallbacks: () => [...fallbacks],
+      // Event observation methods
+      onAttempt: (listener: (data: any) => void) => eventEmitter.on("degradation:attempt", listener),
+      onSuccess: (listener: (data: any) => void) => eventEmitter.on("degradation:success", listener),
+      removeAllListeners: () => eventEmitter.removeAllListeners(),
     };
+
+    return handler;
   }
 
   /**
-   * Create a mock timeout strategy
+   * Create a real timeout strategy with event observation
    */
-  static createMockTimeout(config?: { timeoutMs?: number }) {
-    return {
-      name: "MockTimeoutHandler",
-      recover: vi.fn().mockImplementation(async (error: BaseAxonError) => {
+  static createTimeoutHandler(config?: { timeoutMs?: number }) {
+    const eventEmitter = new EventEmitter();
+    const activeTimeouts = new Map<number, NodeJS.Timeout>();
+    let timeoutIdCounter = 0;
+
+    const handler = {
+      name: "TimeoutHandler",
+      eventEmitter,
+      async recover(error: BaseAxonError) {
         const timeoutMs = config?.timeoutMs ?? 5000;
 
-        return {
+        eventEmitter.emit("timeout:attempt", { timeoutMs, error, timestamp: new Date() });
+
+        const result = {
           recovered: true,
           strategy: "timeout",
           timeoutApplied: timeoutMs,
           value: "timeout_handled",
         };
-      }),
-      setTimeout: vi.fn(),
-      clearTimeout: vi.fn(),
+
+        eventEmitter.emit("timeout:success", { result, timestamp: new Date() });
+        return result;
+      },
+      setTimeout: (callback: () => void, delay: number) => {
+        const id = ++timeoutIdCounter;
+        const timeout = setTimeout(() => {
+          activeTimeouts.delete(id);
+          callback();
+        }, delay);
+        activeTimeouts.set(id, timeout);
+        eventEmitter.emit("timeout:set", { id, delay, timestamp: new Date() });
+        return id;
+      },
+      clearTimeout: (id: number) => {
+        const timeout = activeTimeouts.get(id);
+        if (timeout) {
+          clearTimeout(timeout);
+          activeTimeouts.delete(id);
+          eventEmitter.emit("timeout:cleared", { id, timestamp: new Date() });
+        }
+      },
+      // Event observation methods
+      onAttempt: (listener: (data: any) => void) => eventEmitter.on("timeout:attempt", listener),
+      onSuccess: (listener: (data: any) => void) => eventEmitter.on("timeout:success", listener),
+      removeAllListeners: () => eventEmitter.removeAllListeners(),
     };
+
+    return handler;
   }
 }
 
@@ -537,23 +801,36 @@ export class RecoveryAssertions {
     },
   ) {
     if (expected.recovered !== undefined) {
-      expect(result.recovered).toBe(expected.recovered);
+      if (result.recovered !== expected.recovered) {
+        throw new Error(`Expected recovered to be ${expected.recovered}, got ${result.recovered}`);
+      }
     }
 
     if (expected.strategy) {
-      expect(result.strategy).toBe(expected.strategy);
+      if (result.strategy !== expected.strategy) {
+        throw new Error(`Expected strategy to be ${expected.strategy}, got ${result.strategy}`);
+      }
     }
 
     if (expected.attempts !== undefined) {
-      expect(result.attempts).toBe(expected.attempts);
+      if (result.attempts !== expected.attempts) {
+        throw new Error(`Expected attempts to be ${expected.attempts}, got ${result.attempts}`);
+      }
     }
 
     if (expected.qualityScore !== undefined) {
-      expect(result.qualityScore).toBeCloseTo(expected.qualityScore, 2);
+      const diff = Math.abs(result.qualityScore - expected.qualityScore);
+      if (diff > 0.01) {
+        throw new Error(`Expected qualityScore to be close to ${expected.qualityScore}, got ${result.qualityScore}`);
+      }
     }
 
     if (expected.timeWithinLimit !== undefined) {
-      expect(result.executionTime).toBeLessThan(expected.timeWithinLimit);
+      if (result.executionTime >= expected.timeWithinLimit) {
+        throw new Error(
+          `Expected executionTime to be less than ${expected.timeWithinLimit}, got ${result.executionTime}`,
+        );
+      }
     }
   }
 
@@ -570,19 +847,29 @@ export class RecoveryAssertions {
     },
   ) {
     if (requirements.maxMeanTime !== undefined) {
-      expect(stats.mean).toBeLessThan(requirements.maxMeanTime);
+      if (stats.mean >= requirements.maxMeanTime) {
+        throw new Error(`Expected mean time to be less than ${requirements.maxMeanTime}, got ${stats.mean}`);
+      }
     }
 
     if (requirements.maxP95Time !== undefined) {
-      expect(stats.p95).toBeLessThan(requirements.maxP95Time);
+      if (stats.p95 >= requirements.maxP95Time) {
+        throw new Error(`Expected p95 time to be less than ${requirements.maxP95Time}, got ${stats.p95}`);
+      }
     }
 
     if (requirements.maxP99Time !== undefined) {
-      expect(stats.p99).toBeLessThan(requirements.maxP99Time);
+      if (stats.p99 >= requirements.maxP99Time) {
+        throw new Error(`Expected p99 time to be less than ${requirements.maxP99Time}, got ${stats.p99}`);
+      }
     }
 
     if (requirements.minThroughput !== undefined && stats.throughput !== undefined) {
-      expect(stats.throughput).toBeGreaterThan(requirements.minThroughput);
+      if (stats.throughput <= requirements.minThroughput) {
+        throw new Error(
+          `Expected throughput to be greater than ${requirements.minThroughput}, got ${stats.throughput}`,
+        );
+      }
     }
   }
 }
@@ -669,22 +956,22 @@ export class TimeUtils {
     this.timeouts.clear();
 
     // Mock setTimeout
-    global.setTimeout = vi.fn().mockImplementation((callback: () => void, delay: number) => {
+    global.setTimeout = ((callback: () => void, delay: number) => {
       const timeoutId = {} as NodeJS.Timeout;
       this.timeouts.set(timeoutId, {
         callback,
         triggerTime: this.currentTime + delay,
       });
       return timeoutId;
-    });
+    }) as any;
 
     // Mock clearTimeout
-    global.clearTimeout = vi.fn().mockImplementation((timeoutId: NodeJS.Timeout) => {
+    global.clearTimeout = ((timeoutId: NodeJS.Timeout) => {
       this.timeouts.delete(timeoutId);
-    });
+    }) as any;
 
     // Mock Date.now
-    Date.now = vi.fn().mockImplementation(() => this.currentTime);
+    Date.now = (() => this.currentTime) as any;
   }
 
   /**
@@ -695,7 +982,9 @@ export class TimeUtils {
 
     const triggeredTimeouts: Array<{ callback: () => void; triggerTime: number }> = [];
 
-    for (const [timeoutId, timeout] of this.timeouts.entries()) {
+    // Convert entries to array to avoid iterator issues
+    const timeoutEntries = Array.from(this.timeouts.entries());
+    for (const [timeoutId, timeout] of timeoutEntries) {
       if (timeout.triggerTime <= this.currentTime) {
         triggeredTimeouts.push(timeout);
         this.timeouts.delete(timeoutId);

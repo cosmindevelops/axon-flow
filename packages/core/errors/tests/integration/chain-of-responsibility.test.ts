@@ -2,7 +2,7 @@
  * Integration tests for chain of responsibility error handling
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, afterEach } from "vitest";
 import { BaseAxonError } from "../../src/base/base-error.classes.js";
 import { ErrorCategory, ErrorSeverity } from "../../src/base/base-error.types.js";
 import {
@@ -16,12 +16,48 @@ import { HandlerPriority } from "../../src/chain/chain.types.js";
 
 describe("Error Handler Chain Integration", () => {
   let chain: ErrorHandlerChain;
+  let eventTracker: any;
+  let realLogger: any;
 
   beforeEach(() => {
     chain = new ErrorHandlerChain({
       sortByPriority: true,
       stopOnFirstHandle: false,
     });
+
+    // Create event tracker for observation
+    eventTracker = {
+      events: [] as any[],
+      addEvent: function (type: string, data: any) {
+        this.events.push({ type, data, timestamp: new Date() });
+      },
+      getEvents: function (type?: string) {
+        return type ? this.events.filter((e) => e.type === type) : this.events;
+      },
+      reset: function () {
+        this.events = [];
+      },
+    };
+
+    // Create real logger with event observation
+    realLogger = {
+      error: function (message: any, context?: any) {
+        eventTracker.addEvent("log_error", { message, context });
+      },
+      warn: function (message: any, context?: any) {
+        eventTracker.addEvent("log_warn", { message, context });
+      },
+      info: function (message: any, context?: any) {
+        eventTracker.addEvent("log_info", { message, context });
+      },
+      debug: function (message: any, context?: any) {
+        eventTracker.addEvent("log_debug", { message, context });
+      },
+    };
+  });
+
+  afterEach(() => {
+    eventTracker?.reset();
   });
 
   describe("Context enrichment flow", () => {
@@ -40,19 +76,17 @@ describe("Error Handler Chain Integration", () => {
       chain.addHandler(enrichmentHandler);
 
       const originalError = new BaseAxonError("Test error", "TEST_CODE");
-      let enrichedError: any;
+      const results = await chain.process(originalError);
 
-      // Intercept the handler to capture the enriched error
-      const originalHandle = enrichmentHandler.handle.bind(enrichmentHandler);
-      enrichmentHandler.handle = async (error) => {
-        const result = await originalHandle(error);
-        enrichedError = result.modifiedError;
-        return result;
-      };
-
-      await chain.process(originalError);
-
-      expect(enrichedError).toBeDefined();
+      // Verify results contain enriched error information
+      expect(results).toBeDefined();
+      expect(results.length).toBeGreaterThan(0);
+      
+      const handlerResult = results[0];
+      expect(handlerResult.handled).toBe(true);
+      expect(handlerResult.modifiedError).toBeDefined();
+      
+      const enrichedError = handlerResult.modifiedError;
       expect(enrichedError.context.correlationId).toBeDefined();
       expect(enrichedError.context.component).toBe("TestComponent");
       expect(enrichedError.context.operation).toBe("testOperation");
@@ -72,16 +106,10 @@ describe("Error Handler Chain Integration", () => {
 
       chain.addHandler(enrichmentHandler);
 
-      let enrichedError: any;
-      const originalHandle = enrichmentHandler.handle.bind(enrichmentHandler);
-      enrichmentHandler.handle = async (error) => {
-        const result = await originalHandle(error);
-        enrichedError = result.modifiedError;
-        return result;
-      };
-
-      await chain.process(new BaseAxonError("Test"));
-
+      const results = await chain.process(new BaseAxonError("Test"));
+      
+      expect(results.length).toBeGreaterThan(0);
+      const enrichedError = results[0].modifiedError;
       expect(enrichedError.context.correlationId).toBe(customId);
     });
   });
@@ -97,17 +125,11 @@ describe("Error Handler Chain Integration", () => {
       chain.addHandler(stackHandler);
 
       const error = new BaseAxonError("Stack test");
-      let processedError: any;
+      const results = await chain.process(error);
 
-      const originalHandle = stackHandler.handle.bind(stackHandler);
-      stackHandler.handle = async (err) => {
-        const result = await originalHandle(err);
-        processedError = result.modifiedError;
-        return result;
-      };
-
-      await chain.process(error);
-
+      expect(results.length).toBeGreaterThan(0);
+      const processedError = results[0].modifiedError;
+      
       expect(processedError).toBeDefined();
       expect(processedError.context.stackTrace).toBeDefined();
 
@@ -138,15 +160,10 @@ describe("Error Handler Chain Integration", () => {
         },
       });
 
-      let sanitizedError: any;
-      const originalHandle = sanitizer.handle.bind(sanitizer);
-      sanitizer.handle = async (err) => {
-        const result = await originalHandle(err);
-        sanitizedError = result.modifiedError;
-        return result;
-      };
-
-      await chain.process(error);
+      const results = await chain.process(error);
+      
+      expect(results.length).toBeGreaterThan(0);
+      const sanitizedError = results[0].modifiedError;
 
       expect(sanitizedError.message).toContain("[REDACTED]");
       expect(sanitizedError.message).not.toContain("secret123");
@@ -172,34 +189,21 @@ describe("Error Handler Chain Integration", () => {
         },
       });
 
-      let sanitizedError: any;
-      const originalHandle = sanitizer.handle.bind(sanitizer);
-      sanitizer.handle = async (err) => {
-        const result = await originalHandle(err);
-        sanitizedError = result.modifiedError;
-        return result;
-      };
-
-      await chain.process(error);
-
+      const results = await chain.process(error);
+      
+      expect(results.length).toBeGreaterThan(0);
+      const sanitizedError = results[0].modifiedError;
       expect(sanitizedError.context.metadata.secret).toBe("********");
     });
   });
 
   describe("Logging integration", () => {
     it("should log errors based on severity", async () => {
-      const mockLogger = {
-        error: vi.fn(),
-        warn: vi.fn(),
-        info: vi.fn(),
-        debug: vi.fn(),
-      };
-
       const loggingHandler = new LoggingHandler({
         logLevel: "error",
         includeStack: true,
         includeContext: true,
-        logger: mockLogger,
+        logger: realLogger,
       });
 
       chain.addHandler(loggingHandler);
@@ -211,25 +215,20 @@ describe("Error Handler Chain Integration", () => {
 
       await chain.process(criticalError);
 
-      expect(mockLogger.error).toHaveBeenCalled();
-      const [message, context] = mockLogger.error.mock.calls[0];
-      expect(message).toContain("Critical failure");
-      expect(context.code).toBe("CRITICAL");
-      expect(context.severity).toBe(ErrorSeverity.CRITICAL);
-      expect(context.context).toBeDefined();
-      expect(context.stack).toBeDefined();
+      const errorLogs = eventTracker.getEvents("log_error");
+      expect(errorLogs).toHaveLength(1);
+      
+      const logEntry = errorLogs[0].data;
+      expect(logEntry.message).toContain("Critical failure");
+      expect(logEntry.context.code).toBe("CRITICAL");
+      expect(logEntry.context.severity).toBe(ErrorSeverity.CRITICAL);
+      expect(logEntry.context.context).toBeDefined();
+      expect(logEntry.context.stack).toBeDefined();
     });
 
     it("should use appropriate log level for severity", async () => {
-      const mockLogger = {
-        error: vi.fn(),
-        warn: vi.fn(),
-        info: vi.fn(),
-        debug: vi.fn(),
-      };
-
       const loggingHandler = new LoggingHandler({
-        logger: mockLogger,
+        logger: realLogger,
       });
 
       chain.addHandler(loggingHandler);
@@ -245,20 +244,13 @@ describe("Error Handler Chain Integration", () => {
       await chain.process(warningError);
       await chain.process(infoError);
 
-      expect(mockLogger.warn).toHaveBeenCalledTimes(1);
-      expect(mockLogger.info).toHaveBeenCalledTimes(1);
+      expect(eventTracker.getEvents("log_warn")).toHaveLength(1);
+      expect(eventTracker.getEvents("log_info")).toHaveLength(1);
     });
   });
 
   describe("Complete pipeline", () => {
     it("should process error through complete handler chain", async () => {
-      const mockLogger = {
-        error: vi.fn(),
-        warn: vi.fn(),
-        info: vi.fn(),
-        debug: vi.fn(),
-      };
-
       // Add handlers in priority order
       const enrichmentHandler = new ContextEnrichmentHandler(
         {
@@ -284,7 +276,7 @@ describe("Error Handler Chain Integration", () => {
 
       const logger = new LoggingHandler(
         {
-          logger: mockLogger,
+          logger: realLogger,
         },
         HandlerPriority.LOW,
       );
@@ -299,24 +291,32 @@ describe("Error Handler Chain Integration", () => {
         },
       });
 
-      await chain.process(error);
+      const results = await chain.process(error);
+
+      // Verify all handlers processed the error
+      expect(results).toHaveLength(4);
 
       // Verify logger was called with processed error
-      expect(mockLogger.error).toHaveBeenCalled();
-      const [message, context] = mockLogger.error.mock.calls[0];
+      const errorLogs = eventTracker.getEvents("log_error");
+      expect(errorLogs).toHaveLength(1);
+      
+      const loggedContext = errorLogs[0].data.context;
 
       // Should have correlation ID from enrichment
-      expect(context.context.correlationId).toBeDefined();
-      expect(context.context.component).toBe("Pipeline");
+      expect(loggedContext.context.correlationId).toBeDefined();
+      expect(loggedContext.context.component).toBe("Pipeline");
 
       // Password should be sanitized in logged context
-      expect(JSON.stringify(context)).not.toContain("sensitive");
-      expect(JSON.stringify(context)).not.toContain("secret");
+      expect(JSON.stringify(loggedContext)).not.toContain("sensitive");
+      expect(JSON.stringify(loggedContext)).not.toContain("secret");
     });
 
     it("should handle handler failures gracefully", async () => {
       const failingHandler = new ContextEnrichmentHandler({});
+      const originalHandle = failingHandler.handle.bind(failingHandler);
+      
       failingHandler.handle = async () => {
+        eventTracker.addEvent("handler_error", { message: "Handler failure" });
         throw new Error("Handler failure");
       };
 
@@ -326,6 +326,9 @@ describe("Error Handler Chain Integration", () => {
 
       // Should throw the handler error
       await expect(chain.process(error)).rejects.toThrow("Handler failure");
+      
+      // Verify the error was tracked
+      expect(eventTracker.getEvents("handler_error")).toHaveLength(1);
     });
 
     it("should respect timeout configuration", async () => {
@@ -334,8 +337,12 @@ describe("Error Handler Chain Integration", () => {
       });
 
       const slowHandler = new ContextEnrichmentHandler({});
+      const originalHandle = slowHandler.handle.bind(slowHandler);
+      
       slowHandler.handle = async (error) => {
+        eventTracker.addEvent("slow_handler_start", { timeout: 200 });
         await new Promise((resolve) => setTimeout(resolve, 200));
+        eventTracker.addEvent("slow_handler_complete", { message: "Should not reach here" });
         return {
           handled: true,
           continueChain: false,
@@ -347,6 +354,10 @@ describe("Error Handler Chain Integration", () => {
       const error = new BaseAxonError("Timeout test");
 
       await expect(slowChain.process(error)).rejects.toThrow("timeout");
+      
+      // Should have started but not completed
+      expect(eventTracker.getEvents("slow_handler_start")).toHaveLength(1);
+      expect(eventTracker.getEvents("slow_handler_complete")).toHaveLength(0);
     });
 
     it("should stop on first handle when configured", async () => {
@@ -354,13 +365,10 @@ describe("Error Handler Chain Integration", () => {
         stopOnFirstHandle: true,
       });
 
-      const handler1Called = vi.fn();
-      const handler2Called = vi.fn();
-
       const handler1 = new ContextEnrichmentHandler({});
       const originalHandle1 = handler1.handle.bind(handler1);
       handler1.handle = async (error) => {
-        handler1Called();
+        eventTracker.addEvent("handler1_called", { name: "handler1" });
         return {
           handled: true,
           continueChain: true,
@@ -369,8 +377,9 @@ describe("Error Handler Chain Integration", () => {
       };
 
       const handler2 = new StackTraceHandler({});
+      const originalHandle2 = handler2.handle.bind(handler2);
       handler2.handle = async (error) => {
-        handler2Called();
+        eventTracker.addEvent("handler2_called", { name: "handler2" });
         return {
           handled: true,
           continueChain: true,
@@ -381,14 +390,14 @@ describe("Error Handler Chain Integration", () => {
 
       await stopChain.process(new BaseAxonError("Test"));
 
-      expect(handler1Called).toHaveBeenCalled();
-      expect(handler2Called).not.toHaveBeenCalled();
+      expect(eventTracker.getEvents("handler1_called")).toHaveLength(1);
+      expect(eventTracker.getEvents("handler2_called")).toHaveLength(0);
     });
   });
 
   describe("Handler management", () => {
     it("should sort handlers by priority", () => {
-      const lowHandler = new LoggingHandler({}, HandlerPriority.LOW);
+      const lowHandler = new LoggingHandler({ logger: realLogger }, HandlerPriority.LOW);
       const highHandler = new SanitizationHandler({}, HandlerPriority.HIGH);
       const criticalHandler = new ContextEnrichmentHandler({}, HandlerPriority.CRITICAL);
 
@@ -420,13 +429,173 @@ describe("Error Handler Chain Integration", () => {
       chain
         .addHandler(new ContextEnrichmentHandler({}))
         .addHandler(new StackTraceHandler({}))
-        .addHandler(new LoggingHandler({}));
+        .addHandler(new LoggingHandler({ logger: realLogger }));
 
       expect(chain.getHandlers()).toHaveLength(3);
 
       chain.clear();
 
       expect(chain.getHandlers()).toHaveLength(0);
+    });
+  });
+
+  describe("Real error recovery chain integration", () => {
+    it("should integrate with recovery strategies for complete error handling", async () => {
+      // Create a chain that enriches then attempts recovery
+      const enrichmentHandler = new ContextEnrichmentHandler({
+        addCorrelationId: true,
+        addComponent: "RecoveryChain",
+      });
+
+      const loggingHandler = new LoggingHandler({
+        logger: realLogger,
+        logLevel: "error",
+      });
+
+      chain.addHandler(enrichmentHandler).addHandler(loggingHandler);
+
+      // Create a serious error that would trigger recovery
+      const recoveryError = new BaseAxonError("Database connection failed", "DB_CONNECTION_ERROR", {
+        severity: ErrorSeverity.CRITICAL,
+        category: ErrorCategory.SYSTEM,
+        metadata: {
+          host: "localhost",
+          port: 5432,
+          retryAttempts: 3,
+        },
+      });
+
+      const results = await chain.process(recoveryError);
+
+      // Verify enrichment happened
+      expect(results.length).toBe(2);
+      const enrichedResult = results.find(r => r.handler === "ContextEnrichmentHandler");
+      expect(enrichedResult?.modifiedError.context.correlationId).toBeDefined();
+      expect(enrichedResult?.modifiedError.context.component).toBe("RecoveryChain");
+
+      // Verify logging happened
+      const errorLogs = eventTracker.getEvents("log_error");
+      expect(errorLogs).toHaveLength(1);
+      expect(errorLogs[0].data.message).toContain("Database connection failed");
+    });
+
+    it("should handle chained error transformations", async () => {
+      // Create a chain that transforms an error through multiple stages
+      const enrichmentHandler = new ContextEnrichmentHandler({
+        addCorrelationId: true,
+        addRequestId: true,
+      });
+
+      const sanitizer = new SanitizationHandler({
+        sensitiveKeys: ["connectionString", "password"],
+        redactValue: "***REDACTED***",
+      });
+
+      const stackHandler = new StackTraceHandler({
+        maxDepth: 8,
+        cleanPaths: true,
+      });
+
+      chain.addHandler(enrichmentHandler)
+           .addHandler(sanitizer)
+           .addHandler(stackHandler);
+
+      const originalError = new BaseAxonError(
+        "Failed to connect with connectionString=user:password@host:5432/db", 
+        "DB_AUTH_ERROR",
+        {
+          severity: ErrorSeverity.ERROR,
+          metadata: {
+            connectionString: "postgresql://user:secret@localhost:5432/mydb",
+            password: "supersecret",
+            publicInfo: "This is safe to log",
+          },
+        }
+      );
+
+      const results = await chain.process(originalError);
+
+      expect(results).toHaveLength(3);
+
+      // Get the final transformed error (from the last handler)
+      const finalError = results[results.length - 1].modifiedError;
+
+      // Should have correlation ID from enrichment
+      expect(finalError.context.correlationId).toBeDefined();
+
+      // Should have sanitized sensitive data
+      expect(finalError.message).toContain("***REDACTED***");
+      expect(finalError.message).not.toContain("user:password");
+      expect(finalError.context.metadata.connectionString).toBe("***REDACTED***");
+      expect(finalError.context.metadata.password).toBe("***REDACTED***");
+      expect(finalError.context.metadata.publicInfo).toBe("This is safe to log");
+
+      // Should have processed stack trace
+      expect(finalError.context.stackTrace).toBeDefined();
+      const stackLines = finalError.context.stackTrace.split("\n");
+      expect(stackLines.length).toBeLessThanOrEqual(9); // maxDepth + 1
+    });
+  });
+
+  describe("Performance and reliability", () => {
+    it("should handle high throughput error processing", async () => {
+      const fastChain = new ErrorHandlerChain({
+        sortByPriority: true,
+      });
+
+      const fastLogger = new LoggingHandler({
+        logger: realLogger,
+      });
+
+      fastChain.addHandler(fastLogger);
+
+      // Process multiple errors rapidly
+      const errors = Array.from({ length: 100 }, (_, i) =>
+        new BaseAxonError(`Error ${i}`, `CODE_${i}`, {
+          severity: ErrorSeverity.WARNING,
+          metadata: { index: i },
+        })
+      );
+
+      const startTime = performance.now();
+      
+      await Promise.all(errors.map(error => fastChain.process(error)));
+      
+      const endTime = performance.now();
+      const duration = endTime - startTime;
+
+      // Should process 100 errors quickly
+      expect(duration).toBeLessThan(1000); // Under 1 second
+      expect(eventTracker.getEvents("log_warn")).toHaveLength(100);
+    });
+
+    it("should maintain consistent processing time", async () => {
+      const consistentChain = new ErrorHandlerChain();
+      const enrichmentHandler = new ContextEnrichmentHandler({
+        addCorrelationId: true,
+      });
+      
+      consistentChain.addHandler(enrichmentHandler);
+
+      const durations: number[] = [];
+
+      // Test consistent processing times
+      for (let i = 0; i < 20; i++) {
+        const error = new BaseAxonError(`Test ${i}`, `CODE_${i}`);
+        
+        const start = performance.now();
+        await consistentChain.process(error);
+        const end = performance.now();
+        
+        durations.push(end - start);
+      }
+
+      const avgDuration = durations.reduce((a, b) => a + b) / durations.length;
+      const maxDuration = Math.max(...durations);
+
+      // Processing should be consistently fast
+      expect(avgDuration).toBeLessThan(5); // Under 5ms average
+      expect(maxDuration).toBeLessThan(20); // No outliers over 20ms
     });
   });
 });
