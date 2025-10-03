@@ -752,6 +752,16 @@ gantt
 
 <br><br>
 
+## 🪝 Git Hooks & Commit Discipline
+
+> Compliance anchors: `docs/architecture/coding-standards.md` ("Install Husky pre-commit hooks") · `docs/main/002-technical-specification.md` §9.2 (IU-1 checklist)
+
+- `pre-commit` runs `pnpm lint-staged` to apply Prettier formatting and ESLint fixes on staged files before they land.
+- `commit-msg` enforces Conventional Commits via commitlint. Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`.
+- `pre-push` executes `pnpm typecheck` to block TypeScript regressions.
+- Hooks install automatically after `pnpm install` through the root `prepare` script.
+- Emergencies only: append `--no-verify` to `git commit`/`git push` (or set `HUSKY=0`) and remediate immediately per governance.
+
 ### 🚨 License & Usage Restrictions
 
 **© 2025 Cosmin Fuica. All rights reserved.**

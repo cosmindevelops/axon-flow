@@ -1,0 +1,13 @@
+# Output directories
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+
+# Generated artifacts
+**/*.generated.*
+**/generated/**
+
+# Build metadata
+pnpm-lock.yaml

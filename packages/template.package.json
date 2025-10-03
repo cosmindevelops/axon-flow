@@ -1,0 +1,43 @@
+{
+  "name": "@axon/core-types",
+  "version": "0.1.0",
+  "description": "Canonical domain types for Axon Flow (IU-2 validation scope).",
+  "keywords": ["axon-flow", "iu-02", "core"],
+  "type": "module",
+  "sideEffects": false,
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup --config tsup.config.ts",
+    "clean": "rimraf dist",
+    "lint": "eslint --max-warnings=0 'src/**/*.ts'",
+    "test": "pnpm run test:unit && pnpm run test:integration",
+    "test:unit": "jest --config jest.config.ts --selectProjects unit",
+    "test:integration": "jest --config jest.config.ts --selectProjects integration",
+    "typecheck": "tsc --build tsconfig.json",
+    "verify": "pnpm run lint && pnpm run typecheck && pnpm run test"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "peerDependencies": {
+    "typescript": "^5.9.0"
+  },
+  "dependencies": {
+    "@axon/logger": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "jest": "^29.7.0",
+    "rimraf": "^5.0.0",
+    "ts-jest": "^29.2.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.9.0"
+  }
+}

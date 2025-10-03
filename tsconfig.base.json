@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@axon/core-*": ["packages/core/*/src/index.ts"],
+      "@axon/application-*": ["packages/application/*/src/index.ts"],
+      "@axon/infrastructure-*": ["packages/infrastructure/*/src/index.ts"],
+      "@axon/contracts-*": ["packages/contracts/*/src/index.ts"],
+      "@axon/tooling-*": ["packages/tooling/*/src/index.ts"]
+    },
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    "incremental": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
