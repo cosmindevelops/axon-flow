@@ -63,9 +63,7 @@ function detectAffectedPackages(files) {
  */
 function runTypeCheck(files) {
   // Filter to only TypeScript files
-  const tsFiles = files.filter(file =>
-    /\.(ts|tsx|mts|cts)$/.test(file) && !file.endsWith('.d.ts')
-  );
+  const tsFiles = files.filter(file => /\.(ts|tsx|mts|cts)$/.test(file) && !file.endsWith('.d.ts'));
 
   if (tsFiles.length === 0) {
     console.log('✓ No TypeScript files to check');
@@ -92,7 +90,7 @@ function runTypeCheck(files) {
       execSync(turboCmd, {
         cwd: rootDir,
         stdio: 'inherit',
-        env: { ...process.env, FORCE_COLOR: '1' }
+        env: { ...process.env, FORCE_COLOR: '1' },
       });
 
       console.log('\n✓ Package type checking passed\n');
@@ -106,7 +104,7 @@ function runTypeCheck(files) {
       execSync(tscCmd, {
         cwd: rootDir,
         stdio: 'inherit',
-        env: { ...process.env, FORCE_COLOR: '1' }
+        env: { ...process.env, FORCE_COLOR: '1' },
       });
 
       console.log('\n✓ Root type checking passed\n');
