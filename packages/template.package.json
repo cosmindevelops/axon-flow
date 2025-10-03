@@ -7,6 +7,7 @@
   "sideEffects": false,
   "files": ["dist"],
   "scripts": {
+    "dev": "tsup --config tsup.config.ts --watch",
     "build": "tsup --config tsup.config.ts",
     "clean": "rimraf dist",
     "lint": "eslint --max-warnings=0 'src/**/*.ts'",

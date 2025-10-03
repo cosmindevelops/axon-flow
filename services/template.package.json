@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node dist/main.cjs",
     "start:dev": "nest start --watch",
+    "dev": "pnpm run start:dev",
     "build": "nest build",
     "lint": "eslint --max-warnings=0 'src/**/*.ts'",
     "test": "pnpm run test:unit && pnpm run test:integration && pnpm run test:contract",

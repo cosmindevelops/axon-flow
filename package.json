@@ -10,6 +10,8 @@
   },
   "packageManager": "pnpm@10.18.0",
   "scripts": {
+    "clean": "node scripts/maintenance/remove-build-artifacts.js",
+    "clean:cache": "node scripts/maintenance/clear-turbo-cache.js",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
@@ -17,10 +19,13 @@
     "typecheck": "tsc --build tsconfig.json",
     "format": "prettier --cache --write .",
     "format:check": "prettier --cache --check .",
+    "validate:env": "node scripts/validate-env.js",
     "check": "pnpm lint && pnpm format:check",
     "lint-staged": "lint-staged",
     "prepare": "husky install",
-    "verify": "pnpm lint && pnpm typecheck && pnpm test"
+    "verify": "pnpm lint && pnpm typecheck && pnpm test",
+    "validate": "pnpm exec tsx scripts/validation/index.ts",
+    "benchmark": "pnpm exec tsx scripts/validation/index.ts --mode benchmark"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
@@ -43,6 +48,7 @@
     "lint-staged": "^16.2.3",
     "prettier": "^3.6.2",
     "turbo": "2.5.8",
+    "tsx": "^4.19.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.45.0"
   }

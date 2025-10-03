@@ -1,0 +1,19 @@
+{
+  "name": "@axon/dev-hmr",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hot reload orchestration for Axon Flow monorepo (IU-1 · V1.3).",
+  "keywords": [
+    "axon-flow",
+    "iu-01",
+    "hot-reload",
+    "hmr"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node ./index.mjs"
+  }
+}
