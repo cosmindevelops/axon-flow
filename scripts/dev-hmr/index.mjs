@@ -42,10 +42,11 @@ let drainingQueue = false;
 let typeScriptWatcherProcess = null;
 
 async function pathExists(filePath) {
-  console.error(`Error checking path existence: ${filePath}`, error);
+  try {
     await access(filePath, fsConstants.F_OK);
     return true;
-  } catch {
+  } catch (error) {
+    console.error(`Error checking path existence: ${filePath}`, error);
     return false;
   }
 }
