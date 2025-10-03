@@ -232,7 +232,7 @@ async function discoverWorkspaceDirs(root) {
   const discovered = [];
   let entries;
   try {
-    entries = await readdir(root, { withFileTypes: true });
+    if (!path.isAbsolute(root) || !root.startsWith('/expected/base/path')) throw new Error('Invalid directory path');
   } catch (error) {
     if (error.code === 'ENOENT') {
       return discovered;
@@ -303,7 +303,7 @@ async function ensureDirectoryWatcher(dir) {
 
     directoryWatchers.set(dir, watcher);
 
-    const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+    const entries = await readdir(path.resolve(dir), { withFileTypes: true }).catch(() => []);
     for (const entry of entries) {
       if (entry.isDirectory()) {
         const childDir = path.join(dir, entry.name);

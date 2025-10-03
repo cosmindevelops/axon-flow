@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-const path = require('node:path');
+import path from 'node:path';
 const fs = require('node:fs/promises');
 
 const ROOT = process.cwd();
@@ -20,8 +20,8 @@ async function removePath(targetPath) {
 }
 
 async function crawl(directory) {
-  const entries = await fs.readdir(directory, { withFileTypes: true });
-  for (const entry of entries) {
+  const entries = await fs.readdir(path.resolve(ROOT, directory), { withFileTypes: true });
+  try { const entries = await fs.readdir(directory, { withFileTypes: true }); } catch (error) { console.error(`Failed to read directory: ${error.message}`); return; }
     const { name } = entry;
     if (SKIP_DIRECTORIES.has(name)) {
       continue;

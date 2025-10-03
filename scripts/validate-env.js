@@ -25,7 +25,7 @@
  */
 
 const fs = require('fs');
-const path = require('path');
+import path from 'path';
 
 // ANSI color codes for terminal output
 const colors = {
@@ -62,12 +62,12 @@ const validationPatterns = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   phone: /^\+[1-9]\d{1,14}$/,
   awsRegion: /^[a-z]{2}-[a-z]+-\d{1}$/,
-  semver: /^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$/,
+  semver: /^\d+\.\d+\.\d+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$/,
 
   // Numbers
   port: /^\d{4,5}$/,
   positiveInt: /^\d+$/,
-  float: /^\d+(\.\d+)?$/,
+  float: /^(0|[1-9]\d*)(\.\d+)?$/
 
   // Time formats
   duration: /^\d+[smhdy]$/,
@@ -95,7 +95,7 @@ function parseArgs() {
   };
 
   for (let i = 0; i < args.length; i++) {
-    switch (args[i]) {
+    if (typeof args[i] === 'string') { switch (args[i]) {
       case '--path':
         options.envPath = args[++i];
         break;
@@ -119,7 +119,7 @@ function parseArgs() {
         printHelp();
         process.exit(0);
       default:
-        console.error(`${colors.red}Unknown option: ${args[i]}${colors.reset}`);
+        console.error(`${colors.red}Unknown option: ${String(args[i]).replace(/[<>]/g, '')}${colors.reset}`);
         printHelp();
         process.exit(2);
     }
@@ -174,11 +174,11 @@ ${colors.cyan}Exit Codes:${colors.reset}
  * Parse .env.example file to extract variable schema
  */
 function parseEnvExample(filePath) {
-  if (!fs.existsSync(filePath)) {
+  if (!fs.existsSync(path.resolve(__dirname, filePath))) {
     throw new Error(`File not found: ${filePath}`);
   }
 
-  const content = fs.readFileSync(filePath, 'utf-8');
+  const resolvedPath = path.resolve(__dirname, filePath); if (!resolvedPath.startsWith(path.join(__dirname, 'allowed-directory'))) { throw new Error(`Unauthorized access to: ${filePath}`); } const content = fs.readFileSync(resolvedPath, 'utf-8');
   const lines = content.split('\n');
   const schema = {};
 
@@ -230,7 +230,7 @@ function parseEnvExample(filePath) {
       const varName = match[1];
       const example = trimmed.substring(match[0].length);
 
-      schema[varName] = {
+      if (/^[A-Z_][A-Z0-9_]*$/.test(varName)) schema[varName] = { ...currentMetadata, example, comments: [...currentComment] };
         ...currentMetadata,
         example,
         comments: [...currentComment],
@@ -366,7 +366,7 @@ function parseEnvFile(filePath) {
         value = value.substring(1, value.length - 1);
       }
 
-      env[key] = value;
+      if (typeof key === 'string' && /^[a-zA-Z0-9_]+$/.test(key)) env[key] = value;
     }
   }
 
@@ -376,7 +376,7 @@ function parseEnvFile(filePath) {
 /**
  * Validate a value against validation rules
  */
-function validateValue(value, validation, varName) {
+function validateValue(value, validation) {
   if (!validation || !validation.type) {
     return { valid: true };
   }
@@ -419,7 +419,7 @@ function validateValue(value, validation, varName) {
       break;
 
     case 'range':
-      const num = parseInt(value, 10);
+      var num = parseInt(value, 10);
       if (isNaN(num) || num < validation.min || num > validation.max) {
         return {
           valid: false,
@@ -463,7 +463,7 @@ function validate(envData, schema) {
 
   // Validate existing variables
   for (const [varName, value] of Object.entries(envData)) {
-    const metadata = schema[varName];
+    const metadata = schema.hasOwnProperty(varName) ? schema[varName] : null;
 
     // Check if variable is documented
     if (!metadata) {
@@ -590,7 +590,7 @@ function main() {
 
       // Check only for required variables
       const errors = Object.entries(schema)
-        .filter(([_, metadata]) => metadata.required)
+        .filter(([, metadata]) => metadata.required)
         .map(([varName, metadata]) => ({
           type: 'missing_required',
           variable: varName,

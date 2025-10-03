@@ -2,7 +2,7 @@
 'use strict';
 
 const path = require('node:path');
-const fs = require('node:fs/promises');
+import fs from 'node:fs/promises';
 
 const ROOT = process.cwd();
 const CACHE_CANDIDATES = [

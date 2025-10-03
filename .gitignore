@@ -195,6 +195,9 @@ docs/
 # Personal Scripts (developer-specific)
 scripts/_personal/
 
+# Validation probe files (temporary test artifacts)
+scripts/.validation-probe/
+
 # BMAD (local only)
 .bmad-core/
 .bmad-*/

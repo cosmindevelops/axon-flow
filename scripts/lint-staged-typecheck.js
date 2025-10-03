@@ -44,7 +44,7 @@ function detectAffectedPackages(files) {
         if (parts.length >= 2) {
           const packagePath = path.join(rootDir, dir, parts[1]);
           // Verify package.json exists
-          if (existsSync(path.join(packagePath, 'package.json'))) {
+          if (accessSync(path.join(packagePath, 'package.json'), fs.constants.F_OK)) {
             affectedPackages.add(`${dir}/${parts[1]}`);
           }
         }
