@@ -17,6 +17,7 @@
 
 const { execSync } = require('node:child_process');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 
 const rootDir = path.resolve(__dirname, '..');
@@ -88,12 +89,8 @@ function runTypeCheck(files) {
   console.log(`\n🔍 Type checking ${tsFiles.length} TypeScript file(s)...\n`);
 
   const affectedPackages = detectAffectedPackages(tsFiles);
-  const hasRootTypeFiles = tsFiles.some(file => {
-    const absoluteFile = path.isAbsolute(file) ? file : path.join(rootDir, file);
-    const relativePath = path.relative(rootDir, absoluteFile).split(path.sep).filter(Boolean);
-    const [prefix] = relativePath;
-    return !prefix || !WORKSPACE_PREFIXES.has(prefix);
-  });
+  const rootTsFiles = tsFiles.filter(file => isRootTypeFile(file));
+  const hasRootTypeFiles = rootTsFiles.length > 0;
 
   try {
     if (affectedPackages.size > 0) {
@@ -121,14 +118,20 @@ function runTypeCheck(files) {
       // Strategy 2: Root-level type checking (no workspace packages affected)
       console.log('📋 Checking root-level TypeScript files...\n');
 
-      const tscCmd = 'pnpm exec tsc --noEmit';
+      const filesForRootCheck = hasRootTypeFiles ? rootTsFiles : tsFiles;
+      const tempTsConfig = createTemporaryTsConfig(filesForRootCheck);
+      const tscCmd = `pnpm exec tsc --noEmit --pretty false --project "${tempTsConfig}"`;
       console.log(`Running: ${tscCmd}\n`);
 
-      execSync(tscCmd, {
-        cwd: rootDir,
-        stdio: 'inherit',
-        env: { ...process.env, FORCE_COLOR: '1' },
-      });
+      try {
+        execSync(tscCmd, {
+          cwd: rootDir,
+          stdio: 'inherit',
+          env: { ...process.env, FORCE_COLOR: '1' },
+        });
+      } finally {
+        cleanupTemporaryTsConfig(tempTsConfig);
+      }
 
       console.log('\n✓ Root type checking passed\n');
     }
@@ -137,6 +140,38 @@ function runTypeCheck(files) {
   } catch (error) {
     console.error('\n❌ Type checking failed\n');
     return error.status || 1;
+  }
+}
+
+function isRootTypeFile(file) {
+  const absoluteFile = path.isAbsolute(file) ? file : path.join(rootDir, file);
+  const relativePath = path.relative(rootDir, absoluteFile).split(path.sep).filter(Boolean);
+  const [prefix] = relativePath;
+  return !prefix || !WORKSPACE_PREFIXES.has(prefix);
+}
+
+function createTemporaryTsConfig(files) {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'axon-lint-staged-'));
+  const tempConfigPath = path.join(tempDir, 'tsconfig.json');
+
+  const config = {
+    extends: path.relative(tempDir, path.join(rootDir, 'tsconfig.json')), // reuse root project references
+    files: files.map(file => {
+      const absoluteFile = path.isAbsolute(file) ? file : path.join(rootDir, file);
+      return path.relative(tempDir, absoluteFile);
+    }),
+  };
+
+  fs.writeFileSync(tempConfigPath, JSON.stringify(config, null, 2));
+  return tempConfigPath;
+}
+
+function cleanupTemporaryTsConfig(tempConfigPath) {
+  try {
+    const tempDir = path.dirname(tempConfigPath);
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  } catch (error) {
+    console.warn('⚠️  Failed to clean up temporary tsconfig:', error);
   }
 }
 

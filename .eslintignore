@@ -1,8 +1,0 @@
-dist/
-build/
-node_modules/
-coverage/
-.turbo/
-.next/
-**/generated/**
-**/*.d.ts

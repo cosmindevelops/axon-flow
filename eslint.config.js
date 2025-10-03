@@ -58,7 +58,13 @@ export const baseConfigLayers = tseslint.config(
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        project: [tsconfigPath],
+        project: [
+          tsconfigPath,
+          './scripts/tsconfig.json',
+          './packages/tsconfig.json',
+          './apps/tsconfig.json',
+          './services/tsconfig.json',
+        ],
         tsconfigRootDir: __dirname,
         sourceType: 'module',
         ecmaVersion: 'latest',

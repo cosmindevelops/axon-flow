@@ -8,14 +8,15 @@
  */
 
 import { spawn } from 'node:child_process';
-import type { ChildProcess } from 'node:child_process';
-import { rm, readFile, mkdir, readdir, writeFile, access, lstat } from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
+import { rm, readFile, mkdir, readdir, writeFile, access, lstat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import process from 'node:process';
 import { performance } from 'node:perf_hooks';
+import process from 'node:process';
 import { parseArgs } from 'node:util';
+
+import type { ChildProcess } from 'node:child_process';
 
 const COLORS = {
   reset: '\u001B[0m',
@@ -92,7 +93,7 @@ class ValidationContext {
     await mkdir(target, { recursive: true });
   }
 
-  async registerTemp(target: string): Promise<void> {
+  registerTemp(target: string): void {
     this.tempArtifacts.push(target);
   }
 
@@ -223,13 +224,13 @@ async function runCommand(
   let stderr = '';
 
   if (!options.inherit && child.stdout) {
-    child.stdout.on('data', chunk => {
+    child.stdout.on('data', (chunk: Buffer) => {
       stdout += chunk.toString();
     });
   }
 
   if (!options.inherit && child.stderr) {
-    child.stderr.on('data', chunk => {
+    child.stderr.on('data', (chunk: Buffer) => {
       stderr += chunk.toString();
     });
   }
@@ -742,7 +743,7 @@ async function analyzeHoisting(ctx: ValidationContext): Promise<ValidationResult
 }
 
 async function measurePnpmInstall(ctx: ValidationContext): Promise<ValidationResult> {
-  const start = performance.now();
+  const _start = performance.now();
 
   if (ctx.options.skipInstall) {
     return {
@@ -807,7 +808,7 @@ async function measurePnpmInstall(ctx: ValidationContext): Promise<ValidationRes
 }
 
 async function measureBuildCaching(ctx: ValidationContext): Promise<ValidationResult> {
-  const start = performance.now();
+  const _start = performance.now();
 
   if (ctx.options.skipBuild) {
     return {
@@ -1022,7 +1023,7 @@ async function validateHotReload(ctx: ValidationContext): Promise<ValidationResu
 
   if (!candidateFileExists) {
     await writeFile(candidateFile, baselineContent);
-    await ctx.registerTemp(candidateFile);
+    ctx.registerTemp(candidateFile);
   }
 
   // Identify dist artifact to monitor
@@ -1098,7 +1099,7 @@ async function validateHotReload(ctx: ValidationContext): Promise<ValidationResu
             break;
           }
         }
-      } catch (error) {
+      } catch {
         // File might be briefly unavailable during rebuild
         continue;
       }
@@ -1220,7 +1221,7 @@ async function runPrecommitHooks(ctx: ValidationContext): Promise<ValidationResu
   // Create test files in scripts/ directory since it's included in root tsconfig references
   const probeDir = ctx.resolve('scripts', '.validation-probe');
   await ctx.ensureDir(probeDir);
-  await ctx.registerTemp(probeDir);
+  ctx.registerTemp(probeDir);
 
   const failingFile = path.join(probeDir, 'failing.ts');
   await writeFile(failingFile, 'const failing: number = "not-a-number";\n');
@@ -1369,8 +1370,10 @@ function printResult(result: ValidationResult, options: ValidationOptions): void
   const duration = result.durationMs
     ? `${COLORS.gray}${formatDuration(result.durationMs)}${COLORS.reset}`
     : '';
+  // eslint-disable-next-line no-console
   console.log(`${statusPrefix} ${result.id} – ${result.title} ${duration}`.trim());
   if (!options.quiet || result.status !== 'passed') {
+    // eslint-disable-next-line no-console
     console.log(`    ${result.details}`);
   }
 }
@@ -1506,6 +1509,7 @@ async function main(): Promise<void> {
 
   await writeBenchmark(ctx, report);
 
+  // eslint-disable-next-line no-console
   console.log(
     `\n${COLORS.cyan}Summary:${COLORS.reset} ${passed} passed, ${failed} failed, ${skipped} skipped (${formatDuration(durationMs)})`
   );

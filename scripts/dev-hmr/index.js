@@ -46,7 +46,9 @@ async function pathExists(filePath) {
     await access(filePath, fsConstants.F_OK);
     return true;
   } catch (error) {
-    console.error(`Error checking path existence: ${filePath}`, error);
+    if (error?.code !== 'ENOENT') {
+      console.error(`[dev-hmr] Failed to access ${filePath}:`, error);
+    }
     return false;
   }
 }
@@ -231,11 +233,16 @@ async function startTypeScriptWatcher() {
 
 async function discoverWorkspaceDirs(root) {
   const discovered = [];
+
+  if (!path.isAbsolute(root) || !root.startsWith(REPO_ROOT)) {
+    throw new Error(`Invalid directory path: ${root}`);
+  }
+
   let entries;
   try {
-    if (!path.isAbsolute(root) || !root.startsWith(REPO_ROOT)) throw new Error('Invalid directory path');
+    entries = await readdir(path.resolve(root), { withFileTypes: true });
   } catch (error) {
-    if (error.code === 'ENOENT') {
+    if (error?.code === 'ENOENT') {
       return discovered;
     }
     throw error;

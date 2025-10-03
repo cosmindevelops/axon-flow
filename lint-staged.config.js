@@ -6,13 +6,13 @@
  */
 
 export default {
-  '*.{js,jsx,ts,tsx,cjs,mjs}': [
+  '**/*.{js,jsx,ts,tsx,cjs,mjs}': [
     'pnpm exec prettier --cache --write',
     'node scripts/lint-staged-typecheck.js',
   ],
 
   // Other files: Format only
-  '*.{json,jsonc,md,mdx,yml,yaml,graphql,css,scss,less,html}': [
+  '**/*.{json,jsonc,md,mdx,yml,yaml,graphql,css,scss,less,html}': [
     'pnpm exec prettier --cache --write',
   ],
 };

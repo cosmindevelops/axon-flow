@@ -2,6 +2,7 @@
   "name": "axon-flow",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Axon Flow monorepo orchestrated with Turborepo and pnpm.",
   "license": "PROPRIETARY",
   "engines": {
@@ -22,7 +23,7 @@
     "validate:env": "node scripts/validate-env.js",
     "check": "pnpm lint && pnpm format:check",
     "lint-staged": "lint-staged",
-    "prepare": "husky install",
+    "prepare": "husky",
     "verify": "pnpm lint && pnpm typecheck && pnpm test",
     "validate": "pnpm exec tsx scripts/validation/index.ts",
     "benchmark": "pnpm exec tsx scripts/validation/index.ts --mode benchmark"
@@ -30,11 +31,11 @@
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
-    "@eslint/js": "^9.36.0",
+    "@eslint/js": "^9.37.0",
     "@types/node": "^24.6.2",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
-    "eslint": "^9.36.0",
+    "eslint": "^9.37.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",

@@ -20,7 +20,8 @@ async function removePath(targetPath) {
 }
 
 async function crawl(directory) {
-  const entries = await fs.readdir(path.resolve(ROOT, directory), { withFileTypes: true });
+  try {
+    const entries = await fs.readdir(path.resolve(ROOT, directory), { withFileTypes: true });
 
     for (const entry of entries) {
       const { name } = entry;
@@ -45,7 +46,7 @@ async function crawl(directory) {
       }
     }
   } catch (error) {
-    console.error(`Failed to read directory: ${error.message}`);
+    console.error(`[clean] failed to read directory ${directory}: ${error.message}`);
   }
 }
 
