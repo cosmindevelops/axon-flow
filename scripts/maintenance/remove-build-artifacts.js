@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-import path from 'node:path';
+const path = require('node:path');
 const fs = require('node:fs/promises');
 
 const ROOT = process.cwd();
@@ -20,28 +20,33 @@ async function removePath(targetPath) {
 }
 
 async function crawl(directory) {
+  const entries = await fs.readdir(path.join(ROOT, directory), { withFileTypes: true });
   const entries = await fs.readdir(path.resolve(ROOT, directory), { withFileTypes: true });
-  try { const entries = await fs.readdir(directory, { withFileTypes: true }); } catch (error) { console.error(`Failed to read directory: ${error.message}`); return; }
-    const { name } = entry;
-    if (SKIP_DIRECTORIES.has(name)) {
-      continue;
-    }
 
-    const entryPath = path.join(directory, name);
-
-    if (entry.isDirectory()) {
-      if (TARGET_DIRECTORIES.has(name)) {
-        await removePath(entryPath);
+    for (const entry of entries) {
+      const { name } = entry;
+      if (SKIP_DIRECTORIES.has(name)) {
         continue;
       }
 
-      await crawl(entryPath);
-      continue;
-    }
+      const entryPath = path.join(directory, name);
 
-    if (entry.isFile() && TARGET_FILES.has(name)) {
-      await removePath(entryPath);
+      if (entry.isDirectory()) {
+        if (TARGET_DIRECTORIES.has(name)) {
+          await removePath(entryPath);
+          continue;
+        }
+
+        await crawl(entryPath);
+        continue;
+      }
+
+      if (entry.isFile() && TARGET_FILES.has(name)) {
+        await removePath(entryPath);
+      }
     }
+  } catch (error) {
+    console.error(`Failed to read directory: ${error.message}`);
   }
 }
 

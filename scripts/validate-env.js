@@ -3,86 +3,38 @@
 /**
  * Environment Variable Validation Script
  *
- * Validates .env files against .env.example schemas by parsing metadata
- * from comments and checking for required variables, valid formats, and
- * allowed values.
- *
- * Usage:
- *   node scripts/validate-env.js [options]
- *
- * Options:
- *   --path <path>       Path to .env file (default: .env)
- *   --example <path>    Path to .env.example file (default: .env.example)
- *   --workspace <path>  Validate workspace-level .env (e.g., apps/web-dashboard)
- *   --strict            Exit with error on warnings
- *   --quiet             Suppress success messages
- *   --dry-run           Check without failing (exit code always 0)
- *
- * Exit Codes:
- *   0 - Validation successful
- *   1 - Validation errors found
- *   2 - File not found or parsing error
+ * Validates .env files against .env.example metadata, interpreting comment
+ * annotations for required variables and validation rules.
  */
 
-const fs = require('fs');
-import path from 'path';
+const fs = require('node:fs');
+const path = require('node:path');
 
-// ANSI color codes for terminal output
 const colors = {
   reset: '\x1b[0m',
-  bright: '\x1b[1m',
+  bold: '\x1b[1m',
   dim: '\x1b[2m',
   red: '\x1b[31m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
-  blue: '\x1b[34m',
   cyan: '\x1b[36m',
 };
 
-// Validation regex patterns
 const validationPatterns = {
-  // URLs
-  url: /^https?:\/\/.+/,
-  urlStrict: /^https?:\/\/[a-zA-Z0-9-._~:/?#[\]@!$&'()*+,;=]+$/,
-  wsUrl: /^wss?:\/\/.+/,
-
-  // Database connections
-  postgresql: /^postgres(ql)?:\/\/.+/,
-  redis: /^rediss?:\/\/.+/,
-  amqp: /^amqps?:\/\/.+/,
-
-  // API keys and tokens
-  openaiKey: /^sk-[a-zA-Z0-9]+$/,
-  anthropicKey: /^sk-ant-[a-zA-Z0-9-]+$/,
-  stripeTestKey: /^sk_test_[a-zA-Z0-9]+$/,
-  stripeLiveKey: /^sk_live_[a-zA-Z0-9]+$/,
-  sendgridKey: /^SG\.[a-zA-Z0-9_-]+$/,
-
-  // Identifiers
+  url: /^https?:\/\/.+/i,
+  urlStrict: /^https?:\/\/[^\s]+$/i,
+  wsUrl: /^wss?:\/\/.+/i,
+  postgresql: /^postgres(ql)?:\/\/.+/i,
+  redis: /^rediss?:\/\/.+/i,
+  amqp: /^amqps?:\/\/.+/i,
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   phone: /^\+[1-9]\d{1,14}$/,
-  awsRegion: /^[a-z]{2}-[a-z]+-\d{1}$/,
-  semver: /^\d+\.\d+\.\d+(-[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)*)?$/,
-
-  // Numbers
-  port: /^\d{4,5}$/,
-  positiveInt: /^\d+$/,
-  float: /^(0|[1-9]\d*)(\.\d+)?$/
-
-  // Time formats
-  duration: /^\d+[smhdy]$/,
-
-  // Boolean
-  boolean: /^(true|false)$/,
-
-  // Generic
-  alphanumeric: /^[a-zA-Z0-9_-]+$/,
-  base64: /^[A-Za-z0-9+/]+=*$/,
+  awsRegion: /^[a-z]{2}-[a-z]+-\d$/i,
+  s3Bucket: /^(?!xn--)(?!.*\.\.)[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/,
+  alphanumeric: /^[a-z0-9_-]+$/i,
+  base64: /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
 };
 
-/**
- * Parse command line arguments
- */
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = {
@@ -94,8 +46,10 @@ function parseArgs() {
     dryRun: false,
   };
 
-  for (let i = 0; i < args.length; i++) {
-    if (typeof args[i] === 'string') { switch (args[i]) {
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+
+    switch (arg) {
       case '--path':
         options.envPath = args[++i];
         break;
@@ -112,20 +66,21 @@ function parseArgs() {
         options.quiet = true;
         break;
       case '--dry-run':
+      case '--dryRun':
         options.dryRun = true;
         break;
       case '--help':
       case '-h':
         printHelp();
         process.exit(0);
+        break;
       default:
-        console.error(`${colors.red}Unknown option: ${String(args[i]).replace(/[<>]/g, '')}${colors.reset}`);
+        console.error(`${colors.red}Unknown option: ${arg}${colors.reset}`);
         printHelp();
         process.exit(2);
     }
   }
 
-  // Adjust paths for workspace validation
   if (options.workspace) {
     options.envPath = path.join(options.workspace, '.env');
     options.examplePath = path.join(options.workspace, '.env.example');
@@ -134,500 +89,508 @@ function parseArgs() {
   return options;
 }
 
-/**
- * Print help message
- */
 function printHelp() {
-  console.log(`
-${colors.bright}Environment Variable Validation Script${colors.reset}
-
+  console.log(`\n${colors.bold}Environment Variable Validation${colors.reset}\n
 ${colors.cyan}Usage:${colors.reset}
   node scripts/validate-env.js [options]
 
 ${colors.cyan}Options:${colors.reset}
   --path <path>       Path to .env file (default: .env)
   --example <path>    Path to .env.example file (default: .env.example)
-  --workspace <path>  Validate workspace-level .env (e.g., apps/web-dashboard)
+  --workspace <path>  Validate workspace .env (sets both paths)
   --strict            Exit with error on warnings
-  --quiet             Suppress success messages
-  --dry-run           Check without failing (exit code always 0)
-  --help, -h          Show this help message
-
-${colors.cyan}Examples:${colors.reset}
-  # Validate root .env
-  node scripts/validate-env.js
-
-  # Validate workspace .env
-  node scripts/validate-env.js --workspace apps/web-dashboard
-
-  # Dry run (never fails)
-  node scripts/validate-env.js --dry-run
-
-${colors.cyan}Exit Codes:${colors.reset}
-  0 - Validation successful
-  1 - Validation errors found
-  2 - File not found or parsing error
+  --quiet             Suppress success output
+  --dry-run           Never fail (exit code always 0)
+  --help, -h          Show this message
 `);
 }
 
-/**
- * Parse .env.example file to extract variable schema
- */
 function parseEnvExample(filePath) {
-  if (!fs.existsSync(path.resolve(__dirname, filePath))) {
-    throw new Error(`File not found: ${filePath}`);
+  const absolute = path.resolve(filePath);
+  if (!fs.existsSync(absolute)) {
+    throw new Error(`Example file not found at ${absolute}`);
   }
 
-  const resolvedPath = path.resolve(__dirname, filePath); if (!resolvedPath.startsWith(path.join(__dirname, 'allowed-directory'))) { throw new Error(`Unauthorized access to: ${filePath}`); } const content = fs.readFileSync(resolvedPath, 'utf-8');
-  const lines = content.split('\n');
-  const schema = {};
+  const schema = new Map();
+  const lines = fs.readFileSync(absolute, 'utf8').split(/\r?\n/);
+  let commentBlock = [];
 
-  let currentComment = [];
-  let currentMetadata = {
-    required: false,
-    description: '',
-    validation: null,
-    default: null,
-    enum: null,
-  };
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    // Skip empty lines and section headers
-    if (!trimmed || trimmed.startsWith('#=') || trimmed.startsWith('# ---')) {
-      currentComment = [];
+    if (trimmed.length === 0) {
+      commentBlock = [];
       continue;
     }
 
-    // Parse comment lines for metadata
     if (trimmed.startsWith('#')) {
-      const comment = trimmed.substring(1).trim();
-
-      // Check for [REQUIRED] or [OPTIONAL]
-      if (comment.startsWith('[REQUIRED]')) {
-        currentMetadata.required = true;
-        currentMetadata.description = comment.substring(10).trim();
-      } else if (comment.startsWith('[OPTIONAL]')) {
-        currentMetadata.required = false;
-        currentMetadata.description = comment.substring(10).trim();
-      } else if (comment.startsWith('Validation:')) {
-        const validationText = comment.substring(11).trim();
-        currentMetadata.validation = parseValidation(validationText);
-      } else if (comment.startsWith('Default:')) {
-        currentMetadata.default = comment.substring(8).trim();
-      } else if (!currentMetadata.description) {
-        currentMetadata.description = comment;
-      }
-
-      currentComment.push(comment);
+      commentBlock.push(trimmed.slice(1).trim());
       continue;
     }
 
-    // Parse variable definition
-    const match = trimmed.match(/^([A-Z_][A-Z0-9_]*)=/);
-    if (match) {
-      const varName = match[1];
-      const example = trimmed.substring(match[0].length);
-
-      if (/^[A-Z_][A-Z0-9_]*$/.test(varName)) schema[varName] = { ...currentMetadata, example, comments: [...currentComment] };
-        ...currentMetadata,
-        example,
-        comments: [...currentComment],
-      };
-
-      // Reset metadata for next variable
-      currentComment = [];
-      currentMetadata = {
-        required: false,
-        description: '',
-        validation: null,
-        default: null,
-        enum: null,
-      };
+    const match = trimmed.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+    if (!match) {
+      commentBlock = [];
+      continue;
     }
+
+    const varName = match[1];
+    const example = match[2];
+    const metadata = extractMetadata(commentBlock);
+    metadata.example = example;
+    schema.set(varName, metadata);
+    commentBlock = [];
   }
 
   return schema;
 }
 
-/**
- * Parse validation string from comment into executable validation
- */
-function parseValidation(validationText) {
-  const validation = {
-    type: null,
-    pattern: null,
-    enum: null,
-    min: null,
-    max: null,
+function extractMetadata(comments) {
+  const metadata = {
+    required: false,
+    description: '',
+    defaultValue: null,
+    validations: [],
   };
 
-  // Check for "Must be one of:" enum validation
-  const enumMatch = validationText.match(/Must be one of: ([a-zA-Z0-9|, ]+)/);
-  if (enumMatch) {
-    validation.type = 'enum';
-    validation.enum = enumMatch[1]
-      .split(/[,|]/)
-      .map(v => v.trim())
-      .filter(Boolean);
-    return validation;
-  }
+  for (const rawComment of comments) {
+    const comment = rawComment.trim();
 
-  // Check for "Must start with"
-  if (validationText.includes('Must start with')) {
-    const match = validationText.match(/Must start with (.+)/);
-    if (match) {
-      validation.type = 'startsWith';
-      validation.pattern = match[1].trim();
-      return validation;
-    }
-  }
-
-  // Check for "Must end with"
-  if (validationText.includes('Must end with')) {
-    const match = validationText.match(/Must end with (.+)/);
-    if (match) {
-      validation.type = 'endsWith';
-      validation.pattern = match[1].trim();
-      return validation;
-    }
-  }
-
-  // Check for numeric range
-  const rangeMatch = validationText.match(/Integer between (\d+)-(\d+)/);
-  if (rangeMatch) {
-    validation.type = 'range';
-    validation.min = parseInt(rangeMatch[1], 10);
-    validation.max = parseInt(rangeMatch[2], 10);
-    return validation;
-  }
-
-  // Check for minimum length
-  const minMatch = validationText.match(/Minimum (\d+) characters/);
-  if (minMatch) {
-    validation.type = 'minLength';
-    validation.min = parseInt(minMatch[1], 10);
-    return validation;
-  }
-
-  // Check for common patterns
-  const patterns = {
-    'Valid email format': validationPatterns.email,
-    'Valid URL': validationPatterns.url,
-    'PostgreSQL connection': validationPatterns.postgresql,
-    'Redis connection': validationPatterns.redis,
-    'RabbitMQ connection': validationPatterns.amqp,
-    'Semver format': validationPatterns.semver,
-    'AWS region': validationPatterns.awsRegion,
-  };
-
-  for (const [key, pattern] of Object.entries(patterns)) {
-    if (validationText.includes(key)) {
-      validation.type = 'regex';
-      validation.pattern = pattern;
-      return validation;
-    }
-  }
-
-  return validation;
-}
-
-/**
- * Parse .env file into key-value pairs
- */
-function parseEnvFile(filePath) {
-  if (!fs.existsSync(filePath)) {
-    return null;
-  }
-
-  const content = fs.readFileSync(filePath, 'utf-8');
-  const lines = content.split('\n');
-  const env = {};
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    // Skip comments and empty lines
-    if (!trimmed || trimmed.startsWith('#')) {
+    if (/^\[(required)([^\]]*)\]/i.test(comment)) {
+      metadata.required = true;
+      const remainder = comment.replace(/^\[[^\]]+\]\s*/, '').trim();
+      if (remainder) metadata.description = remainder;
       continue;
     }
 
-    const match = trimmed.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
-    if (match) {
-      const key = match[1];
-      let value = match[2].trim();
-
-      // Remove quotes if present
-      if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-      ) {
-        value = value.substring(1, value.length - 1);
-      }
-
-      if (typeof key === 'string' && /^[a-zA-Z0-9_]+$/.test(key)) env[key] = value;
+    if (/^\[(optional|auto-set)([^\]]*)\]/i.test(comment)) {
+      metadata.required = false;
+      const remainder = comment.replace(/^\[[^\]]+\]\s*/, '').trim();
+      if (remainder && !metadata.description) metadata.description = remainder;
+      continue;
     }
+
+    if (/^validation\s*:/i.test(comment)) {
+      const directives = parseValidationDirectives(comment.replace(/^validation\s*:/i, '').trim());
+      metadata.validations.push(...directives);
+      continue;
+    }
+
+    if (/^default\s*:/i.test(comment)) {
+      metadata.defaultValue = comment.replace(/^default\s*:/i, '').trim();
+      continue;
+    }
+
+    if (!metadata.description && comment) {
+      metadata.description = comment;
+    }
+  }
+
+  return metadata;
+}
+
+function parseValidationDirectives(text) {
+  if (!text) return [];
+
+  const directives = [];
+  const lowered = text.toLowerCase();
+
+  const enumMatch = text.match(/must be one of:\s*(.+)$/i);
+  if (enumMatch) {
+    const values = enumMatch[1]
+      .split(/[,|]/)
+      .map(value => value.trim())
+      .filter(Boolean);
+    if (values.length) directives.push({ type: 'enum', values });
+  }
+
+  const rangeMatch = text.match(/integer between\s*(\d+)\s*[-–]\s*(\d+)/i);
+  if (rangeMatch) {
+    directives.push({ type: 'range', min: Number(rangeMatch[1]), max: Number(rangeMatch[2]) });
+  }
+
+  if (/positive integer/.test(lowered)) {
+    directives.push({ type: 'positiveInteger' });
+  }
+
+  if (/must be true or false/.test(lowered)) {
+    directives.push({ type: 'boolean' });
+  }
+
+  const minLengthMatch = text.match(/(?:minimum|min)\s+(\d+)\s+characters?/i);
+  if (minLengthMatch) {
+    directives.push({ type: 'minLength', min: Number(minLengthMatch[1]) });
+  }
+
+  const exactLengthMatch =
+    text.match(/exact(?:ly)?\s*(\d+)\s+chars?/i) ||
+    (!minLengthMatch && text.match(/\b(\d+)\s+chars?\b/i));
+  if (exactLengthMatch) {
+    directives.push({ type: 'exactLength', length: Number(exactLengthMatch[1]) });
+  }
+
+  const regexMatch = text.match(/must match pattern:\s*(.+)$/i);
+  if (regexMatch) {
+    const patternText = regexMatch[1].trim().replace(/^`|`$/g, '');
+    const normalized = patternText.replace(/\\/g, '\\');
+    try {
+      directives.push({ type: 'regex', pattern: new RegExp(`^${normalized}$`) });
+    } catch {
+      directives.push({ type: 'regex', pattern: new RegExp(normalized) });
+    }
+  }
+
+  const startsWithMatch = text.match(/starts with\s+([^.,]+)/i);
+  if (startsWithMatch) {
+    const prefixes = startsWithMatch[1]
+      .split(/\s+or\s+/i)
+      .map(prefix => prefix.replace(/[()]/g, '').replace(/\.$/, '').trim())
+      .filter(Boolean);
+    if (prefixes.length) directives.push({ type: 'startsWithAny', prefixes });
+  }
+
+  const endsWithMatch = text.match(/ends with\s+([^.,]+)/i);
+  if (endsWithMatch) {
+    const suffixes = endsWithMatch[1]
+      .split(/\s+or\s+/i)
+      .map(suffix => suffix.replace(/[()]/g, '').replace(/\.$/, '').trim())
+      .filter(Boolean);
+    if (suffixes.length) directives.push({ type: 'endsWithAny', suffixes });
+  }
+
+  if (/base64 encoded/.test(lowered)) {
+    directives.push({
+      type: 'pattern',
+      pattern: validationPatterns.base64,
+      label: 'base64 encoded string',
+    });
+  }
+
+  if (/valid email/.test(lowered)) {
+    directives.push({
+      type: 'pattern',
+      pattern: validationPatterns.email,
+      label: 'valid email',
+    });
+  }
+
+  if (/valid url/.test(lowered)) {
+    directives.push({
+      type: 'pattern',
+      pattern: validationPatterns.urlStrict,
+      label: 'valid URL',
+    });
+  }
+
+  if (/aws region/.test(lowered)) {
+    directives.push({
+      type: 'pattern',
+      pattern: validationPatterns.awsRegion,
+      label: 'AWS region format',
+    });
+  }
+
+  if (/e\.164/.test(lowered)) {
+    directives.push({
+      type: 'pattern',
+      pattern: validationPatterns.phone,
+      label: 'E.164 phone',
+    });
+  }
+
+  if (/alphanumeric string/.test(lowered)) {
+    directives.push({
+      type: 'pattern',
+      pattern: validationPatterns.alphanumeric,
+      label: 'alphanumeric',
+    });
+  }
+
+  if (/alphanumeric with underscores\/hyphens/.test(lowered)) {
+    directives.push({
+      type: 'pattern',
+      pattern: /^[A-Za-z0-9_-]+$/,
+      label: 'alphanumeric with underscores or hyphens',
+    });
+  }
+
+  if (/valid s3 bucket name/.test(lowered)) {
+    directives.push({
+      type: 'pattern',
+      pattern: validationPatterns.s3Bucket,
+      label: 'S3 bucket name',
+    });
+  }
+
+  if (/starts with postgresql:\/\//.test(lowered) || /postgres:\/\//.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['postgresql://', 'postgres://'] });
+  }
+
+  if (/starts with redis:\/\//.test(lowered) || /rediss:\/\//.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['redis://', 'rediss://'] });
+  }
+
+  if (/starts with amqp:\/\//.test(lowered) || /amqps:\/\//.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['amqp://', 'amqps://'] });
+  }
+
+  if (/starts with sk_test_ or sk_live_/.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['sk_test_', 'sk_live_'] });
+  }
+
+  if (/starts with pk_test_ or pk_live_/.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['pk_test_', 'pk_live_'] });
+  }
+
+  if (/starts with whsec_/.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['whsec_'] });
+  }
+
+  if (/starts with sg\./.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['SG.'] });
+  }
+
+  if (/starts with ac/.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['AC'] });
+  }
+
+  if (/starts with akia/.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['AKIA'] });
+  }
+
+  if (/starts with iv1\./.test(lowered) || /starts with iv23\./.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['Iv1.', 'Iv23.'] });
+  }
+
+  if (/starts with sk-/.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['sk-'] });
+  }
+
+  if (/starts with http:\/\//.test(lowered) || /starts with https:\/\//.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['http://', 'https://'] });
+  }
+
+  if (/starts with https:\/\/hooks\.slack\.com\//.test(lowered)) {
+    directives.push({ type: 'startsWithAny', prefixes: ['https://hooks.slack.com/'] });
+  }
+
+  return directives;
+}
+
+function parseEnvFile(filePath) {
+  const absolute = path.resolve(filePath);
+  if (!fs.existsSync(absolute)) {
+    return null;
+  }
+
+  const env = {};
+  const lines = fs.readFileSync(absolute, 'utf8').split(/\r?\n/);
+
+  for (const rawLine of lines) {
+    if (
+      typeof rawLine !== 'string' ||
+      rawLine.trim().length === 0 ||
+      rawLine.trim().startsWith('#')
+    ) {
+      continue;
+    }
+
+    const exportMatch = rawLine.match(/^export\s+([A-Z_][A-Z0-9_]*)=(.*)$/);
+    const basicMatch = rawLine.match(/^([A-Z_][A-Z0-9_]*)=(.*)$/);
+    const match = exportMatch || basicMatch;
+
+    if (!match) continue;
+
+    const key = match[1];
+    let value = match[2] ?? '';
+
+    if (!value.trim().startsWith('"') && !value.trim().startsWith("'")) {
+      const hashIndex = value.indexOf(' #');
+      if (hashIndex !== -1) {
+        value = value.slice(0, hashIndex);
+      }
+    }
+
+    value = value.trim();
+
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    env[key] = value;
   }
 
   return env;
 }
 
-/**
- * Validate a value against validation rules
- */
 function validateValue(value, validation) {
-  if (!validation || !validation.type) {
-    return { valid: true };
-  }
-
   switch (validation.type) {
     case 'enum':
-      if (!validation.enum.includes(value)) {
-        return {
-          valid: false,
-          message: `Must be one of: ${validation.enum.join(', ')}. Got: ${value}`,
-        };
+      if (!validation.values.includes(value)) {
+        return `Must be one of: ${validation.values.join(', ')}`;
       }
       break;
-
-    case 'startsWith':
-      if (!value.startsWith(validation.pattern)) {
-        return {
-          valid: false,
-          message: `Must start with ${validation.pattern}`,
-        };
-      }
-      break;
-
-    case 'endsWith':
-      if (!value.endsWith(validation.pattern)) {
-        return {
-          valid: false,
-          message: `Must end with ${validation.pattern}`,
-        };
-      }
-      break;
-
-    case 'regex':
-      if (!validation.pattern.test(value)) {
-        return {
-          valid: false,
-          message: `Invalid format`,
-        };
-      }
-      break;
-
     case 'range':
-      var num = parseInt(value, 10);
-      if (isNaN(num) || num < validation.min || num > validation.max) {
-        return {
-          valid: false,
-          message: `Must be between ${validation.min} and ${validation.max}`,
-        };
+      if (
+        Number.isNaN(Number(value)) ||
+        Number(value) < validation.min ||
+        Number(value) > validation.max
+      ) {
+        return `Must be an integer between ${validation.min} and ${validation.max}`;
       }
       break;
-
+    case 'positiveInteger': {
+      const num = Number(value);
+      if (!Number.isInteger(num) || num <= 0) {
+        return 'Must be a positive integer';
+      }
+      break;
+    }
+    case 'boolean':
+      if (!['true', 'false'].includes(value.toLowerCase())) {
+        return 'Must be true or false';
+      }
+      break;
     case 'minLength':
       if (value.length < validation.min) {
-        return {
-          valid: false,
-          message: `Must be at least ${validation.min} characters`,
-        };
+        return `Must be at least ${validation.min} characters`;
       }
+      break;
+    case 'exactLength':
+      if (value.length !== validation.length) {
+        return `Must be exactly ${validation.length} characters`;
+      }
+      break;
+    case 'regex':
+      if (!validation.pattern.test(value)) {
+        return 'Does not match expected pattern';
+      }
+      break;
+    case 'pattern':
+      if (!validation.pattern.test(value)) {
+        return validation.label ? `Must be a valid ${validation.label}` : 'Invalid value';
+      }
+      break;
+    case 'startsWithAny':
+      if (!validation.prefixes.some(prefix => value.startsWith(prefix))) {
+        return `Must start with one of: ${validation.prefixes.join(', ')}`;
+      }
+      break;
+    case 'endsWithAny':
+      if (!validation.suffixes.some(suffix => value.endsWith(suffix))) {
+        return `Must end with one of: ${validation.suffixes.join(', ')}`;
+      }
+      break;
+    default:
       break;
   }
 
-  return { valid: true };
+  return null;
 }
 
-/**
- * Validate .env file against schema
- */
-function validate(envData, schema) {
+function validateEnvironment(schema, env) {
   const errors = [];
   const warnings = [];
-  const info = [];
 
-  // Check for missing required variables
-  for (const [varName, metadata] of Object.entries(schema)) {
-    if (metadata.required && !(varName in envData)) {
-      errors.push({
-        type: 'missing_required',
-        variable: varName,
-        message: `Required variable missing: ${varName}`,
-        description: metadata.description,
-      });
-    }
-  }
+  for (const [key, metadata] of schema) {
+    const value = env[key];
+    const hasValue = value !== undefined && value !== '';
 
-  // Validate existing variables
-  for (const [varName, value] of Object.entries(envData)) {
-    const metadata = schema.hasOwnProperty(varName) ? schema[varName] : null;
-
-    // Check if variable is documented
-    if (!metadata) {
-      warnings.push({
-        type: 'undocumented',
-        variable: varName,
-        message: `Variable not documented in .env.example: ${varName}`,
-      });
-      continue;
-    }
-
-    // Skip empty values for optional variables
-    if (!value && !metadata.required) {
-      continue;
-    }
-
-    // Validate empty required variables
-    if (!value && metadata.required) {
-      errors.push({
-        type: 'empty_required',
-        variable: varName,
-        message: `Required variable is empty: ${varName}`,
-        description: metadata.description,
-      });
-      continue;
-    }
-
-    // Validate value format
-    const validationResult = validateValue(value, metadata.validation, varName);
-    if (!validationResult.valid) {
-      errors.push({
-        type: 'invalid_format',
-        variable: varName,
-        message: `Invalid value for ${varName}: ${validationResult.message}`,
-        value: value.substring(0, 50) + (value.length > 50 ? '...' : ''),
-      });
-    }
-  }
-
-  return { errors, warnings, info };
-}
-
-/**
- * Print validation results
- */
-function printResults(results, options) {
-  const { errors, warnings, info } = results;
-
-  // Print errors
-  if (errors.length > 0) {
-    console.log(`\n${colors.red}${colors.bright}✗ Validation Errors:${colors.reset}`);
-    for (const error of errors) {
-      console.log(
-        `\n  ${colors.red}●${colors.reset} ${colors.bright}${error.variable}${colors.reset}`
-      );
-      console.log(`    ${error.message}`);
-      if (error.description) {
-        console.log(`    ${colors.dim}${error.description}${colors.reset}`);
+    if (!hasValue) {
+      if (metadata.required) {
+        const missingMessage = metadata.description
+          ? `${key}: missing value (${metadata.description})`
+          : `${key}: missing value`;
+        errors.push(missingMessage);
+      } else if (metadata.defaultValue) {
+        warnings.push(`${key}: missing, defaults to ${metadata.defaultValue}`);
       }
-      if (error.value) {
-        console.log(`    ${colors.dim}Current value: ${error.value}${colors.reset}`);
+      continue;
+    }
+
+    for (const validation of metadata.validations) {
+      const message = validateValue(value, validation);
+      if (message) {
+        errors.push(`${key}: ${message}`);
+        break;
       }
     }
-    console.log('');
   }
 
-  // Print warnings
-  if (warnings.length > 0) {
-    console.log(`\n${colors.yellow}${colors.bright}⚠ Warnings:${colors.reset}`);
-    for (const warning of warnings) {
-      console.log(`  ${colors.yellow}●${colors.reset} ${warning.message}`);
-    }
-    console.log('');
+  const extraKeys = Object.keys(env).filter(key => !schema.has(key));
+  for (const extraKey of extraKeys) {
+    warnings.push(`${extraKey}: not defined in example file`);
   }
 
-  // Print summary
-  console.log(`${colors.bright}Summary:${colors.reset}`);
-  console.log(
-    `  Errors:   ${errors.length > 0 ? colors.red : colors.green}${errors.length}${colors.reset}`
-  );
-  console.log(
-    `  Warnings: ${warnings.length > 0 ? colors.yellow : colors.green}${warnings.length}${colors.reset}`
-  );
-
-  // Determine exit code
-  let exitCode = 0;
-  if (errors.length > 0) {
-    exitCode = 1;
-  } else if (warnings.length > 0 && options.strict) {
-    exitCode = 1;
-  }
-
-  if (exitCode === 0 && !options.quiet) {
-    console.log(
-      `\n${colors.green}${colors.bright}✓ Environment validation passed!${colors.reset}\n`
-    );
-  }
-
-  return exitCode;
+  return { errors, warnings };
 }
 
-/**
- * Main execution
- */
-function main() {
+function run() {
+  const options = parseArgs();
+
   try {
-    const options = parseArgs();
-
-    console.log(`${colors.bright}Validating environment configuration...${colors.reset}\n`);
-    console.log(`  Example: ${colors.cyan}${options.examplePath}${colors.reset}`);
-    console.log(`  Env:     ${colors.cyan}${options.envPath}${colors.reset}\n`);
-
-    // Parse schema from .env.example
     const schema = parseEnvExample(options.examplePath);
-    const schemaVarCount = Object.keys(schema).length;
-    console.log(`  Schema variables: ${colors.cyan}${schemaVarCount}${colors.reset}`);
-
-    // Parse .env file
     const envData = parseEnvFile(options.envPath);
+
     if (!envData) {
-      console.warn(
-        `${colors.yellow}Warning: ${options.envPath} not found. Checking required variables only.${colors.reset}\n`
-      );
-
-      // Check only for required variables
-      const errors = Object.entries(schema)
-        .filter(([, metadata]) => metadata.required)
-        .map(([varName, metadata]) => ({
-          type: 'missing_required',
-          variable: varName,
-          message: `Required variable missing: ${varName}`,
-          description: metadata.description,
-        }));
-
-      const results = { errors, warnings: [], info: [] };
-      const exitCode = printResults(results, options);
-      process.exit(options.dryRun ? 0 : exitCode);
+      const message = `Environment file not found at ${path.resolve(options.envPath)}`;
+      if (options.dryRun) {
+        console.warn(`${colors.yellow}${message}${colors.reset}`);
+        process.exit(0);
+      } else {
+        console.error(`${colors.red}${message}${colors.reset}`);
+        process.exit(2);
+      }
     }
 
-    const envVarCount = Object.keys(envData).length;
-    console.log(`  Env variables:    ${colors.cyan}${envVarCount}${colors.reset}\n`);
+    const { errors, warnings } = validateEnvironment(schema, envData);
 
-    // Validate
-    const results = validate(envData, schema);
-    const exitCode = printResults(results, options);
+    if (errors.length) {
+      console.error(`\n${colors.red}Environment validation failed:${colors.reset}`);
+      for (const error of errors) {
+        console.error(`  • ${error}`);
+      }
+    }
 
-    process.exit(options.dryRun ? 0 : exitCode);
+    if (warnings.length) {
+      console.warn(`\n${colors.yellow}Warnings:${colors.reset}`);
+      for (const warning of warnings) {
+        console.warn(`  • ${warning}`);
+      }
+    }
+
+    if (!errors.length && (!warnings.length || !options.strict) && !options.quiet) {
+      console.log(`${colors.green}✓ Environment configuration looks good${colors.reset}`);
+    }
+
+    if (options.dryRun) {
+      process.exit(0);
+    }
+
+    if (errors.length) {
+      process.exit(1);
+    }
+
+    if (warnings.length && options.strict) {
+      process.exit(1);
+    }
+
+    process.exit(0);
   } catch (error) {
-    console.error(`\n${colors.red}${colors.bright}Error:${colors.reset} ${error.message}\n`);
-    if (error.stack && process.env.DEBUG) {
-      console.error(error.stack);
+    const message = error instanceof Error ? error.message : String(error);
+    if (options.dryRun) {
+      console.warn(`${colors.yellow}${message}${colors.reset}`);
+      process.exit(0);
+    } else {
+      console.error(`${colors.red}${message}${colors.reset}`);
+      process.exit(2);
     }
-    process.exit(2);
   }
 }
 
-// Run if executed directly
 if (require.main === module) {
-  main();
+  run();
 }
-
-module.exports = {
-  parseEnvExample,
-  parseEnvFile,
-  validate,
-  validateValue,
-};

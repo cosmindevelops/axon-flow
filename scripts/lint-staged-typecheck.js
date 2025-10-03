@@ -15,14 +15,12 @@
  * Validation: V1.20 - Pre-commit hooks enforce quality checks
  */
 
-import { execSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+const { execSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
+const WORKSPACE_PREFIXES = new Set(['apps', 'packages', 'services', 'infrastructure']);
 
 /**
  * Detect which workspace packages are affected by the given files
@@ -31,29 +29,46 @@ const rootDir = path.resolve(__dirname, '..');
  */
 function detectAffectedPackages(files) {
   const affectedPackages = new Set();
-  const workspaceDirs = ['apps', 'packages', 'services', 'infrastructure'];
 
   for (const file of files) {
-    const relativePath = path.relative(rootDir, file);
+    const absoluteFile = path.isAbsolute(file) ? file : path.join(rootDir, file);
+    const packageDir = findNearestPackageDir(absoluteFile);
 
-    // Check if file is in a workspace directory
-    for (const dir of workspaceDirs) {
-      if (relativePath.startsWith(`${dir}/`)) {
-        // Extract package name (e.g., "apps/web" from "apps/web/src/index.ts")
-        const parts = relativePath.split('/');
-        if (parts.length >= 2) {
-          const packagePath = path.join(rootDir, dir, parts[1]);
-          // Verify package.json exists
-          if (accessSync(path.join(packagePath, 'package.json'), fs.constants.F_OK)) {
-            affectedPackages.add(`${dir}/${parts[1]}`);
-          }
-        }
-        break;
-      }
+    if (!packageDir) {
+      continue;
     }
+
+    const relativePackage = path.relative(rootDir, packageDir).split(path.sep).join('/');
+
+    const [prefix] = relativePackage.split('/');
+    if (!WORKSPACE_PREFIXES.has(prefix)) {
+      continue;
+    }
+
+    affectedPackages.add(relativePackage);
   }
 
   return affectedPackages;
+}
+
+function findNearestPackageDir(filePath) {
+  let currentDir = path.dirname(filePath);
+
+  while (currentDir.startsWith(rootDir)) {
+    const pkgPath = path.join(currentDir, 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      return currentDir;
+    }
+
+    const parentDir = path.dirname(currentDir);
+    if (parentDir === currentDir) {
+      break;
+    }
+
+    currentDir = parentDir;
+  }
+
+  return null;
 }
 
 /**
@@ -73,6 +88,12 @@ function runTypeCheck(files) {
   console.log(`\n🔍 Type checking ${tsFiles.length} TypeScript file(s)...\n`);
 
   const affectedPackages = detectAffectedPackages(tsFiles);
+  const hasRootTypeFiles = tsFiles.some(file => {
+    const absoluteFile = path.isAbsolute(file) ? file : path.join(rootDir, file);
+    const relativePath = path.relative(rootDir, absoluteFile).split(path.sep).filter(Boolean);
+    const [prefix] = relativePath;
+    return !prefix || !WORKSPACE_PREFIXES.has(prefix);
+  });
 
   try {
     if (affectedPackages.size > 0) {
@@ -94,7 +115,9 @@ function runTypeCheck(files) {
       });
 
       console.log('\n✓ Package type checking passed\n');
-    } else {
+    }
+
+    if (hasRootTypeFiles || affectedPackages.size === 0) {
       // Strategy 2: Root-level type checking (no workspace packages affected)
       console.log('📋 Checking root-level TypeScript files...\n');
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-const path = require('node:path');
+import path from 'node:path';
 import fs from 'node:fs/promises';
 
 const ROOT = process.cwd();

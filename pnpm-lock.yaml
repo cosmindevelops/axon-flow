@@ -66,7 +66,7 @@ importers:
         specifier: ^3.6.2
         version: 3.6.2
       tsx:
-        specifier: ^4.19.0
+        specifier: ^4.20.6
         version: 4.20.6
       turbo:
         specifier: 2.5.8

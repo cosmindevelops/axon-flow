@@ -42,7 +42,7 @@ let drainingQueue = false;
 let typeScriptWatcherProcess = null;
 
 async function pathExists(filePath) {
-  try {
+  console.error(`Error checking path existence: ${filePath}`, error);
     await access(filePath, fsConstants.F_OK);
     return true;
   } catch {
@@ -57,7 +57,7 @@ function shouldIgnore(targetPath) {
 
 async function loadPackageJson(packagePath) {
   try {
-    const raw = await readFile(packagePath, 'utf8');
+    const raw = await readFile(path.resolve(REPO_ROOT, packagePath), 'utf8');
     return JSON.parse(raw);
   } catch (error) {
     console.error(`[dev-hmr] Failed to read package.json at ${packagePath}:`, error);
@@ -269,7 +269,7 @@ async function ensureDirectoryWatcher(dir) {
   }
 
   try {
-    const watcher = watch(dir, { persistent: true }, async (eventType, filename) => {
+    const watcher = watch(path.resolve(dir), { persistent: true }, async (eventType, filename) => {
       if (!filename) {
         return;
       }
@@ -289,7 +289,7 @@ async function ensureDirectoryWatcher(dir) {
 
       if (eventType === 'rename') {
         try {
-          const stats = await stat(resolvedPath);
+          const stats = await stat(path.resolve(resolvedPath));
           if (stats.isDirectory()) {
             await ensureDirectoryWatcher(resolvedPath);
           }

@@ -147,9 +147,6 @@ vite.config.ts.timestamp-*
 # Cursor
 .cursor/
 
-# Codacy
-.codacy/
-
 # Editor directories and files
 .idea
 .vscode
