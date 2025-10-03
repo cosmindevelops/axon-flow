@@ -20,7 +20,6 @@ async function removePath(targetPath) {
 }
 
 async function crawl(directory) {
-  const entries = await fs.readdir(path.join(ROOT, directory), { withFileTypes: true });
   const entries = await fs.readdir(path.resolve(ROOT, directory), { withFileTypes: true });
 
     for (const entry of entries) {
