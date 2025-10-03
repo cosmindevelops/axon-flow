@@ -51,7 +51,7 @@ async function crawl(directory) {
 
 async function main() {
   try {
-    await crawl(ROOT);
+    await crawl('.');
   } catch (error) {
     process.stderr.write(`[clean] failed: ${error.message}\n`);
     process.exitCode = 1;
