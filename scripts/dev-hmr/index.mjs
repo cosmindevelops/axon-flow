@@ -232,7 +232,7 @@ async function discoverWorkspaceDirs(root) {
   const discovered = [];
   let entries;
   try {
-    if (!path.isAbsolute(root) || !root.startsWith('/expected/base/path')) throw new Error('Invalid directory path');
+    if (!path.isAbsolute(root) || !root.startsWith(REPO_ROOT)) throw new Error('Invalid directory path');
   } catch (error) {
     if (error.code === 'ENOENT') {
       return discovered;
