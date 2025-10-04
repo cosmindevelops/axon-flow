@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "tsBuildInfoFile": ".tsbuildinfo"
+  },
+  "files": [],
+  "references": [
+    { "path": "./packages/tsconfig.json" },
+    { "path": "./apps/tsconfig.json" },
+    { "path": "./services/tsconfig.json" },
+    { "path": "./scripts/tsconfig.json" }
+  ]
+}

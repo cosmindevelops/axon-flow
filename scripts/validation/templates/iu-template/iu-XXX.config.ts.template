@@ -1,0 +1,22 @@
+import type { IUValidationConfig } from '../shared/types';
+
+export const iu{{IU_NUM}}Config: IUValidationConfig = {
+  id: {{IU_NUM}},
+  name: '{{IU_NAME}}',
+  dependencies: [{{DEPENDENCIES}}],
+  timeout: 60_000,
+  retries: 0,
+  parallel: true,
+  environment: {
+    NODE_ENV: 'test',
+  },
+  fixtures: {
+    required: [],
+    cleanup: true,
+  },
+  reporting: {
+    captureScreenshots: false,
+    captureLogs: true,
+    verbose: true,
+  },
+};

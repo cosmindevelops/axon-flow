@@ -86,9 +86,30 @@
 
 After working with various AI automation tools, I identified critical gaps in
 multi-agent systems. This project aims to build a robust platform guided by
-three core philosophies:
+Three core philosophies:
 
-|                          <p align="center"><img src="docs/assets/1.png" width="80" height="80"></p><p align="center">**Architecture First**</p>                           |                 <p align="center"><img src="docs/assets/2.png" width="80" height="80"></p><p align="center">**Extreme Modularity**</p>                 |                  <p align="center"><img src="docs/assets/3.png" width="80" height="80"></p><p align="center">**Developer Centric**</p>                   |
+<table style="width:100%; table-layout:fixed; border-collapse:collapse;">
+  <tr>
+    <td align="center" style="padding:12px;">
+      <figure>
+        <img src="docs/assets/1.png" width="80" height="80" alt="Architecture First — hub‑centric, observable, and predictable systems" />
+        <figcaption><strong>Architecture First</strong></figcaption>
+      </figure>
+    </td>
+    <td align="center" style="padding:12px;">
+      <figure>
+        <img src="docs/assets/2.png" width="80" height="80" alt="Extreme Modularity — small, composable packages and clear boundaries" />
+        <figcaption><strong>Extreme Modularity</strong></figcaption>
+      </figure>
+    </td>
+    <td align="center" style="padding:12px;">
+      <figure>
+        <img src="docs/assets/3.png" width="80" height="80" alt="Developer Centric — great DX with one-command setup, hot reload, and robust tooling" />
+        <figcaption><strong>Developer Centric</strong></figcaption>
+      </figure>
+    </td>
+  </tr>
+</table>
 | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------: |
 | A robust, **Hub-Centric** microservices architecture prevents the "agent chaos" that plagues decentralized systems. I enforce strict, predictable communication patterns. | Every external dependency is abstracted behind a **Provider Pattern**. Swap LLMs, databases, or storage providers with a single line of configuration. | A world-class developer experience is paramount. Enjoy a one-command setup, hot-reloading, comprehensive testing, and rich debugging tools from day one. |
 |                                       **Benefit:** Predictable, observable, and debuggable workflows, even with hundreds of agents.                                       |                          **Benefit:** No vendor lock-in. Unprecedented flexibility to adapt your stack as technology evolves.                          |                                 **Benefit:** Go from an idea to a functioning, multi-agent workflow in hours, not weeks.                                 |
@@ -292,7 +313,7 @@ enterprise solutions.
       <div style="height: 100%; display: flex; flex-direction: column;">
         <div style="margin-bottom: 15px;">
           <img src="https://img.shields.io/badge/📊-Market_Research_Platform-95E1D3?style=for-the-badge&labelColor=0D1117&logoColor=white" alt="Market Research">
-        </div>    
+        </div>
         <div style="flex-grow: 1; margin-bottom: 15px;">
           <p align="left"><strong>🤖 Agent Fleet:</strong><br>
           <img src="https://img.shields.io/badge/NewsMonitor-Web_Scraping-95E1D3?style=plastic&labelColor=0D1117&color=95E1D3" alt="NewsMonitor"><br>
@@ -751,6 +772,7 @@ gantt
 </div>
 
 <br><br>
+
 
 ### 🚨 License & Usage Restrictions
 
