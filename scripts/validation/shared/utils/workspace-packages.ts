@@ -49,7 +49,7 @@ export function findWorkspacePackages(rootDir: string): WorkspacePackage[] {
         }
         collectPackages(join(folderPath, entry.name), results, 0);
       }
-    } catch (error) {
+    } catch {
       // Folder may not exist yet; ignore.
     }
   }

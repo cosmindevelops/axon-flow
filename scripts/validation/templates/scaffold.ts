@@ -9,6 +9,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const TEMPLATES_DIR = join(__dirname, 'iu-template');
 
+interface ScaffoldOptions {
+  iu: number;
+  name: string;
+  deps: string;
+  criteria: number;
+}
+
 const program = new Command();
 program
   .name('scaffold')
@@ -22,7 +29,7 @@ program
     value => Number.parseInt(value, 10),
     20
   )
-  .action(options => {
+  .action((options: ScaffoldOptions) => {
     const iuNumber: number = options.iu;
     if (Number.isNaN(iuNumber) || iuNumber < 1 || iuNumber > 35) {
       throw new Error('IU number must be between 1 and 35');

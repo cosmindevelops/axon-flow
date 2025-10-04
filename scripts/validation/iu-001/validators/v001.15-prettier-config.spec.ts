@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, it, expect } from 'vitest';
 
-import { findWorkspacePackages } from '../../shared/utils';
+import { findWorkspacePackages, type WorkspacePackage } from '../../shared/utils';
 import { resolveProjectPath } from '../helpers/workspace-validator';
 
 /**
@@ -12,7 +12,7 @@ import { resolveProjectPath } from '../helpers/workspace-validator';
  */
 describe('[IU-1][V1.15] Prettier configuration', () => {
   const projectRoot = resolveProjectPath();
-  const packages = findWorkspacePackages(projectRoot);
+  const packages: WorkspacePackage[] = findWorkspacePackages(projectRoot);
 
   it('ensures root prettier configuration exists', () => {
     expect(existsSync(join(projectRoot, '.prettierrc.json'))).toBe(true);

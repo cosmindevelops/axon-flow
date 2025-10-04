@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { runCommand, type CommandResult } from '../../shared/utils';
+import { runCommand } from '../../shared/utils';
 import { resolveProjectPath } from '../helpers/workspace-validator';
 
 /**
@@ -11,7 +11,7 @@ describe('[IU-1][V1.1] pnpm install performance', () => {
   const projectRoot = resolveProjectPath();
 
   it('completes `pnpm install --frozen-lockfile` in ≤ 60s', () => {
-    const result: CommandResult = runCommand(
+    const result = runCommand(
       'pnpm',
       ['install', '--frozen-lockfile', '--reporter=silent', '--ignore-scripts'],
       {
@@ -23,7 +23,7 @@ describe('[IU-1][V1.1] pnpm install performance', () => {
           CI: '1',
         },
         timeoutMs: 120_000,
-      },
+      }
     );
 
     expect(result.exitCode).toBe(0);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { runCommand } from '../../shared/utils';
+import { runCommand, type CommandResult } from '../../shared/utils';
 import { resolveProjectPath } from '../helpers/workspace-validator';
 
 /**
@@ -11,7 +11,7 @@ describe('[IU-1][V1.2] Turbo build execution', () => {
   const projectRoot = resolveProjectPath();
 
   it('runs `pnpm turbo run build` successfully', () => {
-    const result = runCommand('pnpm', ['turbo', 'run', 'build'], {
+    const result: CommandResult = runCommand('pnpm', ['turbo', 'run', 'build'], {
       cwd: projectRoot,
       env: { ...process.env, CI: '1' },
       timeoutMs: 180_000,

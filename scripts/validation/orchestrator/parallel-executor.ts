@@ -14,7 +14,7 @@ export class ParallelExecutor {
       return [];
     }
 
-    const results: T[] = new Array(tasks.length);
+    const results: T[] = new Array<T>(tasks.length);
     let cursor = 0;
 
     const worker = async (): Promise<void> => {

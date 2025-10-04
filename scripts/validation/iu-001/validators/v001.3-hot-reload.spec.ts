@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 
-import { runCommand, findWorkspacePackages } from '../../shared/utils';
+import {
+  runCommand,
+  findWorkspacePackages,
+  type CommandResult,
+  type WorkspacePackage,
+} from '../../shared/utils';
 import { resolveProjectPath } from '../helpers/workspace-validator';
 
 interface TurboDryRun {
@@ -22,18 +27,15 @@ describe('[IU-1][V1.3] Hot reload configuration', () => {
   const projectRoot = resolveProjectPath();
 
   it('provides persistent dev tasks for each workspace package with a dev script', () => {
-    const packages = findWorkspacePackages(projectRoot).filter(pkg => {
+    const packages: WorkspacePackage[] = findWorkspacePackages(projectRoot).filter(pkg => {
       if (pkg.dir === projectRoot) {
         return false;
       }
-      if (!pkg.manifest) {
-        return false;
-      }
-      const scripts = pkg.manifest.scripts as Record<string, string> | undefined;
+      const scripts = pkg.manifest.scripts;
       return Boolean(scripts?.dev);
     });
 
-    const result = runCommand('pnpm', ['turbo', 'run', 'dev', '--dry-run=json'], {
+    const result: CommandResult = runCommand('pnpm', ['turbo', 'run', 'dev', '--dry-run=json'], {
       cwd: projectRoot,
       env: { ...process.env, CI: '1' },
     });
@@ -47,7 +49,7 @@ describe('[IU-1][V1.3] Hot reload configuration', () => {
     }
 
     for (const workspacePackage of packages) {
-      const name = workspacePackage.manifest.name as string | undefined;
+      const name = workspacePackage.manifest.name;
       expect(name, `package at ${workspacePackage.dir} must declare a name`).toBeDefined();
       if (!name) {
         continue;

@@ -61,6 +61,7 @@ export const baseConfigLayers = tseslint.config(
         project: [
           tsconfigPath,
           './scripts/tsconfig.json',
+          './scripts/validation/tsconfig.eslint.json',
           './packages/tsconfig.json',
           './apps/tsconfig.json',
           './services/tsconfig.json',
@@ -154,6 +155,17 @@ export const prettierConfigLayers = [
   },
 ];
 
-export const baseConfig = [...baseConfigLayers, ...prettierConfigLayers];
+const validationSpecOverrides = {
+  files: ['scripts/validation/**/*.spec.ts', 'scripts/validation/orchestrator/**/*.ts'],
+  rules: {
+    '@typescript-eslint/no-unsafe-assignment': 'off',
+    '@typescript-eslint/no-unsafe-call': 'off',
+    '@typescript-eslint/no-unsafe-member-access': 'off',
+    '@typescript-eslint/no-unsafe-return': 'off',
+    '@typescript-eslint/no-unsafe-argument': 'off',
+  },
+};
+
+export const baseConfig = [...baseConfigLayers, ...prettierConfigLayers, validationSpecOverrides];
 
 export default baseConfig;

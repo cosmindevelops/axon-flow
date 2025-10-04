@@ -39,7 +39,9 @@ export function assertJsonFileContains(
 ): void {
   assertFileExists(filePath, baseDir);
   const fullPath = resolvePath(filePath, baseDir);
-  const parsed = JSON.parse(readFileSync(fullPath, DEFAULT_ENCODING));
+  const parsed: Record<string, unknown> = JSON.parse(
+    readFileSync(fullPath, DEFAULT_ENCODING)
+  ) as Record<string, unknown>;
 
   for (const [key, value] of Object.entries(expected)) {
     expect(parsed).toHaveProperty(key);
@@ -61,10 +63,27 @@ export function assertPackageJsonValid(
     throw new Error(`package.json missing in ${packageDir}`);
   }
 
-  const pkg = JSON.parse(readFileSync(fullPath, DEFAULT_ENCODING));
+  const pkg: Record<string, unknown> = JSON.parse(
+    readFileSync(fullPath, DEFAULT_ENCODING)
+  ) as Record<string, unknown>;
   for (const field of requiredFields) {
     expect(pkg).toHaveProperty(field);
   }
+}
+
+interface ExecError extends Error {
+  stdout: Buffer;
+  stderr: Buffer;
+}
+
+function isExecError(error: unknown): error is ExecError {
+  return (
+    error instanceof Error &&
+    'stdout' in error &&
+    'stderr' in error &&
+    error.stdout instanceof Buffer &&
+    error.stderr instanceof Buffer
+  );
 }
 
 export function assertTypeScriptCompiles(
@@ -78,9 +97,9 @@ export function assertTypeScriptCompiles(
       stdio: 'pipe',
       env: { ...process.env, FORCE_COLOR: '0' },
     });
-  } catch (error) {
-    const stdout = error instanceof Error && 'stdout' in error ? String((error as any).stdout) : '';
-    const stderr = error instanceof Error && 'stderr' in error ? String((error as any).stderr) : '';
+  } catch (error: unknown) {
+    const stdout = isExecError(error) ? error.stdout.toString() : '';
+    const stderr = isExecError(error) ? error.stderr.toString() : '';
     throw new Error(`TypeScript compilation failed for ${tsconfigPath}\n${stdout}${stderr}`);
   }
 }
@@ -92,9 +111,9 @@ export function assertEslintClean(target: string, baseDir: string = process.cwd(
       stdio: 'pipe',
       env: { ...process.env, FORCE_COLOR: '0' },
     });
-  } catch (error) {
-    const stdout = error instanceof Error && 'stdout' in error ? String((error as any).stdout) : '';
-    const stderr = error instanceof Error && 'stderr' in error ? String((error as any).stderr) : '';
+  } catch (error: unknown) {
+    const stdout = isExecError(error) ? error.stdout.toString() : '';
+    const stderr = isExecError(error) ? error.stderr.toString() : '';
     throw new Error(`ESLint violations detected for ${target}\n${stdout}${stderr}`);
   }
 }

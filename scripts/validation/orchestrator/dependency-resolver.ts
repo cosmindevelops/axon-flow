@@ -2,7 +2,9 @@ import { IU_DEPENDENCIES } from './iu-dependencies';
 
 import type { IUDependencyGraph, ResolvedExecutionPlan } from '../shared/types';
 
-const ALL_IUS = Object.keys(IU_DEPENDENCIES).map(key => Number.parseInt(key, 10));
+const ALL_IUS: number[] = Object.keys(IU_DEPENDENCIES).map((key: string) =>
+  Number.parseInt(key, 10)
+);
 
 export class DependencyResolver {
   private readonly graph: IUDependencyGraph;
@@ -52,16 +54,16 @@ export class DependencyResolver {
     const dependents = new Map<number, number[]>();
 
     for (const [rawIu, deps] of Object.entries(IU_DEPENDENCIES)) {
-      const iu = Number.parseInt(rawIu, 10);
+      const iu: number = Number.parseInt(rawIu, 10);
       dependencies.set(iu, deps);
       for (const dep of deps) {
-        const list = dependents.get(dep) ?? [];
+        const list: number[] = dependents.get(dep) ?? [];
         list.push(iu);
         dependents.set(dep, list);
       }
     }
 
-    const executionOrder = this.topologicalSort();
+    const executionOrder: number[] = this.topologicalSort();
     return { dependencies, dependents, executionOrder };
   }
 
@@ -75,10 +77,10 @@ export class DependencyResolver {
     }
 
     for (const [rawIu, deps] of Object.entries(IU_DEPENDENCIES)) {
-      const iu = Number.parseInt(rawIu, 10);
+      const iu: number = Number.parseInt(rawIu, 10);
       for (const dep of deps) {
         inDegree.set(iu, (inDegree.get(iu) ?? 0) + 1);
-        const list = adjacency.get(dep);
+        const list: number[] | undefined = adjacency.get(dep);
         if (list) {
           list.push(iu);
         }
@@ -94,10 +96,10 @@ export class DependencyResolver {
 
     const result: number[] = [];
     while (queue.length > 0) {
-      const current = queue.shift()!;
+      const current: number = queue.shift()!;
       result.push(current);
       for (const neighbor of adjacency.get(current) ?? []) {
-        const nextCount = (inDegree.get(neighbor) ?? 0) - 1;
+        const nextCount: number = (inDegree.get(neighbor) ?? 0) - 1;
         inDegree.set(neighbor, nextCount);
         if (nextCount === 0) {
           queue.push(neighbor);

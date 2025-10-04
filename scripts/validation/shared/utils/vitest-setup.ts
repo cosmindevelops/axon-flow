@@ -2,7 +2,8 @@
 import { expect } from 'vitest';
 
 declare module 'vitest' {
-  interface Assertion<T = any> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface Assertion<T> {
     toBeValidIU(): void;
     toBeValidCriteria(): void;
   }

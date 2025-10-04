@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { findWorkspacePackages } from '../../shared/utils';
+import { findWorkspacePackages, type WorkspacePackage } from '../../shared/utils';
 import { resolveProjectPath } from '../helpers/workspace-validator';
 
 /**
@@ -9,7 +9,7 @@ import { resolveProjectPath } from '../helpers/workspace-validator';
  */
 describe('[IU-1][V1.10] Package manifest structure', () => {
   const projectRoot = resolveProjectPath();
-  const packages = findWorkspacePackages(projectRoot);
+  const packages: WorkspacePackage[] = findWorkspacePackages(projectRoot);
 
   it('ensures each package manifest contains required fields', () => {
     for (const workspacePackage of packages) {

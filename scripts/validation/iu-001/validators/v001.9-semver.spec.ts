@@ -1,7 +1,7 @@
 import semverRegex from 'semver-regex';
 import { describe, it, expect } from 'vitest';
 
-import { findWorkspacePackages } from '../../shared/utils';
+import { findWorkspacePackages, type WorkspacePackage } from '../../shared/utils';
 import { resolveProjectPath } from '../helpers/workspace-validator';
 
 /**
@@ -10,11 +10,11 @@ import { resolveProjectPath } from '../helpers/workspace-validator';
  */
 describe('[IU-1][V1.9] Package versioning', () => {
   const projectRoot = resolveProjectPath();
-  const packages = findWorkspacePackages(projectRoot);
+  const packages: WorkspacePackage[] = findWorkspacePackages(projectRoot);
 
   it('ensures each package declares a semver-compliant version', () => {
     for (const workspacePackage of packages) {
-      const version = workspacePackage.manifest.version as string | undefined;
+      const version = workspacePackage.manifest.version;
       expect(version, `Package ${workspacePackage.dir} must declare a version`).toBeDefined();
       if (!version) {
         continue;

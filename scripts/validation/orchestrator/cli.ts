@@ -15,6 +15,22 @@ import { ValidationRunner, formatPlan } from './runner';
 
 import type { ReportFormat, ValidationOptions } from '../shared/types';
 
+interface CommanderOptions {
+  iu?: string[];
+  from?: number;
+  to?: number;
+  all?: boolean;
+  parallel?: number;
+  bail?: boolean;
+  format?: string;
+  output?: string;
+  verbose?: boolean;
+}
+
+interface DepsCommandOptions {
+  iu?: number;
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8')) as {
@@ -36,7 +52,7 @@ program
   .addOption(new Option('--format <format>', 'Report format').choices(['json', 'html', 'markdown']))
   .addOption(new Option('--output <path>', 'Report output path'))
   .addOption(new Option('--verbose', 'Enable verbose output'))
-  .action(async options => {
+  .action(async (options: CommanderOptions) => {
     try {
       const parsed = normalizeOptions(options);
       const runner = new ValidationRunner();
@@ -74,9 +90,9 @@ program
   .command('deps')
   .description('Show dependency graph information')
   .option('--iu <number>', 'Show dependencies for a single IU', value => Number.parseInt(value, 10))
-  .action(cmdOptions => {
+  .action((cmdOptions: DepsCommandOptions) => {
     const resolver = new DependencyResolver();
-    if (cmdOptions.iu) {
+    if (cmdOptions.iu !== undefined) {
       const deps = resolver.getDependencies(cmdOptions.iu);
       const formatted =
         deps.length > 0
@@ -111,7 +127,7 @@ program
     process.stdout.write(` - claudedocs/validation-system-variant1-implementation-guide.md\n`);
   });
 
-function normalizeOptions(options: any): ValidationOptions {
+function normalizeOptions(options: CommanderOptions): ValidationOptions {
   const all = Boolean(options.all);
   const explicitIUs = Array.isArray(options.iu)
     ? options.iu.map((value: string) => Number.parseInt(value, 10)).filter(Number.isFinite)
@@ -156,4 +172,4 @@ function normalizeOptions(options: any): ValidationOptions {
   };
 }
 
-program.parseAsync(process.argv);
+void program.parseAsync(process.argv);

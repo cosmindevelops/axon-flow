@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "composite": true,
+    "composite": false,
     "outDir": "./dist",
     "rootDir": "./",
     "declaration": true,
@@ -16,8 +16,8 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noImplicitReturns": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
@@ -26,8 +26,11 @@
     "orchestrator/**/*.ts",
     "shared/**/*.ts",
     "iu-*/**/*.ts",
+    "iu-*/**/*.spec.ts",
     "templates/**/*.ts",
-    "templates/**/*.cjs"
+    "templates/**/*.cjs",
+    "vitest.config.ts",
+    "eslint.config.js"
   ],
-  "exclude": ["node_modules", "dist", "**/*.spec.ts", "iu-*/results/**", "reports/**"]
+  "exclude": ["node_modules", "dist", "iu-*/results/**", "reports/**"]
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { findWorkspacePackages } from '../../shared/utils';
+import { findWorkspacePackages, type WorkspacePackage } from '../../shared/utils';
 import { resolveProjectPath } from '../helpers/workspace-validator';
 
 /**
@@ -9,15 +9,13 @@ import { resolveProjectPath } from '../helpers/workspace-validator';
  */
 describe('[IU-1][V1.13] TypeScript version alignment', () => {
   const projectRoot = resolveProjectPath();
-  const packages = findWorkspacePackages(projectRoot);
+  const packages: WorkspacePackage[] = findWorkspacePackages(projectRoot);
 
   it('ensures TypeScript >= 5.3 and consistent across workspaces', () => {
     const versions = new Set<string>();
 
     for (const workspacePackage of packages) {
-      const devDependencies = workspacePackage.manifest.devDependencies as
-        | Record<string, string>
-        | undefined;
+      const devDependencies = workspacePackage.manifest.devDependencies;
       if (!devDependencies?.typescript) {
         continue;
       }
