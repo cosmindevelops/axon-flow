@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { describe, it, expect } from 'vitest';
 
+import { runCommand } from '../../shared/utils';
 import { resolveProjectPath } from '../helpers/workspace-validator';
 
 interface TurboConfig {
@@ -35,8 +36,18 @@ describe('[IU-1][V1.8] Turborepo caching', () => {
     expect(turboConfig.tasks.test?.cache).toBe(true);
   });
 
-  it('produces local turbo cache directory after builds', () => {
+  it('produces local turbo cache directory after builds', { timeout: 150_000 }, () => {
     const turboDir = join(projectRoot, '.turbo');
+
+    // Run a simple build to ensure cache directory is created
+    if (!existsSync(turboDir)) {
+      runCommand('pnpm', ['turbo', 'run', 'build', '--filter=@axon/validation'], {
+        cwd: projectRoot,
+        env: { ...process.env, CI: '1' },
+        timeoutMs: 120_000,
+      });
+    }
+
     expect(existsSync(turboDir)).toBe(true);
   });
 });

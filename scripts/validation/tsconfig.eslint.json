@@ -23,6 +23,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
+    "*.ts",
     "orchestrator/**/*.ts",
     "shared/**/*.ts",
     "iu-*/**/*.ts",
