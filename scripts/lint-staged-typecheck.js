@@ -45,7 +45,7 @@ try {
 
   console.log('✓ Type-checking passed');
   process.exit(0);
-} catch (error) {
+} catch {
   console.error('✗ Type-checking failed');
   process.exit(1);
 }
