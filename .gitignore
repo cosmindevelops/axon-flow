@@ -5,6 +5,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+dev-debug.log
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
@@ -36,6 +37,7 @@ bower_components
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
+build/
 
 # Dependency directories
 node_modules/
@@ -138,8 +140,60 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# Ignore cursor AI rules
-.cursor/rules/codacy.mdc
+# Monorepo Tools
+.turbo/
 
-# Codacy 
+# Cursor
+.cursor/
+
+# Codacy
 .codacy/
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code
+.claude/
+.claudekit/
+.serena/
+AGENTS.md
+CLAUDE.md
+
+# Taskmaster
+.taskmaster/
+
+# Github
+.github/chatmodes/
+.github/instructions/
+
+# Kilocode
+.kilocode/
+.kilocodemodes
+
+# Gemini
+GEMINI.md
+
+# Misc
+__archieve
+Makefile
+docs/
+.mcp.json
+.codebasemap
+
+# Personal Scripts (developer-specific)
+scripts/_personal/
+
+# BMAD (local only)
+.bmad-core/
+.bmad-*/
