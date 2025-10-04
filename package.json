@@ -25,8 +25,8 @@
     "lint-staged": "lint-staged",
     "prepare": "husky",
     "verify": "pnpm lint && pnpm typecheck && pnpm test",
-    "validate": "pnpm exec tsx scripts/validation/index.ts",
-    "benchmark": "pnpm exec tsx scripts/validation/index.ts --mode benchmark"
+    "validate": "pnpm --filter @axon/validation exec tsx orchestrator/cli.ts run --all",
+    "benchmark": "pnpm --filter @axon/validation exec tsx orchestrator/cli.ts run --all --format json"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",

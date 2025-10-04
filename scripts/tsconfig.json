@@ -2,12 +2,10 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": "./",
-    "composite": true,
     "noEmit": true,
-    "tsBuildInfoFile": "../.tsbuildinfo.scripts.tsbuildinfo",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext"
+    "incremental": false
   },
-  "include": ["./**/*.ts"]
+  "include": [
+    "validation/**/*.ts"
+  ]
 }
