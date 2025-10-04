@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "tsBuildInfoFile": ".tsbuildinfo.build"
+  },
+  "files": [],
+  "references": [
+    { "path": "./packages/tsconfig.json" },
+    { "path": "./apps/tsconfig.json" },
+    { "path": "./services/tsconfig.json" },
+    { "path": "./scripts/tsconfig.json" }
+  ],
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.integration-spec.ts",
+    "**/*.e2e-spec.ts",
+    "**/__tests__/**"
+  ]
+}

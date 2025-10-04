@@ -1,0 +1,24 @@
+# Validation execution results
+*/results/*.json
+*/results/*.log
+reports/latest/*
+reports/history/*
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Environment
+.env.local
+.env.test.local
+
+# OS files
+.DS_Store
+Thumbs.db
