@@ -51,6 +51,7 @@ web_modules/
 
 # Optional npm cache directory
 .npm
+.pnpm
 
 # Optional eslint cache
 .eslintcache
@@ -146,9 +147,6 @@ vite.config.ts.timestamp-*
 # Cursor
 .cursor/
 
-# Codacy
-.codacy/
-
 # Editor directories and files
 .idea
 .vscode
@@ -197,3 +195,7 @@ scripts/_personal/
 # BMAD (local only)
 .bmad-core/
 .bmad-*/
+
+# Reports
+reports/benchmarks
+scripts/validation/reports
