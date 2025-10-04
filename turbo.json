@@ -1,0 +1,77 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "CI",
+    "NODE_ENV",
+    "TURBO_TEAM",
+    "TURBO_TOKEN",
+    "TURBO_REMOTE_CACHE_SIGNATURE_KEY",
+    "TURBO_HASH_ONLY_GIT_CHANGES"
+  ],
+  "globalDependencies": ["pnpm-workspace.yaml", "package.json", "pnpm-lock.yaml", "turbo.json"],
+  "tasks": {
+    "lint": {
+      "cache": true,
+      "dependsOn": ["^lint"],
+      "inputs": [
+        "src/**",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        ".eslintrc*",
+        ".prettierrc*",
+        "eslint.config.*"
+      ],
+      "env": ["NODE_ENV"]
+    },
+    "build": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "build/**", ".next/**", "!.next/cache/**"],
+      "inputs": ["src/**", "package.json", "tsconfig.json", "tsconfig.*.json", "turbo.json"],
+      "env": ["NODE_ENV", "CI", "TURBO_HASH_ONLY_GIT_CHANGES"]
+    },
+    "test": {
+      "cache": true,
+      "dependsOn": ["build", "^test"],
+      "outputs": ["coverage/**", "test-results/**"],
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        "vitest.config.*",
+        "jest.config.*"
+      ],
+      "env": ["NODE_ENV", "CI"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "dependsOn": ["^dev"],
+      "inputs": [
+        "src/**",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        "next.config.*",
+        "nest-cli.json"
+      ],
+      "env": ["NODE_ENV", "AXON_HMR_DEBOUNCE_MS", "TURBO_HASH_ONLY_GIT_CHANGES"]
+    },
+    "clean": {
+      "cache": false,
+      "dependsOn": ["^clean"],
+      "inputs": ["dist/**", "build/**", ".next/**"],
+      "outputs": []
+    },
+    "clean:cache": {
+      "cache": false,
+      "outputs": []
+    }
+  },
+  "remoteCache": {
+    "enabled": false
+  }
+}

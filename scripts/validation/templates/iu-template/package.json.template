@@ -1,0 +1,11 @@
+{
+  "name": "@axon/validation-iu-{{IU_NUM}}",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Validation suite for IU-{{IU_NUM}}: {{IU_NAME}}",
+  "scripts": {
+    "test": "vitest run --dir=iu-{{IU_NUM}}",
+    "test:watch": "vitest --dir=iu-{{IU_NUM}}",
+    "test:coverage": "vitest run --coverage --dir=iu-{{IU_NUM}}"
+  }
+}

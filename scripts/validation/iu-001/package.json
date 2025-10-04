@@ -1,0 +1,11 @@
+{
+  "name": "@axon/validation-iu-001",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Validation suite for IU-001: Project Foundation & Monorepo Setup",
+  "scripts": {
+    "test": "vitest run --dir=iu-001",
+    "test:watch": "vitest --dir=iu-001",
+    "test:coverage": "vitest run --coverage --dir=iu-001"
+  }
+}
