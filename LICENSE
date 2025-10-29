@@ -1,0 +1,77 @@
+Axon Flow End User License Agreement (EULA)
+Version 1.0 — Effective October 26, 2025
+
+This Agreement governs the entire Axon Flow monorepo and every package, service, and
+artifact distributed from this repository. All contributors and consumers must treat
+this document as the authoritative license for the project unless superseded by a
+signed, written amendment from the Licensor.
+
+IMPORTANT: PLEASE READ THIS END USER LICENSE AGREEMENT ("AGREEMENT" OR "EULA") CAREFULLY BEFORE INSTALLING OR USING THE SOFTWARE. BY INSTALLING, COPYING, OR OTHERWISE USING THE SOFTWARE, YOU AGREE TO BE BOUND BY THE TERMS OF THIS AGREEMENT. IF YOU DO NOT AGREE, DO NOT INSTALL OR USE THE SOFTWARE.
+
+1. Definitions
+1.1 "Software" means the Axon Flow codebase, associated binaries, documentation, configurations, and any related materials provided by Cosmin Fuica (the "Licensor").
+1.2 "You" or "Licensee" means the individual or entity exercising rights under this Agreement.
+1.3 "Authorized Purpose" means internal evaluation or development directly in connection with an authorized collaboration with the Licensor.
+
+2. Acceptance of Terms
+By installing, accessing, or using the Software, You represent and warrant that You (a) have read and understood this Agreement, (b) are at least the age of majority in Your jurisdiction, and (c) have the authority to bind Yourself or the entity You represent. If You do not have such authority or disagree with any term, You must not use the Software.
+
+3. Grant of Limited License
+3.1 Subject to Your continuous compliance with this Agreement, the Licensor grants You a personal, non-exclusive, non-transferable, revocable license to install and use the Software solely for the Authorized Purpose.
+3.2 No ownership rights are conveyed. The Software is licensed, not sold. All rights not expressly granted are reserved by the Licensor.
+
+4. License Restrictions
+Without limiting any other restriction in this Agreement, You shall not, and shall not permit any third party to:
+- copy, reproduce, distribute, publish, sublicense, rent, lease, or otherwise make the Software available to any third party in whole or in part;
+- modify, adapt, translate, alter, merge, or create derivative works or improvements based on the Software;
+- reverse engineer, decompile, disassemble, or otherwise attempt to derive or gain access to the source code of any non-public portion of the Software, except to the limited extent that applicable law expressly permits despite this restriction;
+- use the Software, in whole or in part, for any commercial purpose, customer-facing service, or revenue-generating activity without the Licensor's prior express written permission;
+- remove, alter, or obscure any proprietary notices, labels, or marks on or within the Software;
+- bypass, defeat, or tamper with any security or access controls associated with the Software.
+
+5. Intellectual Property Ownership
+5.1 The Licensor retains all right, title, and interest, including all intellectual property rights, in and to the Software and any copies thereof.
+5.2 All trademarks, service marks, logos, and trade names associated with the Software are the property of the Licensor or its licensors. No license or right is granted to use them except as strictly necessary for the Authorized Purpose.
+
+6. Confidentiality
+6.1 You acknowledge that the Software constitutes confidential and proprietary information of the Licensor. You agree to exercise at least the same level of care in safeguarding the Software as You use for Your own confidential materials of comparable value, but in no event less than reasonable care.
+6.2 You shall not disclose, provide, or otherwise make available the Software to any third party without the Licensor's prior written consent.
+
+7. Compliance and Audit Rights
+7.1 You shall comply with all applicable laws and regulations in connection with Your use of the Software.
+7.2 Upon reasonable notice, the Licensor may request written certification of Your compliance with this Agreement.
+
+8. Updates and Support
+8.1 The Licensor may, but is not obligated to, provide patches, updates, or upgrades (collectively, "Updates"). Any Updates provided are deemed part of the Software and subject to this Agreement.
+8.2 This Agreement does not obligate the Licensor to provide any support or maintenance services. Any support provided is at the Licensor's sole discretion.
+
+9. Term and Termination
+9.1 This Agreement is effective upon Your first installation or use of the Software and remains in effect until terminated.
+9.2 This Agreement terminates automatically without notice if You fail to comply with any term of this Agreement. The Licensor may terminate this Agreement at any time upon written notice.
+9.3 Upon termination, You must immediately cease all use of the Software and destroy all copies in Your possession or control. Sections 4–13 shall survive termination.
+
+10. Disclaimer of Warranties
+10.1 THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTY OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE LICENSOR DISCLAIMS ALL WARRANTIES, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE, INCLUDING WITHOUT LIMITATION IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
+10.2 The Licensor does not warrant that the Software will be uninterrupted, error-free, secure, or compatible with any particular environment.
+
+11. Limitation of Liability
+11.1 TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS, REVENUE, DATA, OR USE, ARISING OUT OF OR IN CONNECTION WITH THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+11.2 THE LICENSOR'S TOTAL LIABILITY FOR ANY CLAIM ARISING OUT OF OR RELATING TO THE SOFTWARE OR THIS AGREEMENT SHALL NOT EXCEED ONE HUNDRED U.S. DOLLARS (US$100).
+
+12. Indemnification
+You agree to indemnify, defend, and hold harmless the Licensor and its affiliates, officers, directors, employees, and agents from and against any and all claims, liabilities, damages, losses, and expenses (including reasonable attorneys' fees) arising out of or related to Your breach of this Agreement or Your misuse of the Software.
+
+13. Governing Law; Venue
+This Agreement is governed by and construed in accordance with the laws of the State of New York, USA, without regard to its conflicts of law principles. You consent to the exclusive jurisdiction of the state and federal courts located in New York County, New York for any dispute arising out of or relating to this Agreement, and waive any objection to venue or inconvenient forum.
+
+14. Export Control
+You shall comply with all applicable export control laws and regulations. You represent and warrant that You are not located in, under the control of, or a national or resident of any country or jurisdiction subject to U.S. embargo or sanctions.
+
+15. Miscellaneous
+15.1 This Agreement constitutes the entire agreement between the parties concerning the Software and supersedes all prior or contemporaneous understandings or agreements, whether written or oral.
+15.2 No amendment or modification of this Agreement shall be valid unless in writing and signed by the Licensor.
+15.3 Failure to enforce any provision of this Agreement shall not constitute a waiver of that or any other provision.
+15.4 If any provision of this Agreement is held to be invalid or unenforceable, the remaining provisions shall remain in full force and effect.
+15.5 You may not assign or transfer this Agreement, or any rights or obligations herein, without the Licensor's prior written consent. The Licensor may assign this Agreement without restriction.
+
+For licensing inquiries, contact: cosminfuica@gmail.com
